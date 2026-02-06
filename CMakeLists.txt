@@ -18,3 +18,9 @@ add_executable(neon_browser
 )
 
 target_link_libraries(neon_browser PRIVATE Qt6::Widgets Qt6::WebEngineWidgets)
+
+if (WIN32)
+    set_target_properties(neon_browser PROPERTIES WIN32_EXECUTABLE TRUE)
+endif()
+
+install(TARGETS neon_browser RUNTIME DESTINATION .)
