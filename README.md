@@ -76,3 +76,27 @@ Opcode tablosu:
 - Bu proje **gerçek PCB/çip üretimi yapmaz**.
 - Tamamen eğitim/analiz amaçlı yazılım emülasyonudur.
 - Kod okunabilir ve öğretici olacak şekilde yorumlanmıştır.
+
+
+## EXE olusturma sorunu icin hizli cozum ("exe yapamiyorum")
+
+En sik nedenler:
+- `g++.exe` PATH'te degil
+- MSYS2'nin `ucrt64`/`mingw64` ortami yerine farkli shell kullaniliyor
+- MinGW yerine MSVC arac zinciri acik
+
+### Onerilen kurulum (MSYS2)
+1. MSYS2 kurun: `https://www.msys2.org/`
+2. "MSYS2 MinGW 64-bit" terminalini acin.
+3. Paketleri yukleyin:
+   - `pacman -S --needed mingw-w64-x86_64-toolchain`
+4. `C:\msys64\mingw64\bin` yolunu Windows PATH'e ekleyin.
+5. Yeni CMD/PowerShell acip proje klasorunde `build_exe.bat` calistirin.
+
+### Beklenen cikti
+- `build\mcu_emulator.exe` dosyasi olusur.
+- Script, derleyici yolunu ve varsa DLL bagimlilik ozetini ekrana yazar.
+
+### Not
+- Bu script **MinGW g++** icindir.
+- Linux/WSL icinde dogrudan Windows `.exe` uretebilmek icin ayrica cross-compiler (ornegin `x86_64-w64-mingw32-g++`) gerekir.
