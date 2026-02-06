@@ -1,0 +1,54 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["work", "main", "master"]
+
+jobs:
+  build-windows-exe:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v4
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.2'
+          host: 'windows'
+          target: 'desktop'
+          modules: 'qtwebengine'
+          cache: true
+
+      - name: Configure
+        shell: pwsh
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        shell: pwsh
+        run: cmake --build build --config Release
+
+      - name: Install
+        shell: pwsh
+        run: cmake --install build --config Release --prefix build/dist
+
+      - name: Deploy Qt runtime
+        shell: pwsh
+        run: |
+          $exe = Resolve-Path "build/dist/neon_browser.exe"
+          windeployqt --release --compiler-runtime --no-translations $exe
+
+      - name: Package
+        shell: pwsh
+        run: Compress-Archive -Path build/dist/* -DestinationPath neon_browser_windows.zip
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: neon-browser-windows
+          path: neon_browser_windows.zip
