@@ -1,12 +1,13 @@
 # CustomTkinter Sistem Widget
 
-Windows 7 stiline yakın başlık çubuğu olan, %75 şeffaf, sabitlenebilir/sürüklenebilir masaüstü sistem widget'ı.
+Windows 7 / AERO görünümüne yakın, %75 şeffaf, masaüstüne özel sistem widget'ı.
 
 ## Özellikler
 
 - `CustomTkinter` arayüz
 - `%75` şeffaflık
-- AERO benzeri blur efekti (Windows'ta destek varsa)
+- AERO benzeri blur/acrylic efekt denemesi (Windows)
+- Daha belirgin (kalın) yazılar ve kompakt kart alanları
 - Windows 7 stili butonlar:
   - `✕` kapat
   - `✎` düzenle / arkaplan rengini değiştir
@@ -17,6 +18,7 @@ Windows 7 stiline yakın başlık çubuğu olan, %75 şeffaf, sabitlenebilir/sü
   - RAM
   - GPU
   - SSD
+- **Sadece masaüstü odaktayken görünür** (Windows'ta `Progman/WorkerW` kontrolü)
 
 ## Kurulum
 
@@ -36,5 +38,6 @@ python widget_app.py
 
 ## Notlar
 
-- `GPUtil` kurulu değilse GPU alanında "GPU bilgisi alınamadı" yazar.
-- `nvidia-smi` varsa Windows üzerinde GPU fallback bilgisi alınmaya çalışılır.
+- `GPUtil` kurulu değilse GPU için `nvidia-smi` fallback denenir.
+- Destek yoksa GPU alanında `GPU bilgisi yok` yazısı gösterilir.
+- AERO efekt API'leri Windows sürümüne göre değişebileceği için bazı sistemlerde etkisiz kalabilir.
