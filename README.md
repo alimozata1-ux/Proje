@@ -100,3 +100,19 @@ En sik nedenler:
 ### Not
 - Bu script **MinGW g++** icindir.
 - Linux/WSL icinde dogrudan Windows `.exe` uretebilmek icin ayrica cross-compiler (ornegin `x86_64-w64-mingw32-g++`) gerekir.
+
+
+## Hazir EXE indirme (GitHub Actions)
+
+Bu ortamda Windows cross-compiler kurulumu ag/proxy kisitlari nedeniyle her zaman mumkun olmayabilir.
+Buna cozum olarak repo icine otomatik Windows build pipeline eklendi.
+
+### Nasil indirirsiniz?
+1. GitHub'da **Actions** sekmesine gidin.
+2. **Build Windows EXE** workflow'unu secin.
+3. `Run workflow` ile manuel tetikleyin (veya push/PR ile otomatik calisir).
+4. Calisma tamamlaninca **Artifacts** altindan su dosyalari indirin:
+   - `mcu-emulator-exe` -> `mcu_emulator.exe`
+   - `mcu-emulator-windows-zip` -> `mcu_emulator_windows.zip`
+
+Workflow dosyasi: `.github/workflows/build-windows-exe.yml`

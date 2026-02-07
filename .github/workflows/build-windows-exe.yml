@@ -1,0 +1,55 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "work" ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2 (MinGW64)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-binutils
+            zip
+
+      - name: Build EXE
+        shell: msys2 {0}
+        run: |
+          g++ -std=c++17 -O2 -Wall -Wextra -pedantic -s -mwindows \
+            -static -static-libgcc -static-libstdc++ \
+            main.cpp mcu.cpp cpu.cpp alu.cpp ram.cpp rom.cpp bus.cpp pins.cpp clock.cpp emulator.cpp loader.cpp gui.cpp \
+            -lcomdlg32 -lgdi32 -luser32 -lkernel32 -lole32 -luuid -lwinmm -lws2_32 \
+            -o build/mcu_emulator.exe
+
+      - name: Package artifact
+        shell: msys2 {0}
+        run: |
+          mkdir -p dist
+          cp build/mcu_emulator.exe dist/
+          cp README.md dist/
+          cd dist
+          zip -9 -r mcu_emulator_windows.zip mcu_emulator.exe README.md
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcu-emulator-exe
+          path: dist/mcu_emulator.exe
+
+      - name: Upload ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcu-emulator-windows-zip
+          path: dist/mcu_emulator_windows.zip
