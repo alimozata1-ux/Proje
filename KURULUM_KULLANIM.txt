@@ -1,0 +1,59 @@
+C++ Windows Saat/Tarih/CPU/RAM Widget - Kurulum ve Kullanim
+===========================================================
+
+1) Gereksinimler
+----------------
+- Windows 10/11
+- CMake (3.16 veya ustu)
+- Asagidakilerden biri:
+  a) Visual Studio 2019/2022 (Desktop development with C++)
+  b) MinGW-w64 (g++, mingw32-make)
+
+2) Projeyi Derleme
+------------------
+A) Visual Studio ile:
+
+  cmake -S . -B build
+  cmake --build build --config Release
+
+Olusan dosya:
+  build\Release\SystemWidget.exe
+
+B) MinGW ile:
+
+  cmake -S . -B build -G "MinGW Makefiles"
+  cmake --build build
+
+Olusan dosya:
+  build\SystemWidget.exe
+
+3) Calistirma
+-------------
+- EXE dosyasina cift tiklayin.
+- Uygulama acildiginda masaustunde seffaf bir widget olarak gorunur.
+
+4) Kullanim
+-----------
+- Saat/Tarih: Otomatik guncellenir (1 saniye).
+- CPU ve RAM: Canli kullanim degerleri gosterilir.
+- X: Uygulamayi kapatir.
+- Renk: Arka plan rengini degistirir.
+- + / - : Seffafligi artirir/azaltir.
+- Sabit / Normal: Pencereyi her zaman ustte tutma modunu acar/kapatir.
+- Kopya: Anlik tarih/saat/CPU/RAM bilgisini panoya kopyalar.
+- Sifirla: Varsayilan renk/seffaflik/pin ayarina doner.
+- Pencereyi fare ile tutup surukleyebilirsiniz.
+
+5) Ayarlarin Kaydedilmesi
+-------------------------
+- Uygulama kapatilinca su ayarlar ayni klasorde kaydedilir:
+  - Konum (X, Y)
+  - Arka plan rengi
+  - Seffaflik seviyesi
+  - Pin durumu
+- Dosya adi: widget_settings.ini
+
+6) Not
+------
+- Bu proje Win32 API kullandigi icin Linux/macOS'ta dogrudan calismaz.
+- Linux ortaminda derleme denemesinde windows.h hatasi normaldir.
