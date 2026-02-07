@@ -1,22 +1,31 @@
-# Python Sistem Widget
+# CustomTkinter Sistem Widget
 
-Bu uygulama masaüstünde çalışan, sürüklenebilir/sabitlenebilir bir widget sağlar:
+Windows 7 stiline yakın başlık çubuğu olan, %75 şeffaf, sabitlenebilir/sürüklenebilir masaüstü sistem widget'ı.
 
-- Saat ve tarih
-- CPU kullanım yüzdesi
-- RAM kullanım durumu
-- SSD (disk) kullanım durumu
-- `%75` şeffaf pencere
-- Kırmızı `X` kapatma tuşu
-- Arkaplan renk değiştirme (`🎨`)
-- Sabitleme / sürüklenebilirlik (`📌`)
+## Özellikler
+
+- `CustomTkinter` arayüz
+- `%75` şeffaflık
+- AERO benzeri blur efekti (Windows'ta destek varsa)
+- Windows 7 stili butonlar:
+  - `✕` kapat
+  - `✎` düzenle / arkaplan rengini değiştir
+  - `📌` sabitle / `📍` serbest bırak
+- Özel kart alanları:
+  - Tarih & Saat
+  - CPU
+  - RAM
+  - GPU
+  - SSD
 
 ## Kurulum
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install psutil
+pip install customtkinter psutil
+# opsiyonel GPU detayları için
+pip install gputil
 ```
 
 ## Çalıştırma
@@ -25,10 +34,7 @@ pip install psutil
 python widget_app.py
 ```
 
-## Kontroller
+## Notlar
 
-- `X`: Uygulamayı kapatır.
-- `📌`: Widget sabitleme durumunu değiştirir.
-  - Sabit (`📌`) iken taşınmaz.
-  - Serbest (`📍`) iken fare ile sürüklenebilir.
-- `🎨`: Arkaplan rengini değiştirir.
+- `GPUtil` kurulu değilse GPU alanında "GPU bilgisi alınamadı" yazar.
+- `nvidia-smi` varsa Windows üzerinde GPU fallback bilgisi alınmaya çalışılır.

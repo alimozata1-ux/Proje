@@ -1,212 +1,248 @@
+import ctypes
 import datetime
-import tkinter as tk
-from tkinter import colorchooser
-
+import os
+import platform
+import tkinter.colorchooser as colorchooser
+import customtkinter as ctk
 import psutil
 
 
-class SystemWidget:
-    def __init__(self, root: tk.Tk) -> None:
-        self.root = root
-        self.root.title("Sistem Widget")
-        self.root.overrideredirect(True)
-        self.root.attributes("-topmost", True)
-        self.root.attributes("-alpha", 0.75)
+class SystemWidget(ctk.CTk):
+    def __init__(self) -> None:
+        super().__init__()
 
-        self.bg_color = "#1f1f1f"
-        self.fg_color = "#f2f2f2"
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("dark-blue")
+
+        self.title("Sistem Widget")
+        self.geometry("390x300+60+60")
+        self.overrideredirect(True)
+        self.attributes("-topmost", True)
+        self.attributes("-alpha", 0.75)
 
         self.pinned = True
         self.drag_start_x = 0
         self.drag_start_y = 0
 
-        self.container = tk.Frame(root, bg=self.bg_color, bd=2, relief="flat")
-        self.container.pack(fill="both", expand=True)
+        self.bg_color = "#1A2636"
+        self.panel_color = "#24364E"
 
-        self._build_titlebar()
-        self._build_content()
-
-        self._bind_drag(self.titlebar)
-        self._bind_drag(self.container)
-
+        self._enable_aero_effect()
+        self._build_ui()
         self.update_data()
 
-    def _build_titlebar(self) -> None:
-        self.titlebar = tk.Frame(self.container, bg=self.bg_color)
-        self.titlebar.pack(fill="x", padx=6, pady=(6, 2))
+    def _enable_aero_effect(self) -> None:
+        """Windows üzerinde DWM blur (AERO benzeri) efekti dener."""
+        if platform.system() != "Windows":
+            return
 
-        self.title_label = tk.Label(
-            self.titlebar,
-            text="Widget",
-            bg=self.bg_color,
-            fg=self.fg_color,
-            font=("Segoe UI", 10, "bold"),
+        try:
+            hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
+
+            class DWM_BLURBEHIND(ctypes.Structure):
+                _fields_ = [
+                    ("dwFlags", ctypes.c_uint),
+                    ("fEnable", ctypes.c_bool),
+                    ("hRgnBlur", ctypes.c_void_p),
+                    ("fTransitionOnMaximized", ctypes.c_bool),
+                ]
+
+            blur_behind = DWM_BLURBEHIND(1, True, None, False)
+            ctypes.windll.dwmapi.DwmEnableBlurBehindWindow(hwnd, ctypes.byref(blur_behind))
+        except Exception:
+            # İşletim sistemi veya sürüm desteklemiyorsa sessizce geç.
+            pass
+
+    def _build_ui(self) -> None:
+        self.main_frame = ctk.CTkFrame(
+            self,
+            fg_color=self.bg_color,
+            corner_radius=16,
+            border_width=1,
+            border_color="#7FA5C8",
         )
-        self.title_label.pack(side="left")
+        self.main_frame.pack(fill="both", expand=True, padx=6, pady=6)
 
-        self.pin_button = tk.Button(
-            self.titlebar,
-            text="📌",
-            command=self.toggle_pin,
-            bg=self.bg_color,
-            fg="#ffd166",
-            activebackground=self.bg_color,
-            activeforeground="#ffe08a",
-            bd=0,
-            font=("Segoe UI", 10, "bold"),
-            cursor="hand2",
-        )
-        self.pin_button.pack(side="right", padx=(2, 4))
+        self.title_bar = ctk.CTkFrame(self.main_frame, fg_color="#6E93BB", corner_radius=10)
+        self.title_bar.pack(fill="x", padx=8, pady=(8, 4))
 
-        self.color_button = tk.Button(
-            self.titlebar,
-            text="🎨",
-            command=self.choose_color,
-            bg=self.bg_color,
-            fg="#8ecae6",
-            activebackground=self.bg_color,
-            activeforeground="#bde0fe",
-            bd=0,
-            font=("Segoe UI", 10),
-            cursor="hand2",
-        )
-        self.color_button.pack(side="right", padx=2)
-
-        self.close_button = tk.Button(
-            self.titlebar,
-            text="X",
-            command=self.root.destroy,
-            bg=self.bg_color,
-            fg="#ff4d4d",
-            activebackground=self.bg_color,
-            activeforeground="#ff8080",
-            bd=0,
-            font=("Segoe UI", 10, "bold"),
-            cursor="hand2",
-        )
-        self.close_button.pack(side="right", padx=2)
-
-        self._bind_drag(self.title_label)
-
-    def _build_content(self) -> None:
-        self.content = tk.Frame(self.container, bg=self.bg_color)
-        self.content.pack(fill="both", expand=True, padx=10, pady=(4, 10))
-
-        self.clock_label = tk.Label(
-            self.content,
-            bg=self.bg_color,
-            fg=self.fg_color,
+        self.title_label = ctk.CTkLabel(
+            self.title_bar,
+            text="Sistem Widget",
+            text_color="#F2F5FA",
             font=("Segoe UI", 13, "bold"),
-            anchor="w",
         )
-        self.clock_label.pack(fill="x", pady=(0, 4))
+        self.title_label.pack(side="left", padx=10, pady=4)
 
-        self.date_label = tk.Label(
-            self.content,
-            bg=self.bg_color,
-            fg="#c7c7c7",
-            font=("Segoe UI", 10),
-            anchor="w",
+        self.pin_button = self._title_button("📌", self.toggle_pin, "#AFC5DC", "#C2D5E9")
+        self.pin_button.pack(side="right", padx=(0, 6), pady=4)
+
+        self.edit_button = self._title_button("✎", self.change_background, "#AFC5DC", "#C2D5E9")
+        self.edit_button.pack(side="right", padx=4, pady=4)
+
+        self.close_button = self._title_button("✕", self.destroy, "#D86A6A", "#E58484")
+        self.close_button.pack(side="right", padx=4, pady=4)
+
+        for widget in (self.title_bar, self.title_label, self.main_frame):
+            self._bind_drag(widget)
+
+        self.content_frame = ctk.CTkFrame(
+            self.main_frame,
+            fg_color=self.panel_color,
+            corner_radius=12,
         )
-        self.date_label.pack(fill="x", pady=(0, 8))
+        self.content_frame.pack(fill="both", expand=True, padx=10, pady=(4, 10))
 
-        self.cpu_label = self._metric_label("CPU: --")
-        self.ram_label = self._metric_label("RAM: --")
-        self.ssd_label = self._metric_label("SSD: --")
+        self.clock_card = self._create_card("TARİH & SAAT")
+        self.clock_value = ctk.CTkLabel(
+            self.clock_card,
+            text="--:--:--",
+            font=("Consolas", 24, "bold"),
+            text_color="#F4F8FF",
+        )
+        self.clock_value.pack(anchor="w", padx=10)
+        self.date_value = ctk.CTkLabel(
+            self.clock_card,
+            text="--.--.----",
+            font=("Segoe UI", 12),
+            text_color="#D4E3F4",
+        )
+        self.date_value.pack(anchor="w", padx=10, pady=(0, 8))
 
-    def _metric_label(self, text: str) -> tk.Label:
-        label = tk.Label(
-            self.content,
+        self.cpu_card = self._create_card("CPU")
+        self.cpu_value = self._card_value(self.cpu_card)
+
+        self.ram_card = self._create_card("RAM")
+        self.ram_value = self._card_value(self.ram_card)
+
+        self.gpu_card = self._create_card("GPU")
+        self.gpu_value = self._card_value(self.gpu_card)
+
+        self.ssd_card = self._create_card("SSD")
+        self.ssd_value = self._card_value(self.ssd_card)
+
+    def _title_button(self, text: str, command, color: str, hover: str) -> ctk.CTkButton:
+        return ctk.CTkButton(
+            self.title_bar,
             text=text,
-            bg=self.bg_color,
-            fg=self.fg_color,
-            font=("Consolas", 10),
-            anchor="w",
+            width=28,
+            height=22,
+            corner_radius=4,
+            font=("Segoe UI", 11, "bold"),
+            fg_color=color,
+            hover_color=hover,
+            text_color="#10243A",
+            command=command,
         )
-        label.pack(fill="x", pady=1)
+
+    def _create_card(self, title: str) -> ctk.CTkFrame:
+        frame = ctk.CTkFrame(
+            self.content_frame,
+            fg_color="#2D4360",
+            corner_radius=10,
+            border_width=1,
+            border_color="#8FAECC",
+        )
+        frame.pack(fill="x", padx=8, pady=4)
+
+        title_label = ctk.CTkLabel(
+            frame,
+            text=title,
+            font=("Segoe UI", 11, "bold"),
+            text_color="#BFD5EE",
+        )
+        title_label.pack(anchor="w", padx=10, pady=(6, 0))
+        return frame
+
+    def _card_value(self, card: ctk.CTkFrame) -> ctk.CTkLabel:
+        label = ctk.CTkLabel(
+            card,
+            text="--",
+            font=("Consolas", 12),
+            text_color="#EDF4FF",
+        )
+        label.pack(anchor="w", padx=10, pady=(0, 6))
         return label
 
-    def _bind_drag(self, widget: tk.Widget) -> None:
+    def _bind_drag(self, widget) -> None:
         widget.bind("<Button-1>", self.start_drag)
         widget.bind("<B1-Motion>", self.on_drag)
 
-    def start_drag(self, event: tk.Event) -> None:
-        self.drag_start_x = event.x_root - self.root.winfo_x()
-        self.drag_start_y = event.y_root - self.root.winfo_y()
+    def start_drag(self, event) -> None:
+        self.drag_start_x = event.x_root - self.winfo_x()
+        self.drag_start_y = event.y_root - self.winfo_y()
 
-    def on_drag(self, event: tk.Event) -> None:
+    def on_drag(self, event) -> None:
         if not self.pinned:
             x = event.x_root - self.drag_start_x
             y = event.y_root - self.drag_start_y
-            self.root.geometry(f"+{x}+{y}")
+            self.geometry(f"+{x}+{y}")
 
     def toggle_pin(self) -> None:
         self.pinned = not self.pinned
-        self.pin_button.config(text="📌" if self.pinned else "📍")
+        self.pin_button.configure(text="📌" if self.pinned else "📍")
 
-    def choose_color(self) -> None:
-        color = colorchooser.askcolor(title="Arkaplan Rengi Seç")[1]
-        if color:
-            self.bg_color = color
-            self.apply_theme()
+    def change_background(self) -> None:
+        color = colorchooser.askcolor(title="Arka Plan Rengini Seç")[1]
+        if not color:
+            return
 
-    def apply_theme(self) -> None:
-        widgets = [
-            self.container,
-            self.titlebar,
-            self.title_label,
-            self.content,
-            self.clock_label,
-            self.date_label,
-            self.cpu_label,
-            self.ram_label,
-            self.ssd_label,
-            self.pin_button,
-            self.color_button,
-            self.close_button,
-        ]
+        self.bg_color = color
+        self.main_frame.configure(fg_color=self.bg_color)
 
-        for widget in widgets:
-            widget.configure(bg=self.bg_color)
+    def _get_gpu_usage(self) -> str:
+        """GPU kullanımını mümkün olan yöntemle döndürür."""
+        # 1) GPUtil varsa onu kullan
+        try:
+            import GPUtil  # type: ignore
 
-        self.title_label.configure(fg=self.fg_color)
-        self.clock_label.configure(fg=self.fg_color)
-        self.cpu_label.configure(fg=self.fg_color)
-        self.ram_label.configure(fg=self.fg_color)
-        self.ssd_label.configure(fg=self.fg_color)
+            gpus = GPUtil.getGPUs()
+            if gpus:
+                load = gpus[0].load * 100
+                temp = gpus[0].temperature
+                return f"%{load:5.1f} | {gpus[0].name[:18]} | {temp:.0f}°C"
+        except Exception:
+            pass
 
-        self.date_label.configure(fg="#d8d8d8")
-        self.pin_button.configure(
-            fg="#ffd166", activebackground=self.bg_color, activeforeground="#ffe08a"
-        )
-        self.color_button.configure(
-            fg="#8ecae6", activebackground=self.bg_color, activeforeground="#bde0fe"
-        )
-        self.close_button.configure(
-            fg="#ff4d4d", activebackground=self.bg_color, activeforeground="#ff8080"
-        )
+        # 2) Windows + nvidia-smi fallback
+        if platform.system() == "Windows":
+            cmd = "nvidia-smi --query-gpu=utilization.gpu,name,temperature.gpu --format=csv,noheader,nounits"
+            try:
+                result = os.popen(cmd).read().strip()
+                if result:
+                    first = result.splitlines()[0]
+                    util, name, temp = [p.strip() for p in first.split(",", 2)]
+                    return f"%{float(util):5.1f} | {name[:18]} | {temp}°C"
+            except Exception:
+                pass
+
+        return "GPU bilgisi alınamadı"
 
     def update_data(self) -> None:
         now = datetime.datetime.now()
-        self.clock_label.config(text=now.strftime("%H:%M:%S"))
-        self.date_label.config(text=now.strftime("%d.%m.%Y - %A"))
+        self.clock_value.configure(text=now.strftime("%H:%M:%S"))
+        self.date_value.configure(text=now.strftime("%d.%m.%Y %A"))
 
         cpu = psutil.cpu_percent(interval=None)
         ram = psutil.virtual_memory()
         disk = psutil.disk_usage("/")
+        gpu_text = self._get_gpu_usage()
 
-        self.cpu_label.config(text=f"CPU : %{cpu:5.1f}")
-        self.ram_label.config(text=f"RAM : %{ram.percent:5.1f} ({ram.used // (1024**3)}GB/{ram.total // (1024**3)}GB)")
-        self.ssd_label.config(text=f"SSD : %{disk.percent:5.1f} ({disk.used // (1024**3)}GB/{disk.total // (1024**3)}GB)")
+        self.cpu_value.configure(text=f"%{cpu:5.1f}")
+        self.ram_value.configure(
+            text=f"%{ram.percent:5.1f} ({ram.used // (1024**3)}GB/{ram.total // (1024**3)}GB)"
+        )
+        self.gpu_value.configure(text=gpu_text)
+        self.ssd_value.configure(
+            text=f"%{disk.percent:5.1f} ({disk.used // (1024**3)}GB/{disk.total // (1024**3)}GB)"
+        )
 
-        self.root.after(1000, self.update_data)
+        self.after(1000, self.update_data)
 
 
 def main() -> None:
-    root = tk.Tk()
-    root.geometry("280x170+50+50")
-    SystemWidget(root)
-    root.mainloop()
+    app = SystemWidget()
+    app.mainloop()
 
 
 if __name__ == "__main__":
