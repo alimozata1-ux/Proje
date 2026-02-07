@@ -15,6 +15,9 @@ Bu proje, Win32 API ile yazılmış masaüstü widget uygulamasıdır.
 - `Sabit` / `Normal` butonuyla her zaman üstte (topmost) modunu açma-kapama
 - Pencereyi sürükleyerek taşıma
 - Konum, arka plan rengi, şeffaflık ve pin durumu ayarlarını `widget_settings.ini` dosyasına otomatik kaydetme
+- `Kopya` butonuyla tarih/saat/CPU/RAM bilgisini panoya kopyalama
+- `Sifirla` butonuyla varsayılan renk, şeffaflık ve pin ayarlarına dönme
+- CPU ve RAM kullanımında yüksek değerlere göre otomatik uyarı rengi (sarı/kırmızı)
 
 ## Derleme (Windows)
 

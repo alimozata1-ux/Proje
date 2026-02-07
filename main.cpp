@@ -14,20 +14,25 @@ constexpr int ID_COLOR_BUTTON = 1002;
 constexpr int ID_ALPHA_PLUS_BUTTON = 1003;
 constexpr int ID_ALPHA_MINUS_BUTTON = 1004;
 constexpr int ID_PIN_BUTTON = 1005;
+constexpr int ID_COPY_BUTTON = 1006;
+constexpr int ID_RESET_BUTTON = 1007;
 
 constexpr BYTE kMinAlpha = 80;
 constexpr BYTE kMaxAlpha = 255;
 constexpr BYTE kDefaultAlpha = 191;
+constexpr COLORREF kDefaultBgColor = RGB(40, 40, 40);
 
 HWND g_hDate = nullptr;
 HWND g_hClock = nullptr;
 HWND g_hCpu = nullptr;
 HWND g_hRam = nullptr;
 HWND g_hPin = nullptr;
-COLORREF g_bgColor = RGB(40, 40, 40);
+COLORREF g_bgColor = kDefaultBgColor;
 HBRUSH g_bgBrush = nullptr;
 BYTE g_alpha = kDefaultAlpha;
 bool g_isPinnedTop = true;
+DWORD g_lastRamLoad = 0;
+double g_lastCpuLoad = 0.0;
 
 std::wstring GetSettingsPath() {
     wchar_t modulePath[MAX_PATH]{};
@@ -89,6 +94,15 @@ void LoadSettings(int& x, int& y) {
     g_isPinnedTop = (pin != 0);
 }
 
+void ResetWidgetDefaults(HWND hwnd) {
+    g_bgColor = kDefaultBgColor;
+    g_alpha = kDefaultAlpha;
+    RecreateBackgroundBrush();
+    ApplyAlpha(hwnd);
+    SetPinState(hwnd, true);
+    InvalidateRect(hwnd, nullptr, TRUE);
+}
+
 ULONGLONG FileTimeToUInt64(const FILETIME& ft) {
     return (static_cast<ULONGLONG>(ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
 }
@@ -135,8 +149,11 @@ std::wstring GetRamText() {
     mem.dwLength = sizeof(mem);
 
     if (!GlobalMemoryStatusEx(&mem)) {
+        g_lastRamLoad = 0;
         return L"RAM: veri alinamadi";
     }
+
+    g_lastRamLoad = mem.dwMemoryLoad;
 
     const double totalGb = static_cast<double>(mem.ullTotalPhys) / (1024.0 * 1024.0 * 1024.0);
     const double usedGb = static_cast<double>(mem.ullTotalPhys - mem.ullAvailPhys) / (1024.0 * 1024.0 * 1024.0);
@@ -165,9 +182,43 @@ std::wstring GetClockText() {
 }
 
 std::wstring GetCpuText() {
+    g_lastCpuLoad = GetCpuUsagePercent();
     std::wstringstream ss;
-    ss << L"CPU: " << std::fixed << std::setprecision(1) << GetCpuUsagePercent() << L"%";
+    ss << L"CPU: " << std::fixed << std::setprecision(1) << g_lastCpuLoad << L"%";
     return ss.str();
+}
+
+std::wstring GetSnapshotText() {
+    std::wstringstream ss;
+    ss << GetDateText() << L" " << GetClockText() << L"\r\n" << GetCpuText() << L"\r\n" << GetRamText();
+    return ss.str();
+}
+
+void CopyStatsToClipboard(HWND hwnd) {
+    const std::wstring content = GetSnapshotText();
+    const size_t bytes = (content.size() + 1) * sizeof(wchar_t);
+
+    if (!OpenClipboard(hwnd)) {
+        return;
+    }
+
+    EmptyClipboard();
+    HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, bytes);
+    if (hMem) {
+        void* ptr = GlobalLock(hMem);
+        if (ptr) {
+            memcpy(ptr, content.c_str(), bytes);
+            GlobalUnlock(hMem);
+            SetClipboardData(CF_UNICODETEXT, hMem);
+            hMem = nullptr;
+        }
+    }
+
+    if (hMem) {
+        GlobalFree(hMem);
+    }
+
+    CloseClipboard();
 }
 
 void RefreshWidgetTexts() {
@@ -200,6 +251,17 @@ void ChangeTransparency(HWND hwnd, int delta) {
     ApplyAlpha(hwnd);
 }
 
+COLORREF GetUsageColor(bool isCpu) {
+    const double load = isCpu ? g_lastCpuLoad : static_cast<double>(g_lastRamLoad);
+    if (load >= 90.0) {
+        return RGB(255, 85, 85);
+    }
+    if (load >= 80.0) {
+        return RGB(255, 186, 73);
+    }
+    return RGB(245, 245, 245);
+}
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
         case WM_CREATE: {
@@ -214,17 +276,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             CreateWindowW(L"BUTTON", L"X", WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, 320, 10, 36, 30, hwnd,
                           reinterpret_cast<HMENU>(ID_CLOSE_BUTTON), nullptr, nullptr);
 
-            CreateWindowW(L"BUTTON", L"Renk", WS_CHILD | WS_VISIBLE, 16, 136, 72, 30, hwnd,
+            CreateWindowW(L"BUTTON", L"Renk", WS_CHILD | WS_VISIBLE, 16, 136, 58, 30, hwnd,
                           reinterpret_cast<HMENU>(ID_COLOR_BUTTON), nullptr, nullptr);
 
-            CreateWindowW(L"BUTTON", L"+", WS_CHILD | WS_VISIBLE, 96, 136, 32, 30, hwnd,
+            CreateWindowW(L"BUTTON", L"+", WS_CHILD | WS_VISIBLE, 80, 136, 30, 30, hwnd,
                           reinterpret_cast<HMENU>(ID_ALPHA_PLUS_BUTTON), nullptr, nullptr);
 
-            CreateWindowW(L"BUTTON", L"-", WS_CHILD | WS_VISIBLE, 134, 136, 32, 30, hwnd,
+            CreateWindowW(L"BUTTON", L"-", WS_CHILD | WS_VISIBLE, 114, 136, 30, 30, hwnd,
                           reinterpret_cast<HMENU>(ID_ALPHA_MINUS_BUTTON), nullptr, nullptr);
 
-            g_hPin = CreateWindowW(L"BUTTON", g_isPinnedTop ? L"Sabit" : L"Normal", WS_CHILD | WS_VISIBLE, 172, 136, 70, 30, hwnd,
+            g_hPin = CreateWindowW(L"BUTTON", g_isPinnedTop ? L"Sabit" : L"Normal", WS_CHILD | WS_VISIBLE, 148, 136, 62, 30, hwnd,
                                    reinterpret_cast<HMENU>(ID_PIN_BUTTON), nullptr, nullptr);
+
+            CreateWindowW(L"BUTTON", L"Kopya", WS_CHILD | WS_VISIBLE, 214, 136, 60, 30, hwnd,
+                          reinterpret_cast<HMENU>(ID_COPY_BUTTON), nullptr, nullptr);
+
+            CreateWindowW(L"BUTTON", L"Sifirla", WS_CHILD | WS_VISIBLE, 278, 136, 78, 30, hwnd,
+                          reinterpret_cast<HMENU>(ID_RESET_BUTTON), nullptr, nullptr);
 
             SendMessageW(g_hDate, WM_SETFONT, reinterpret_cast<WPARAM>(GetStockObject(DEFAULT_GUI_FONT)), TRUE);
             SendMessageW(g_hClock, WM_SETFONT, reinterpret_cast<WPARAM>(GetStockObject(DEFAULT_GUI_FONT)), TRUE);
@@ -261,6 +329,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 ChangeTransparency(hwnd, -10);
             } else if (id == ID_PIN_BUTTON) {
                 SetPinState(hwnd, !g_isPinnedTop);
+            } else if (id == ID_COPY_BUTTON) {
+                CopyStatsToClipboard(hwnd);
+            } else if (id == ID_RESET_BUTTON) {
+                ResetWidgetDefaults(hwnd);
+                RefreshWidgetTexts();
             }
             return 0;
         }
@@ -282,7 +355,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
         case WM_CTLCOLORSTATIC: {
             HDC hdc = reinterpret_cast<HDC>(wParam);
-            SetTextColor(hdc, RGB(245, 245, 245));
+            const HWND hCtrl = reinterpret_cast<HWND>(lParam);
+            COLORREF textColor = RGB(245, 245, 245);
+
+            if (hCtrl == g_hCpu) {
+                textColor = GetUsageColor(true);
+            } else if (hCtrl == g_hRam) {
+                textColor = GetUsageColor(false);
+            }
+
+            SetTextColor(hdc, textColor);
             SetBkMode(hdc, TRANSPARENT);
             return reinterpret_cast<LRESULT>(g_bgBrush);
         }
