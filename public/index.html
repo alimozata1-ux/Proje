@@ -8,7 +8,7 @@
   </head>
   <body>
     <div class="desktop-noise"></div>
-    <main class="desktop">
+    <main class="desktop" id="desktopRoot">
       <section class="window boot" id="bootWindow">
         <div class="title-bar">
           <span>C.O.M.R.A.D.E BOOT</span>
@@ -25,7 +25,7 @@
           <span>C.O.M.R.A.D.E 7.1 — DeepSeek Terminal</span>
           <div class="window-controls">
             <button aria-label="Minimize">_</button>
-            <button aria-label="Maximize">▢</button>
+            <button aria-label="Maximize" id="fullscreenBtn" title="Tam ekran">▢</button>
             <button aria-label="Close">✕</button>
           </div>
         </header>
@@ -33,6 +33,7 @@
         <div class="toolbar">
           <button id="newChatBtn">New Chat</button>
           <button id="aboutBtn">About the Union</button>
+          <button id="exportBtn">Export state_report.txt</button>
           <label class="mode-toggle">Mode
             <select id="modeSelect">
               <option value="serious">Serious</option>
@@ -64,12 +65,13 @@
           </section>
         </div>
       </section>
-
-      <footer class="taskbar">
-        <button class="start-btn">Start</button>
-        <p class="taskbar-status">C.O.M.R.A.D.E 7.1 online. Emirlerinizi bekliyorum.</p>
-      </footer>
     </main>
+
+    <footer class="taskbar">
+      <button class="start-btn">Start</button>
+      <p class="taskbar-status">C.O.M.R.A.D.E 7.1 online. Emirlerinizi bekliyorum.</p>
+      <p class="clock" id="clockText">00:00:00</p>
+    </footer>
 
     <dialog id="aboutDialog" class="window">
       <div class="title-bar"><span>About the Union</span></div>

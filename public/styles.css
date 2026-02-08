@@ -17,13 +17,14 @@ body {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
+  padding-bottom: 44px;
 }
 
 .desktop {
-  min-height: 100vh;
+  min-height: calc(100vh - 44px);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 20px;
 }
 
@@ -92,6 +93,11 @@ body {
   margin: 10px auto;
 }
 
+.app.fullscreen {
+  width: calc(100vw - 30px);
+  min-height: calc(100vh - 76px);
+}
+
 .window-controls button,
 .toolbar button,
 #sendBtn,
@@ -111,6 +117,7 @@ body {
   padding: 8px;
   border-bottom: 1px solid #777;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .mode-toggle {
@@ -189,19 +196,34 @@ body {
 }
 
 .taskbar {
-  margin-top: 10px;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
   height: 38px;
   background: #b6b6b6;
   border-top: 2px solid #fff;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px;
+  padding: 4px 8px;
 }
 
 .taskbar-status {
   font-size: 12px;
   margin: 0;
+}
+
+.clock {
+  margin-left: auto;
+  font-size: 12px;
+  padding: 2px 8px;
+  border: 2px solid;
+  border-color: #444 #fff #fff #444;
+  background: #dcdcdc;
+  min-width: 85px;
+  text-align: center;
 }
 
 dialog {
@@ -216,5 +238,9 @@ dialog {
   .comrade-panel {
     border-right: none;
     border-bottom: 1px solid #777;
+  }
+
+  .mode-toggle {
+    margin-left: 0;
   }
 }
