@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>C.O.M.R.A.D.E 7.1</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="desktop-noise"></div>
+    <main class="desktop">
+      <section class="window boot" id="bootWindow">
+        <div class="title-bar">
+          <span>C.O.M.R.A.D.E BOOT</span>
+        </div>
+        <div class="window-body">
+          <p>C.O.M.R.A.D.E 7.1 INITIALIZING...</p>
+          <p>Connecting to central node...</p>
+          <div class="progress"><span id="bootProgress"></span></div>
+        </div>
+      </section>
+
+      <section class="window app hidden" id="chatWindow">
+        <header class="title-bar">
+          <span>C.O.M.R.A.D.E 7.1 — DeepSeek Terminal</span>
+          <div class="window-controls">
+            <button aria-label="Minimize">_</button>
+            <button aria-label="Maximize">▢</button>
+            <button aria-label="Close">✕</button>
+          </div>
+        </header>
+
+        <div class="toolbar">
+          <button id="newChatBtn">New Chat</button>
+          <button id="aboutBtn">About the Union</button>
+          <label class="mode-toggle">Mode
+            <select id="modeSelect">
+              <option value="serious">Serious</option>
+              <option value="satire" selected>Satire</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="content">
+          <aside class="comrade-panel">
+            <div class="avatar">★</div>
+            <h2>COMRADE</h2>
+            <p>Version 7.1</p>
+            <p>Status: <strong id="statusText">Online</strong></p>
+          </aside>
+
+          <section class="chat-panel">
+            <div id="messages" class="messages"></div>
+            <form id="chatForm" class="chat-input">
+              <input
+                id="promptInput"
+                type="text"
+                placeholder="Yoldaş, sorunuzu iletin..."
+                autocomplete="off"
+                required
+              />
+              <button type="submit" id="sendBtn">Transmit</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <footer class="taskbar">
+        <button class="start-btn">Start</button>
+        <p class="taskbar-status">C.O.M.R.A.D.E 7.1 online. Emirlerinizi bekliyorum.</p>
+      </footer>
+    </main>
+
+    <dialog id="aboutDialog" class="window">
+      <div class="title-bar"><span>About the Union</span></div>
+      <div class="window-body">
+        <p><strong>C.O.M.R.A.D.E 7.1</strong> retro arayüzlü bir DeepSeek istemcisidir.</p>
+        <p>Windows 98 tarzı deneyim ve mizahi/serious mod içerir.</p>
+        <button id="closeAboutBtn">Close</button>
+      </div>
+    </dialog>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
