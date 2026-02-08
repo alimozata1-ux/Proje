@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neon Browser</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="toolbar neon-border" id="toolbar">
+        <div class="toolbar-top">
+          <div class="window-actions">
+            <span class="dot close"></span>
+            <span class="dot minimize"></span>
+            <span class="dot expand"></span>
+          </div>
+          <div class="title-wrap">
+            <h1>Neon Browser</h1>
+            <small>Gelecekten gelen sade tarayıcı arayüzü</small>
+          </div>
+        </div>
+
+        <div class="toolbar-main">
+          <button class="nav-btn" id="backBtn">←</button>
+          <button class="nav-btn" id="forwardBtn">→</button>
+          <button class="nav-btn" id="refreshBtn">⟳</button>
+
+          <input
+            type="text"
+            id="urlInput"
+            placeholder="https://ornek.com"
+            value="https://example.com"
+          />
+
+          <button class="go-btn" id="goBtn">Git</button>
+          <button class="quick-btn" id="focusBtn">Odak</button>
+          <button class="quick-btn" id="splitBtn">Split</button>
+        </div>
+
+        <div class="toolbar-bottom">
+          <label for="neonColor">Neon Çizgi Rengi</label>
+          <input type="color" id="neonColor" value="#00fff2" />
+          <label for="intensity">Parlama</label>
+          <input type="range" id="intensity" min="30" max="100" value="70" />
+          <button id="saveFavorite">Favoriye Ekle</button>
+          <button id="clearFavorite">Favorileri Temizle</button>
+        </div>
+      </header>
+
+      <aside class="side-panel neon-border">
+        <h2>Hızlı Özellikler</h2>
+        <ul>
+          <li>Canlı neon tema rengi değiştirme</li>
+          <li>%75 şeffaf araç çubuğu</li>
+          <li>Favori bağlantılar listesi</li>
+          <li>Odak modu ile sade görünüm</li>
+          <li>Split görünüm simülasyonu</li>
+        </ul>
+        <div class="favorites">
+          <h3>Favoriler</h3>
+          <ol id="favoriteList"></ol>
+        </div>
+      </aside>
+
+      <main class="viewer neon-border" id="viewer">
+        <div class="fake-tabs" id="tabs">
+          <button class="tab active">Ana Sekme</button>
+          <button class="tab">Keşfet</button>
+          <button class="tab">Geliştirici</button>
+        </div>
+        <iframe id="webFrame" title="site"></iframe>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
