@@ -1,0 +1,10 @@
+{
+  "name": "comrade-7-1",
+  "version": "1.0.0",
+  "description": "C.O.M.R.A.D.E 7.1 - Windows 98 themed DeepSeek chat interface",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  }
+}
