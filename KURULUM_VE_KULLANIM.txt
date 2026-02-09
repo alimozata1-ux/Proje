@@ -1,0 +1,56 @@
+MODERN BROWSER (WPF + WEBVIEW2)
+KURULUM VE KULLANIM REHBERI
+
+1) GEREKSINIMLER
+- Windows 10/11
+- .NET 8 SDK
+- Microsoft Edge WebView2 Runtime (Evergreen)
+
+2) PROJEYI ACMA
+- Proje klasorunde terminal acin.
+- Asagidaki komutlari sirasiyla calistirin:
+
+  dotnet restore
+  dotnet build -c Release
+
+3) UYGULAMAYI CALISTIRMA
+- Debug modda baslatmak icin:
+
+  dotnet run -c Debug
+
+- Visual Studio ile:
+  1. Proje.csproj dosyasini acin
+  2. Debug/Release secin
+  3. F5 ile calistirin
+
+4) YAYIN ALMA (OPSYONEL)
+- Windows x64 icin publish:
+
+  dotnet publish -c Release -r win-x64 --self-contained false
+
+- Cikti klasoru:
+  bin\Release\net8.0-windows\win-x64\publish\
+
+5) UYGULAMA ICINDE KULLANIM
+- Geri / Ileri / Yenile / Ana Sayfa: ust arac cubugu butonlariyla kullanilir.
+- Adres cubugu:
+  - URL yazip Enter veya "Git" butonuna basin.
+  - Metin girerseniz arama sorgusu olarak acilir.
+- Sekmeler:
+  - "+ Yeni Sekme" ile yeni sekme acilir.
+  - Sekme basligindaki "x" ile sekme kapanir.
+- Favoriler:
+  - "★" ile mevcut adres favorilere eklenir.
+  - "♥" ile favori listesinden site acabilirsiniz.
+- Gecmis:
+  - "🕘" ile son ziyaretler listelenir.
+- Tema:
+  - "◐" ile acik/koyu tema degistirilir.
+
+6) SORUN GIDERME
+- "dotnet: command not found"
+  -> .NET SDK kurulu degil veya PATH'e ekli degil.
+- WebView2 acilmiyor
+  -> WebView2 Runtime kurulu oldugunu kontrol edin.
+- Linux/macOS'ta calismiyor
+  -> Bu proje WPF oldugu icin yalnizca Windows'ta calisir.
