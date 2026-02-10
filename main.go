@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"runtime"
+	"strings"
 
 	"proje/adc"
 	"proje/bus"
@@ -16,9 +19,16 @@ import (
 )
 
 func main() {
+	exitCode := run()
+	waitOnExitIfNeeded()
+	os.Exit(exitCode)
+}
+
+func run() int {
 	emu, err := emulator.New(2, bus.Width32)
 	if err != nil {
-		panic(err)
+		fmt.Println("[ERROR] Emulator init failed:", err)
+		return 1
 	}
 
 	// Basit bellek map'i
@@ -39,7 +49,8 @@ func main() {
 	if len(os.Args) > 1 {
 		p, err := loader.Load(os.Args[1])
 		if err != nil {
-			panic(err)
+			fmt.Println("[ERROR] Program load failed:", err)
+			return 1
 		}
 		code = p.Bytes
 	} else {
@@ -51,11 +62,15 @@ func main() {
 			0x08, 0x01, 0x00, 0x02, // STORE R0, [0x0108]
 			0x00, 0x00, 0x00, 0x07, // HALT
 		}
-		_ = emu.RAM.Write32(0x0041, 'A')
+		if err := emu.RAM.Write32(0x0041, 'A'); err != nil {
+			fmt.Println("[ERROR] Demo RAM write failed:", err)
+			return 1
+		}
 	}
 
 	if err := emu.LoadProgram(code, 0); err != nil {
-		panic(err)
+		fmt.Println("[ERROR] Program map failed:", err)
+		return 1
 	}
 	adc0.SetAnalogInput(0.75)
 
@@ -63,7 +78,7 @@ func main() {
 	emu.AddWatchpoint(0x0100)
 
 	if err := emu.Run(16); err != nil {
-		fmt.Println("run stopped:", err)
+		fmt.Println("[WARN] Run stopped:", err)
 	}
 
 	ui := gui.New(emu)
@@ -73,4 +88,17 @@ func main() {
 	fmt.Println("Screen:", scr0.Render())
 	fmt.Printf("DAC out: %.2f\n", dac0.AnalogOut())
 	fmt.Printf("Core0 regs: %+v\n", emu.Cores[0].Registers)
+	return 0
+}
+
+func waitOnExitIfNeeded() {
+	if runtime.GOOS != "windows" {
+		return
+	}
+	v := strings.TrimSpace(strings.ToLower(os.Getenv("MCU_WAIT_ON_EXIT")))
+	if v != "1" && v != "true" && v != "yes" {
+		return
+	}
+	fmt.Print("\n[INFO] Cikmak icin Enter tusuna basin...")
+	_, _ = bufio.NewReader(os.Stdin).ReadString('\n')
 }

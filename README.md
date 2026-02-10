@@ -62,5 +62,23 @@ build_windows.bat
 build_windows.bat mcu_emulator.exe
 ```
 
+Farklı mimariyle derlemek için (ör. 386):
+
+```bat
+build_windows.bat mcu_emulator.exe 386
+```
+
+EXE'yi çift tıklama sonrası pencerenin kapanmaması için:
+
+```bat
+run_windows.bat
+```
+
+Özel exe adıyla:
+
+```bat
+run_windows.bat mcu_emulator.exe
+```
+
 ## 6) Not
 Bu sürüm eğitim amaçlıdır; instruction formatı ve pseudo-C yükleyici sade tutulmuştur.
