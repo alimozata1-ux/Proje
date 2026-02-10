@@ -1,22 +1,21 @@
-// Windows için basit sistem izleyici (System Monitor)
+// Windows için basit GUI sistem izleyici (System Monitor)
 //
 // Kurulum adımları:
 // 1) Go kur:
 //    - Windows'ta resmi yükleyici: https://go.dev/dl/
 //    - Kurulumdan sonra doğrula: go version
 //
-// 2) Projeyi hazırla ve bağımlılığı ekle:
+// 2) Projeyi hazırla ve bağımlılıkları ekle:
 //    - go mod init system-monitor
 //    - go get github.com/shirou/gopsutil/v3
+//    - go get github.com/lxn/walk
 //
 // 3) Çalıştır:
 //    - go run .
 //
 // 4) Windows .exe oluştur:
-//    - Otomatik script ile (onerilen): build.bat
-//    - Manuel: GOOS=windows GOARCH=amd64 go build -o system-monitor.exe
-//    - (Başka işletim sisteminden Windows için derlemek istersen)
-//      GOOS=windows GOARCH=amd64 go build -o system-monitor.exe
+//    - Otomatik script ile (önerilen): build.bat
+//    - Manuel: GOOS=windows GOARCH=amd64 go build -ldflags="-H windowsgui" -o system-monitor.exe
 
 package main
 
@@ -25,60 +24,85 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/lxn/walk"
+	. "github.com/lxn/walk/declarative"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
-const (
-	cpuIcon  = "🖥️"
-	ramIcon  = "🧠"
-	diskIcon = "💾"
-)
-
 func main() {
-	// Disk kullanım yolunu işletim sistemine göre belirle.
-	// Windows için C:\\, diğerleri için / kullanılır.
+	var mainWindow *walk.MainWindow
+	var cpuLabel *walk.Label
+	var ramLabel *walk.Label
+	var diskLabel *walk.Label
+
+	// Disk kullanım yolu işletim sistemine göre seçilir.
 	diskPath := "/"
 	if runtime.GOOS == "windows" {
 		diskPath = "C:\\"
 	}
 
-	// Her saniye metrik toplamak için sonsuz döngü.
-	for {
-		// CPU kullanımı: interval=0 ile son ölçümden bu yana anlık değer alınır.
-		cpuPercents, cpuErr := cpu.Percent(0, false)
-
-		// RAM kullanımı bilgisi.
-		vm, memErr := mem.VirtualMemory()
-
-		// Disk kullanımı bilgisi (Windows'ta C:\\ sürücüsü).
-		diskUsage, diskErr := disk.Usage(diskPath)
-
-		// CPU çıktısı: hata varsa programı durdurmadan hata mesajı yaz.
-		if cpuErr != nil || len(cpuPercents) == 0 {
-			fmt.Printf("%s CPU: hata (%v)\n", cpuIcon, cpuErr)
-		} else {
-			fmt.Printf("%s CPU: %.1f%%\n", cpuIcon, cpuPercents[0])
-		}
-
-		// RAM çıktısı: hata varsa programı durdurmadan hata mesajı yaz.
-		if memErr != nil {
-			fmt.Printf("%s RAM: hata (%v)\n", ramIcon, memErr)
-		} else {
-			fmt.Printf("%s RAM: %.1f%%\n", ramIcon, vm.UsedPercent)
-		}
-
-		// Disk çıktısı: hata varsa programı durdurmadan hata mesajı yaz.
-		if diskErr != nil {
-			fmt.Printf("%s Disk: hata (%v)\n", diskIcon, diskErr)
-		} else {
-			fmt.Printf("%s Disk: %.1f%%\n", diskIcon, diskUsage.UsedPercent)
-		}
-
-		fmt.Println()
-
-		// Bir sonraki ölçüm için 1 saniye bekle.
-		time.Sleep(1 * time.Second)
+	// Basit ve okunabilir GUI penceresi oluşturulur.
+	window := MainWindow{
+		AssignTo: &mainWindow,
+		Title:    "System Monitor",
+		MinSize:  Size{Width: 300, Height: 180},
+		Layout:   VBox{},
+		Children: []Widget{
+			Label{AssignTo: &cpuLabel, Text: "🖥️ CPU: -"},
+			Label{AssignTo: &ramLabel, Text: "🧠 RAM: -"},
+			Label{AssignTo: &diskLabel, Text: "💾 Disk: -"},
+		},
 	}
+
+	if err := window.Create(); err != nil {
+		fmt.Printf("Pencere oluşturulamadı: %v\n", err)
+		return
+	}
+
+	// Her saniye ölçüm yapan goroutine.
+	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			cpuText := "🖥️ CPU: -"
+			ramText := "🧠 RAM: -"
+			diskText := "💾 Disk: -"
+
+			// CPU ölçümü: hata durumunda uygulama kapanmaz.
+			cpuPercents, cpuErr := cpu.Percent(0, false)
+			if cpuErr != nil || len(cpuPercents) == 0 {
+				cpuText = fmt.Sprintf("🖥️ CPU: hata (%v)", cpuErr)
+			} else {
+				cpuText = fmt.Sprintf("🖥️ CPU: %.1f%%", cpuPercents[0])
+			}
+
+			// RAM ölçümü: hata durumunda uygulama kapanmaz.
+			vm, memErr := mem.VirtualMemory()
+			if memErr != nil {
+				ramText = fmt.Sprintf("🧠 RAM: hata (%v)", memErr)
+			} else {
+				ramText = fmt.Sprintf("🧠 RAM: %.1f%%", vm.UsedPercent)
+			}
+
+			// Disk ölçümü: hata durumunda uygulama kapanmaz.
+			diskUsage, diskErr := disk.Usage(diskPath)
+			if diskErr != nil {
+				diskText = fmt.Sprintf("💾 Disk: hata (%v)", diskErr)
+			} else {
+				diskText = fmt.Sprintf("💾 Disk: %.1f%%", diskUsage.UsedPercent)
+			}
+
+			// GUI elemanları yalnızca UI thread üzerinde güncellenir.
+			mainWindow.Synchronize(func() {
+				cpuLabel.SetText(cpuText)
+				ramLabel.SetText(ramText)
+				diskLabel.SetText(diskText)
+			})
+		}
+	}()
+
+	mainWindow.Run()
 }

@@ -1,14 +1,10 @@
 @echo off
 setlocal
 
-REM Windows için system-monitor.exe derleme scripti
+REM Windows için system-monitor.exe derleme scripti (GUI)
 REM Kullanım:
 REM   1) Go kurulu olmalı: https://go.dev/dl/
 REM   2) Bu klasörde terminal açıp: build.bat
-REM
-REM Not:
-REM   - Bu script doğrudan Windows .exe üretir.
-REM   - Varsayılan hedef: windows/amd64
 
 set "TARGET_OS=windows"
 set "TARGET_ARCH=amd64"
@@ -27,7 +23,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [2/4] Mod bilgisi kontrol ediliyor...
+echo [2/4] Mod dosyasi kontrol ediliyor...
 if not exist go.mod (
   echo [HATA] go.mod bulunamadi. Komutu proje klasorunde calistirin.
   exit /b 1
@@ -39,11 +35,11 @@ if errorlevel 1 (
   echo [UYARI] Bagimlilik indirme adimi basarisiz. Derleme yine de denenecek.
 )
 
-echo [4/4] %OUTPUT% derleniyor ^(%TARGET_OS%/%TARGET_ARCH%^)...
+echo [4/4] %OUTPUT% derleniyor ^(%TARGET_OS%/%TARGET_ARCH%^, GUI^)...
 set "GOOS=%TARGET_OS%"
 set "GOARCH=%TARGET_ARCH%"
 set "CGO_ENABLED=0"
-go build -o %OUTPUT% .
+go build -ldflags="-H windowsgui" -o %OUTPUT% .
 if errorlevel 1 (
   echo [HATA] Derleme basarisiz.
   echo [IPUCU] Ag/proxy engeli varsa once bagimliliklari indirebildiginiz bir ortamda tekrar deneyin.
