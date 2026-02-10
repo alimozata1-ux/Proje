@@ -13,8 +13,8 @@
 //    - go run .
 //
 // 4) Windows .exe oluştur:
-//    - Otomatik script ile: build.bat
-//    - Manuel: go build -o system-monitor.exe
+//    - Otomatik script ile (onerilen): build.bat
+//    - Manuel: GOOS=windows GOARCH=amd64 go build -o system-monitor.exe
 //    - (Başka işletim sisteminden Windows için derlemek istersen)
 //      GOOS=windows GOARCH=amd64 go build -o system-monitor.exe
 
