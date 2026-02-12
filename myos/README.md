@@ -18,6 +18,7 @@ Eğitsel amaçlı x86 (32-bit) bare-metal OS.
 - Masaüstü ikon sistemi (ekle/sil/listele)
 - Text-mode web browser (sekme/geçmiş/yer imi, built-in sayfalar)
 - Ayarlar sistemi (duvar kağıdı/bulut/taskbar modu)
+- Bildirim merkezi (taskbar unread sayacı)
 
 ## Derleme
 ```bash
@@ -68,3 +69,9 @@ Bu proje öğretici sadelik için minimal ve anlaşılır bırakılmıştır.
 - `settings wallpaper 0|1`
 - `settings clouds 0|1`
 - `settings taskbar 0|1`
+
+## Bildirim Komutları
+- `notif add TEXT`
+- `notif list`
+- `notif readall`
+- `notif clear`

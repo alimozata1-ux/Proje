@@ -1,5 +1,6 @@
 #include "gui.h"
 #include "memory.h"
+#include "notifications.h"
 #include "settings.h"
 #include "string.h"
 
@@ -77,9 +78,13 @@ static void gui_draw_wallpaper(void) {
 static void gui_draw_taskbar(void) {
     int i;
     int cursor = 1;
+    char nbuf[16];
     gui_fill_rect(0, VGA_HEIGHT - 1, VGA_WIDTH, 1, ' ', COLOR_TASKBAR);
     gui_write_at(1, VGA_HEIGHT - 1, "MyOS", COLOR_TASKBAR);
-    cursor = settings_get()->taskbar_compact ? 5 : 7;
+    gui_write_at(6, VGA_HEIGHT - 1, "N:", COLOR_TASKBAR);
+    kitoa(notifications_unread_count(), nbuf);
+    gui_write_at(8, VGA_HEIGHT - 1, nbuf, COLOR_TASKBAR);
+    cursor = settings_get()->taskbar_compact ? 11 : 13;
 
     for (i = 0; i < GUI_MAX_WINDOWS; i++) {
         gui_window_t* w = &gui_windows[i];

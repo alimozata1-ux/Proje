@@ -5,6 +5,7 @@
 #include "gui.h"
 #include "keyboard_buffer.h"
 #include "logger.h"
+#include "notifications.h"
 #include "settings.h"
 #include "string.h"
 #include "syscall_table.h"
@@ -68,6 +69,10 @@ static void shell_cmd_help(void) {
     vga_write_string("  settings wallpaper 0|1\n");
     vga_write_string("  settings clouds 0|1\n");
     vga_write_string("  settings taskbar 0|1\n");
+    vga_write_string("  notif add TEXT       - add notification\n");
+    vga_write_string("  notif list           - list notifications\n");
+    vga_write_string("  notif readall        - mark all read\n");
+    vga_write_string("  notif clear          - clear all notifications\n");
 }
 
 static void shell_cmd_alloc(const char* arg) {
@@ -388,6 +393,57 @@ static void shell_cmd_settings(const char* args) {
 ");
 }
 
+static void shell_cmd_notif(const char* args) {
+    if (kstrncmp(args, "add ", 4) == 0) {
+        notifications_push(args + 4);
+        gui_redraw();
+        vga_write_string("notification added
+");
+        return;
+    }
+
+    if (kstrcmp(args, "list") == 0) {
+        int i;
+        int found = 0;
+        for (i = 0; i < NOTIFY_MAX; i++) {
+            notification_t* n = notifications_get(i);
+            if (!n) {
+                continue;
+            }
+            vga_write_string("- ");
+            vga_write_string(n->read ? "[read] " : "[new] ");
+            vga_write_string(n->text);
+            vga_write_string("
+");
+            found = 1;
+        }
+        if (!found) {
+            vga_write_string("no notifications
+");
+        }
+        return;
+    }
+
+    if (kstrcmp(args, "readall") == 0) {
+        notifications_mark_all_read();
+        gui_redraw();
+        vga_write_string("notifications marked read
+");
+        return;
+    }
+
+    if (kstrcmp(args, "clear") == 0) {
+        notifications_clear();
+        gui_redraw();
+        vga_write_string("notifications cleared
+");
+        return;
+    }
+
+    vga_write_string("notif: unknown subcommand
+");
+}
+
 static const char* skip_spaces(const char* s) {
     while (*s == ' ') {
         s++;
@@ -582,6 +638,11 @@ static void shell_execute(const char* line) {
         return;
     }
 
+    if (kstrncmp(line, "notif ", 6) == 0) {
+        shell_cmd_notif(skip_spaces(line + 6));
+        return;
+    }
+
     vga_write_string("unknown command\n");
 }
 
@@ -592,6 +653,8 @@ void shell_init(void) {
     syscall_table_init();
     fs_init();
     browser_init();
+    notifications_init();
+    notifications_push("Welcome to MyOS");
     log_info("shell", "initialized");
     shell_prompt();
 }
