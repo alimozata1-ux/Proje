@@ -8,8 +8,9 @@
 #include "string.h"
 #include "task.h"
 #include "vga.h"
+#include "vm.h"
 
-#define APP_COUNT 16
+#define APP_COUNT 17
 #define NOTEPAD_FILE "notes.txt"
 
 typedef void (*app_entry_t)(void);
@@ -258,6 +259,15 @@ static void app_pong(void) {
     vga_write_string("| |            |   |\n");
 }
 
+
+static void app_virtual_machine(void) {
+    (void)gui_window_open("Virtual Machine", 14, 3, 52, 14);
+    vga_write_string("[vm-app] tiny bytecode vm start\n");
+    vm_reset();
+    vm_load_demo_program();
+    vm_run();
+}
+
 static const system_app_t apps[APP_COUNT] = {
     {"terminal", "Command terminal", app_terminal},
     {"files", "RAM file manager", app_files},
@@ -274,7 +284,8 @@ static const system_app_t apps[APP_COUNT] = {
     {"xox", "Tic-Tac-Toe game", app_xox},
     {"tetris", "Block puzzle game", app_tetris},
     {"snake", "Snake game", app_snake},
-    {"pong", "Pong game", app_pong}
+    {"pong", "Pong game", app_pong},
+    {"vm", "Tiny virtual machine", app_virtual_machine}
 };
 
 void system_apps_init(void) {
@@ -290,6 +301,7 @@ void system_apps_init(void) {
     (void)gui_icon_add("xox", 'X', 50, 2);
     (void)gui_icon_add("tetris", '#', 50, 6);
     (void)gui_icon_add("snake", 'S', 50, 10);
+    (void)gui_icon_add("vm", 'V', 62, 2);
 }
 
 void system_apps_list(void) {
@@ -347,6 +359,12 @@ int system_app_open(const char* name) {
 
     if (kstrcmp(name, "oyun-xox") == 0) {
         app_xox();
+        gui_redraw();
+        return 0;
+    }
+
+    if (kstrcmp(name, "sanalmakine") == 0 || kstrcmp(name, "virtual-machine") == 0) {
+        app_virtual_machine();
         gui_redraw();
         return 0;
     }

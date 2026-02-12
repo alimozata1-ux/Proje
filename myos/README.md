@@ -20,7 +20,7 @@ Eğitsel amaçlı x86 (32-bit) bare-metal OS.
 - Ayarlar sistemi (duvar kağıdı/bulut/taskbar modu)
 - Bildirim merkezi (taskbar unread sayacı)
 - Sürücü bulucu/kurucu (driver manager)
-- Sistem uygulamaları (terminal/files/settings/browser/notifications/drivers/calculator/notepad/thispc/monitor/display/desktop/xox/tetris/snake/pong)
+- Sistem uygulamaları (terminal/files/settings/browser/notifications/drivers/calculator/notepad/thispc/monitor/display/desktop/xox/tetris/snake/pong/vm)
 - Feature Hub (900 eğitimsel özellik kaydı)
 - Hybrid kernel modu (monolithic + servis karmasi)
 
@@ -90,8 +90,8 @@ Bu proje öğretici sadelik için minimal ve anlaşılır bırakılmıştır.
 
 ## Sistem Uygulamaları Komutları
 - `apps`
-- `app open NAME` (örn: `app open terminal`, `app open browser`, `app open calculator`, `app open notepad`, `app open thispc`, `app open monitor`, `app open display`, `app open desktop`, `app open xox`, `app open tetris`, `app open snake`, `app open pong`)
-- Kısayollar: `calc`, `note`, `thispc`, `monitor`, `display`, `desktop`, `xox`, `tetris`, `snake`, `pong`
+- `app open NAME` (örn: `app open terminal`, `app open browser`, `app open calculator`, `app open notepad`, `app open thispc`, `app open monitor`, `app open display`, `app open desktop`, `app open xox`, `app open tetris`, `app open snake`, `app open pong`, `app open vm`)
+- Kısayollar: `calc`, `note`, `thispc`, `monitor`, `display`, `desktop`, `xox`, `tetris`, `snake`, `pong`, `vm`
 
 ## Feature Hub Komutları
 - `features`
@@ -115,3 +115,7 @@ Bu proje öğretici sadelik için minimal ve anlaşılır bırakılmıştır.
 - `kernelmode set hybrid`
 - `kernelmode set monolithic`
 - `kernelmode services`
+
+## Sanal Makine
+- `vm` komutu tiny bytecode VM demosunu çalıştırır.
+- VM örnek komut seti: `LOADI`, `ADD`, `PRINT`, `HALT`.
