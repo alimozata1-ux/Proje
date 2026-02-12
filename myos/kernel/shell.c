@@ -65,6 +65,7 @@ static void shell_cmd_help(void) {
     vga_write_string("  notif add TEXT|list|readall|clear\n");
     vga_write_string("  driver list|find TEXT|install NAME|uninstall NAME|info NAME|installed\n");
     vga_write_string("  tasks, apps, app open NAME\n");
+    vga_write_string("  calc, note, thispc, monitor\n");
     vga_write_string("  features, feature run NAME, feature count\n");
 }
 
@@ -516,6 +517,10 @@ static void shell_execute(const char* line) {
     if (kstrcmp(line, "tasks") == 0) return shell_cmd_tasks();
     if (kstrcmp(line, "apps") == 0) return shell_cmd_apps("list");
     if (kstrncmp(line, "app ", 4) == 0) return shell_cmd_apps(skip_spaces(line + 4));
+    if (kstrcmp(line, "calc") == 0) return shell_cmd_apps("open calculator");
+    if (kstrcmp(line, "note") == 0) return shell_cmd_apps("open notepad");
+    if (kstrcmp(line, "thispc") == 0) return shell_cmd_apps("open thispc");
+    if (kstrcmp(line, "monitor") == 0) return shell_cmd_apps("open monitor");
     if (kstrcmp(line, "features") == 0) return shell_cmd_feature("list");
     if (kstrncmp(line, "feature ", 8) == 0) return shell_cmd_feature(skip_spaces(line + 8));
 

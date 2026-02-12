@@ -20,7 +20,7 @@ Eğitsel amaçlı x86 (32-bit) bare-metal OS.
 - Ayarlar sistemi (duvar kağıdı/bulut/taskbar modu)
 - Bildirim merkezi (taskbar unread sayacı)
 - Sürücü bulucu/kurucu (driver manager)
-- Sistem uygulamaları (terminal/files/settings/browser/notifications/drivers)
+- Sistem uygulamaları (terminal/files/settings/browser/notifications/drivers/calculator/notepad/thispc/monitor)
 - Feature Hub (900 eğitimsel özellik kaydı)
 
 ## Derleme
@@ -89,7 +89,8 @@ Bu proje öğretici sadelik için minimal ve anlaşılır bırakılmıştır.
 
 ## Sistem Uygulamaları Komutları
 - `apps`
-- `app open NAME` (örn: `app open terminal`, `app open browser`)
+- `app open NAME` (örn: `app open terminal`, `app open browser`, `app open calculator`, `app open notepad`, `app open thispc`, `app open monitor`)
+- Kısayollar: `calc`, `note`, `thispc`, `monitor`
 
 ## Feature Hub Komutları
 - `features`

@@ -6,9 +6,12 @@
 #include "notifications.h"
 #include "settings.h"
 #include "string.h"
+#include "task.h"
 #include "vga.h"
 
-#define APP_COUNT 6
+#define APP_COUNT 10
+
+#define NOTEPAD_FILE "notes.txt"
 
 typedef void (*app_entry_t)(void);
 
@@ -69,19 +72,133 @@ static void app_drivers(void) {
     vga_write_string("\n");
 }
 
+static void app_calculator(void) {
+    int a = 24;
+    int b = 6;
+    int add = a + b;
+    int sub = a - b;
+    int mul = a * b;
+    int div = b ? (a / b) : 0;
+    char buf[16];
+
+    (void)gui_window_open("Calculator", 24, 3, 28, 11);
+    vga_write_string("[calc] a=24 b=6\n");
+    vga_write_string("[calc] add=");
+    kitoa(add, buf);
+    vga_write_string(buf);
+    vga_write_string(" sub=");
+    kitoa(sub, buf);
+    vga_write_string(buf);
+    vga_write_string(" mul=");
+    kitoa(mul, buf);
+    vga_write_string(buf);
+    vga_write_string(" div=");
+    kitoa(div, buf);
+    vga_write_string(buf);
+    vga_write_string("\n");
+}
+
+static void app_notepad(void) {
+    char content[FS_DATA_MAX];
+
+    (void)gui_window_open("Notepad", 18, 4, 40, 12);
+
+    if (!fs_exists(NOTEPAD_FILE)) {
+        (void)fs_create(NOTEPAD_FILE);
+        (void)fs_write(NOTEPAD_FILE, "MyOS Notepad\n");
+    }
+
+    (void)fs_append(NOTEPAD_FILE, "- new note line\n");
+    if (fs_read(NOTEPAD_FILE, content, FS_DATA_MAX) < 0) {
+        vga_write_string("[notepad] read failed\n");
+        return;
+    }
+
+    vga_write_string("[notepad] ");
+    vga_write_string(NOTEPAD_FILE);
+    vga_write_string("\n");
+    vga_write_string(content);
+}
+
+static void app_this_computer(void) {
+    char buf[16];
+
+    (void)gui_window_open("This Computer", 12, 2, 54, 14);
+    vga_write_string("[pc] This Computer\n");
+
+    vga_write_string("[pc] files=");
+    kitoa(fs_count(), buf);
+    vga_write_string(buf);
+
+    vga_write_string(" drivers=");
+    kitoa(driver_installed_count(), buf);
+    vga_write_string(buf);
+
+    vga_write_string(" tasks=");
+    kitoa(task_count(), buf);
+    vga_write_string(buf);
+
+    vga_write_string(" windows=");
+    kitoa(gui_window_count(), buf);
+    vga_write_string(buf);
+
+    vga_write_string(" icons=");
+    kitoa(gui_icon_count(), buf);
+    vga_write_string(buf);
+
+    vga_write_string("\n");
+}
+
+static void app_system_monitor(void) {
+    char buf[16];
+    int i;
+
+    (void)gui_window_open("System Monitor", 8, 1, 62, 15);
+    vga_write_string("[monitor] tasks:\n");
+
+    for (i = 0; i < task_count(); i++) {
+        task_t* t = task_get(i);
+        if (!t) {
+            continue;
+        }
+
+        vga_write_string("  ");
+        vga_write_string(t->name ? t->name : "unnamed");
+        vga_write_string(" mode=");
+        vga_write_string(t->mode == TASK_USER ? "user" : "kernel");
+        vga_write_string(" runs=");
+        kitoa((int)t->run_count, buf);
+        vga_write_string(buf);
+        vga_write_string("\n");
+    }
+
+    vga_write_string("[monitor] unread notifications=");
+    kitoa(notifications_unread_count(), buf);
+    vga_write_string(buf);
+    vga_write_string("\n");
+}
+
 static const system_app_t apps[APP_COUNT] = {
     {"terminal", "Command terminal", app_terminal},
     {"files", "RAM file manager", app_files},
     {"settings", "System settings", app_settings},
     {"browser", "Text mode web browser", app_browser},
     {"notifications", "Notification center", app_notifications},
-    {"drivers", "Driver manager", app_drivers}
+    {"drivers", "Driver manager", app_drivers},
+    {"calculator", "Basic arithmetic app", app_calculator},
+    {"notepad", "Simple notes app", app_notepad},
+    {"thispc", "This Computer overview", app_this_computer},
+    {"monitor", "System monitor", app_system_monitor}
 };
 
 void system_apps_init(void) {
     (void)gui_icon_add("terminal", '>', 14, 2);
     (void)gui_icon_add("browser", '@', 14, 6);
     (void)gui_icon_add("drivers", 'D', 14, 10);
+    (void)gui_icon_add("calc", '+', 26, 2);
+    (void)gui_icon_add("notes", 'N', 26, 6);
+    (void)gui_icon_add("thispc", 'C', 26, 10);
+    (void)gui_icon_add("monitor", 'M', 26, 14);
 }
 
 void system_apps_list(void) {
@@ -98,6 +215,7 @@ void system_apps_list(void) {
 
 int system_app_open(const char* name) {
     int i;
+
     for (i = 0; i < APP_COUNT; i++) {
         if (kstrcmp(name, apps[i].name) == 0) {
             apps[i].entry();
@@ -105,5 +223,24 @@ int system_app_open(const char* name) {
             return 0;
         }
     }
+
+    if (kstrcmp(name, "hesapmakinesi") == 0 || kstrcmp(name, "calc") == 0) {
+        app_calculator();
+        gui_redraw();
+        return 0;
+    }
+
+    if (kstrcmp(name, "notdefteri") == 0 || kstrcmp(name, "notes") == 0) {
+        app_notepad();
+        gui_redraw();
+        return 0;
+    }
+
+    if (kstrcmp(name, "bu-bilgisayar") == 0) {
+        app_this_computer();
+        gui_redraw();
+        return 0;
+    }
+
     return -1;
 }
