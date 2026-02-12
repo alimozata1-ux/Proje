@@ -1,0 +1,63 @@
+# myos
+
+Eğitsel amaçlı x86 (32-bit) bare-metal OS.
+
+## Öne Çıkanlar
+- Bootloader + protected mode
+- Paging/MMU (ilk 4MB identity map)
+- Ring3 kullanıcı modu + int 0x80 syscall
+- Timer tabanlı preemptive scheduler
+- PS/2 klavye sürücüsü (IRQ1)
+- Kernel heap allocator
+- Seri port logger
+- Basit komut kabuğu (shell)
+- Tanılama (diagnostics) modülü
+- In-memory RAM filesystem (RAMFS) + shell file commands
+- Text-mode GUI demo (VGA üzerinde taskbar + pencere sistemi)
+- Bliss tarzı duvar kağıdı (gökyüzü + yeşil tepe)
+- Masaüstü ikon sistemi (ekle/sil/listele)
+- Text-mode web browser (sekme/geçmiş/yer imi, built-in sayfalar)
+
+## Derleme
+```bash
+make
+```
+
+## Çalıştırma
+```bash
+make run
+```
+
+## Not
+Bu proje öğretici sadelik için minimal ve anlaşılır bırakılmıştır.
+
+## Dosya Sistemi Komutları
+- `ls`, `touch NAME`, `rm NAME`, `cat NAME`, `write NAME TEXT`, `append NAME TEXT`, `run NAME`
+
+## GUI Komutu
+- `gui` komutu VGA text mode üzerinde pencere/masaüstü demo ekranı çizer.
+
+## Varsayılan Özel EXE-Dosya
+- RAMFS başlangıçta `superx323` isimli executable benzeri dosya oluşturur.
+- Shell içinde `run superx323` komutu ile içeriği çalıştırma simülasyonu yapılır.
+
+## Pencere Sistemi Komutları
+- `gui`: taskbar + demo pencereleri çizer
+- `winlist`: açık pencereleri listeler
+- `winopen TITLE`: yeni pencere açar
+- `winfocus ID`: pencereyi öne getirir
+- `winclose ID`: pencereyi kapatır
+
+## İkon Sistemi Komutları
+- `iconlist`: ikonları listeler
+- `iconadd NAME`: masaüstüne ikon ekler
+- `icondel ID`: ikon siler
+
+## Tarayıcı Komutları
+- `browser home`
+- `browser open URL`
+- `browser back` / `browser forward`
+- `browser tabs` / `browser tab ID` / `browser close ID`
+- `browser bm URL` / `browser bms`
+
+> Not: Bu sürüm eğitim amaçlı text-mode tarayıcıdır; TCP/IP ağı olmadığı için built-in sayfaları render eder.
