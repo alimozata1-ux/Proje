@@ -23,6 +23,7 @@ static gui_icon_t gui_icons[GUI_MAX_ICONS];
 static int gui_next_id = 1;
 static int gui_next_icon_id = 1;
 static int gui_focused_id = -1;
+static int gui_start_menu_open = 0;
 
 static unsigned short vga_entry(char c, unsigned char color) {
     return ((unsigned short)color << 8) | (unsigned char)c;
@@ -113,6 +114,23 @@ static void gui_draw_taskbar(void) {
     }
 }
 
+static void gui_draw_start_menu(void) {
+    int x = 0;
+    int y = VGA_HEIGHT - 8;
+    int w = 20;
+    int h = 7;
+
+    if (!gui_start_menu_open) {
+        return;
+    }
+
+    gui_fill_rect(x, y, w, h, ' ', COLOR_TASKBAR);
+    gui_draw_window(x, y, w, h, "Start");
+    gui_write_at(x + 2, y + 2, "1) Terminal", COLOR_TEXT);
+    gui_write_at(x + 2, y + 3, "2) Files", COLOR_TEXT);
+    gui_write_at(x + 2, y + 4, "3) Settings", COLOR_TEXT);
+}
+
 static void gui_draw_icons(void) {
     int i;
     int j;
@@ -138,6 +156,7 @@ void gui_init(void) {
     gui_next_id = 1;
     gui_next_icon_id = 1;
     gui_focused_id = -1;
+    gui_start_menu_open = 0;
 
     (void)gui_icon_add("superx323", '*', 2, 2);
     (void)gui_icon_add("files", '#', 2, 6);
@@ -151,6 +170,7 @@ void gui_draw_desktop(void) {
         gui_fill_rect(0, 0, VGA_WIDTH, VGA_HEIGHT - 1, ' ', COLOR_BG);
     }
     gui_draw_icons();
+    gui_draw_start_menu();
     gui_draw_taskbar();
 }
 
@@ -377,4 +397,14 @@ void gui_demo(void) {
     gui_window_open("Console", 8, 13, 64, 9);
     gui_window_open("Settings", 24, 7, 28, 8);
     gui_redraw();
+}
+
+void gui_start_menu_toggle(void) {
+    gui_start_menu_open = !gui_start_menu_open;
+    gui_redraw();
+}
+
+void gui_start_menu_open_terminal(void) {
+    gui_start_menu_open = 0;
+    (void)gui_window_open("Terminal", 10, 5, 50, 12);
 }

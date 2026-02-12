@@ -42,4 +42,7 @@ int gui_icon_remove(int id);
 int gui_icon_count(void);
 gui_icon_t* gui_icon_get(int index);
 
+void gui_start_menu_toggle(void);
+void gui_start_menu_open_terminal(void);
+
 #endif
