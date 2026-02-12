@@ -61,11 +61,11 @@ static void shell_cmd_help(void) {
     vga_write_string("  gui, winopen TITLE, winclose ID, winfocus ID, winlist\n");
     vga_write_string("  iconlist, iconadd NAME, icondel ID\n");
     vga_write_string("  browser home|open URL|back|forward|tabs|tab ID|close ID|bm URL|bms\n");
-    vga_write_string("  settings show|wallpaper 0|1|clouds 0|1|taskbar 0|1\n");
+    vga_write_string("  settings show|wallpaper 0|1|clouds 0|1|taskbar 0|1|desktop 0|1|brightness N|theme 0|1\n");
     vga_write_string("  notif add TEXT|list|readall|clear\n");
     vga_write_string("  driver list|find TEXT|install NAME|uninstall NAME|info NAME|installed\n");
     vga_write_string("  tasks, apps, app open NAME\n");
-    vga_write_string("  calc, note, thispc, monitor\n");
+    vga_write_string("  calc, note, thispc, monitor, display, desktop\n");
     vga_write_string("  features, feature run NAME, feature count\n");
 }
 
@@ -259,6 +259,12 @@ static void shell_cmd_settings_show(void) {
     shell_print_number(st->cloud_enabled);
     vga_write_string("\n  taskbar_compact=");
     shell_print_number(st->taskbar_compact);
+    vga_write_string("\n  desktop_enabled=");
+    shell_print_number(st->desktop_enabled);
+    vga_write_string("\n  brightness=");
+    shell_print_number(st->brightness);
+    vga_write_string("\n  theme_dark=");
+    shell_print_number(st->theme_dark);
     vga_write_string("\n");
 }
 
@@ -273,8 +279,18 @@ static void shell_cmd_settings(const char* args) {
     if (starts_with(args, "taskbar ")) {
         settings_set_taskbar_compact(katoi(args + 8)); gui_redraw(); vga_write_string("settings: taskbar updated\n"); return;
     }
+    if (starts_with(args, "desktop ")) {
+        settings_set_desktop_enabled(katoi(args + 8)); gui_redraw(); vga_write_string("settings: desktop updated\n"); return;
+    }
+    if (starts_with(args, "brightness ")) {
+        settings_set_brightness(katoi(args + 11)); gui_redraw(); vga_write_string("settings: brightness updated\n"); return;
+    }
+    if (starts_with(args, "theme ")) {
+        settings_set_theme_dark(katoi(args + 6)); gui_redraw(); vga_write_string("settings: theme updated\n"); return;
+    }
     vga_write_string("settings: unknown option\n");
 }
+
 
 static void shell_cmd_notif(const char* args) {
     if (starts_with(args, "add ")) {
@@ -521,6 +537,8 @@ static void shell_execute(const char* line) {
     if (kstrcmp(line, "note") == 0) return shell_cmd_apps("open notepad");
     if (kstrcmp(line, "thispc") == 0) return shell_cmd_apps("open thispc");
     if (kstrcmp(line, "monitor") == 0) return shell_cmd_apps("open monitor");
+    if (kstrcmp(line, "display") == 0) return shell_cmd_apps("open display");
+    if (kstrcmp(line, "desktop") == 0) return shell_cmd_apps("open desktop");
     if (kstrcmp(line, "features") == 0) return shell_cmd_feature("list");
     if (kstrncmp(line, "feature ", 8) == 0) return shell_cmd_feature(skip_spaces(line + 8));
 

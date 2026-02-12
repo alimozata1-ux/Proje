@@ -9,7 +9,7 @@
 #include "task.h"
 #include "vga.h"
 
-#define APP_COUNT 10
+#define APP_COUNT 12
 
 #define NOTEPAD_FILE "notes.txt"
 
@@ -178,6 +178,50 @@ static void app_system_monitor(void) {
     vga_write_string("\n");
 }
 
+
+static void app_display_settings(void) {
+    os_settings_t* st = settings_get();
+    char buf[16];
+
+    (void)gui_window_open("Display Settings", 20, 2, 36, 12);
+    vga_write_string("[display] desktop=");
+    kitoa(st->desktop_enabled, buf);
+    vga_write_string(buf);
+    vga_write_string(" wallpaper=");
+    kitoa(st->wallpaper_enabled, buf);
+    vga_write_string(buf);
+    vga_write_string(" clouds=");
+    kitoa(st->cloud_enabled, buf);
+    vga_write_string(buf);
+    vga_write_string("\n[display] brightness=");
+    kitoa(st->brightness, buf);
+    vga_write_string(buf);
+    vga_write_string(" theme_dark=");
+    kitoa(st->theme_dark, buf);
+    vga_write_string(buf);
+    vga_write_string("\n");
+}
+
+static void app_desktop(void) {
+    int icons;
+    int windows;
+    char buf[16];
+
+    (void)gui_window_open("Desktop", 10, 3, 58, 14);
+    icons = gui_icon_count();
+    windows = gui_window_count();
+
+    vga_write_string("[desktop] manager\n");
+    vga_write_string("[desktop] icons=");
+    kitoa(icons, buf);
+    vga_write_string(buf);
+    vga_write_string(" windows=");
+    kitoa(windows, buf);
+    vga_write_string(buf);
+    vga_write_string("\n");
+}
+
+
 static const system_app_t apps[APP_COUNT] = {
     {"terminal", "Command terminal", app_terminal},
     {"files", "RAM file manager", app_files},
@@ -188,7 +232,9 @@ static const system_app_t apps[APP_COUNT] = {
     {"calculator", "Basic arithmetic app", app_calculator},
     {"notepad", "Simple notes app", app_notepad},
     {"thispc", "This Computer overview", app_this_computer},
-    {"monitor", "System monitor", app_system_monitor}
+    {"monitor", "System monitor", app_system_monitor},
+    {"display", "Display settings", app_display_settings},
+    {"desktop", "Desktop manager", app_desktop}
 };
 
 void system_apps_init(void) {
@@ -199,6 +245,8 @@ void system_apps_init(void) {
     (void)gui_icon_add("notes", 'N', 26, 6);
     (void)gui_icon_add("thispc", 'C', 26, 10);
     (void)gui_icon_add("monitor", 'M', 26, 14);
+    (void)gui_icon_add("display", 'V', 38, 2);
+    (void)gui_icon_add("desktop", 'T', 38, 6);
 }
 
 void system_apps_list(void) {
@@ -238,6 +286,18 @@ int system_app_open(const char* name) {
 
     if (kstrcmp(name, "bu-bilgisayar") == 0) {
         app_this_computer();
+        gui_redraw();
+        return 0;
+    }
+
+    if (kstrcmp(name, "goruntu") == 0) {
+        app_display_settings();
+        gui_redraw();
+        return 0;
+    }
+
+    if (kstrcmp(name, "masaustu") == 0) {
+        app_desktop();
         gui_redraw();
         return 0;
     }

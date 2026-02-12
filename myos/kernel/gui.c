@@ -18,6 +18,32 @@
 #define COLOR_SKY 0x1F
 #define COLOR_GRASS 0x2F
 
+
+#define COLOR_BG_DARK 0x10
+#define COLOR_BORDER_DARK 0x08
+#define COLOR_TEXT_DARK 0x0F
+#define COLOR_TASKBAR_DARK 0x70
+#define COLOR_TASKBTN_DARK 0x78
+#define COLOR_ICON_DARK 0x0F
+#define COLOR_SKY_DARK 0x10
+#define COLOR_GRASS_DARK 0x20
+
+static unsigned char gui_current_bg(void) { return settings_get()->theme_dark ? COLOR_BG_DARK : COLOR_BG; }
+static unsigned char gui_current_border(void) { return settings_get()->theme_dark ? COLOR_BORDER_DARK : COLOR_BORDER; }
+static unsigned char gui_current_title(void) { return settings_get()->theme_dark ? COLOR_TEXT_DARK : COLOR_TITLE; }
+static unsigned char gui_current_text(void) { return settings_get()->theme_dark ? COLOR_TEXT_DARK : COLOR_TEXT; }
+static unsigned char gui_current_taskbar(void) { return settings_get()->theme_dark ? COLOR_TASKBAR_DARK : COLOR_TASKBAR; }
+static unsigned char gui_current_taskbtn(void) { return settings_get()->theme_dark ? COLOR_TASKBTN_DARK : COLOR_TASKBTN; }
+static unsigned char gui_current_icon(void) { return settings_get()->theme_dark ? COLOR_ICON_DARK : COLOR_ICON; }
+static unsigned char gui_current_sky(void) {
+    if (settings_get()->brightness < 35) return COLOR_SKY_DARK;
+    return settings_get()->theme_dark ? COLOR_SKY_DARK : COLOR_SKY;
+}
+static unsigned char gui_current_grass(void) {
+    if (settings_get()->brightness < 35) return COLOR_GRASS_DARK;
+    return settings_get()->theme_dark ? COLOR_GRASS_DARK : COLOR_GRASS;
+}
+
 static gui_window_t gui_windows[GUI_MAX_WINDOWS];
 static gui_icon_t gui_icons[GUI_MAX_ICONS];
 static int gui_next_id = 1;
@@ -61,18 +87,18 @@ static void gui_draw_wallpaper(void) {
         for (x = 0; x < VGA_WIDTH; x++) {
             int hill_line = 12 + ((x - 40) * (x - 40)) / 220;
             if (y >= hill_line) {
-                gui_put_at(x, y, ' ', COLOR_GRASS);
+                gui_put_at(x, y, ' ', gui_current_grass());
             } else {
-                gui_put_at(x, y, ' ', COLOR_SKY);
+                gui_put_at(x, y, ' ', gui_current_sky());
             }
         }
     }
 
     if (settings_get()->cloud_enabled) {
         /* Bulutlar */
-        gui_write_at(8, 2, " ~~  ~~ ", COLOR_TEXT);
-        gui_write_at(28, 4, "~~~~~~", COLOR_TEXT);
-        gui_write_at(54, 3, " ~~~~ ", COLOR_TEXT);
+        gui_write_at(8, 2, " ~~  ~~ ", gui_current_text());
+        gui_write_at(28, 4, "~~~~~~", gui_current_text());
+        gui_write_at(54, 3, " ~~~~ ", gui_current_text());
     }
 }
 
@@ -80,11 +106,11 @@ static void gui_draw_taskbar(void) {
     int i;
     int cursor = 1;
     char nbuf[16];
-    gui_fill_rect(0, VGA_HEIGHT - 1, VGA_WIDTH, 1, ' ', COLOR_TASKBAR);
-    gui_write_at(1, VGA_HEIGHT - 1, "MyOS", COLOR_TASKBAR);
-    gui_write_at(6, VGA_HEIGHT - 1, "N:", COLOR_TASKBAR);
+    gui_fill_rect(0, VGA_HEIGHT - 1, VGA_WIDTH, 1, ' ', gui_current_taskbar());
+    gui_write_at(1, VGA_HEIGHT - 1, "MyOS", gui_current_taskbar());
+    gui_write_at(6, VGA_HEIGHT - 1, "N:", gui_current_taskbar());
     kitoa(notifications_unread_count(), nbuf);
-    gui_write_at(8, VGA_HEIGHT - 1, nbuf, COLOR_TASKBAR);
+    gui_write_at(8, VGA_HEIGHT - 1, nbuf, gui_current_taskbar());
     cursor = settings_get()->taskbar_compact ? 11 : 13;
 
     for (i = 0; i < GUI_MAX_WINDOWS; i++) {
@@ -98,18 +124,18 @@ static void gui_draw_taskbar(void) {
             break;
         }
 
-        gui_put_at(cursor++, VGA_HEIGHT - 1, '[', COLOR_TASKBTN);
+        gui_put_at(cursor++, VGA_HEIGHT - 1, '[', gui_current_taskbtn());
         if (w->id == gui_focused_id) {
-            gui_put_at(cursor++, VGA_HEIGHT - 1, '*', COLOR_TASKBTN);
+            gui_put_at(cursor++, VGA_HEIGHT - 1, '*', gui_current_taskbtn());
         }
 
         for (j = 0; w->title[j] && j < 8 && cursor < VGA_WIDTH - 2; j++) {
-            gui_put_at(cursor++, VGA_HEIGHT - 1, w->title[j], COLOR_TASKBTN);
+            gui_put_at(cursor++, VGA_HEIGHT - 1, w->title[j], gui_current_taskbtn());
         }
 
-        gui_put_at(cursor++, VGA_HEIGHT - 1, ']', COLOR_TASKBTN);
+        gui_put_at(cursor++, VGA_HEIGHT - 1, ']', gui_current_taskbtn());
         if (cursor < VGA_WIDTH - 1) {
-            gui_put_at(cursor++, VGA_HEIGHT - 1, ' ', COLOR_TASKBAR);
+            gui_put_at(cursor++, VGA_HEIGHT - 1, ' ', gui_current_taskbar());
         }
     }
 }
@@ -124,11 +150,11 @@ static void gui_draw_start_menu(void) {
         return;
     }
 
-    gui_fill_rect(x, y, w, h, ' ', COLOR_TASKBAR);
+    gui_fill_rect(x, y, w, h, ' ', gui_current_taskbar());
     gui_draw_window(x, y, w, h, "Start");
-    gui_write_at(x + 2, y + 2, "1) Terminal", COLOR_TEXT);
-    gui_write_at(x + 2, y + 3, "2) Files", COLOR_TEXT);
-    gui_write_at(x + 2, y + 4, "3) Settings", COLOR_TEXT);
+    gui_write_at(x + 2, y + 2, "1) Terminal", gui_current_text());
+    gui_write_at(x + 2, y + 3, "2) Files", gui_current_text());
+    gui_write_at(x + 2, y + 4, "3) Settings", gui_current_text());
 }
 
 static void gui_draw_icons(void) {
@@ -140,12 +166,12 @@ static void gui_draw_icons(void) {
             continue;
         }
 
-        gui_put_at(icon->x, icon->y, '[', COLOR_ICON);
-        gui_put_at(icon->x + 1, icon->y, icon->glyph, COLOR_ICON);
-        gui_put_at(icon->x + 2, icon->y, ']', COLOR_ICON);
+        gui_put_at(icon->x, icon->y, '[', gui_current_icon());
+        gui_put_at(icon->x + 1, icon->y, icon->glyph, gui_current_icon());
+        gui_put_at(icon->x + 2, icon->y, ']', gui_current_icon());
 
         for (j = 0; icon->label[j] && j < GUI_ICON_LABEL_MAX - 1; j++) {
-            gui_put_at(icon->x + j, icon->y + 1, icon->label[j], COLOR_ICON);
+            gui_put_at(icon->x + j, icon->y + 1, icon->label[j], gui_current_icon());
         }
     }
 }
@@ -164,10 +190,17 @@ void gui_init(void) {
 }
 
 void gui_draw_desktop(void) {
+    if (!settings_get()->desktop_enabled) {
+        gui_fill_rect(0, 0, VGA_WIDTH, VGA_HEIGHT - 1, ' ', gui_current_bg());
+        gui_write_at(2, 2, "Desktop disabled (settings desktop 1)", gui_current_text());
+        gui_draw_taskbar();
+        return;
+    }
+
     if (settings_get()->wallpaper_enabled) {
         gui_draw_wallpaper();
     } else {
-        gui_fill_rect(0, 0, VGA_WIDTH, VGA_HEIGHT - 1, ' ', COLOR_BG);
+        gui_fill_rect(0, 0, VGA_WIDTH, VGA_HEIGHT - 1, ' ', gui_current_bg());
     }
     gui_draw_icons();
     gui_draw_start_menu();
@@ -181,25 +214,25 @@ void gui_draw_window(int x, int y, int w, int h, const char* title) {
         return;
     }
 
-    gui_fill_rect(x, y, w, h, ' ', COLOR_BG);
+    gui_fill_rect(x, y, w, h, ' ', gui_current_bg());
 
     for (i = 0; i < w; i++) {
-        gui_put_at(x + i, y, '-', COLOR_BORDER);
-        gui_put_at(x + i, y + h - 1, '-', COLOR_BORDER);
+        gui_put_at(x + i, y, '-', gui_current_border());
+        gui_put_at(x + i, y + h - 1, '-', gui_current_border());
     }
 
     for (i = 0; i < h; i++) {
-        gui_put_at(x, y + i, '|', COLOR_BORDER);
-        gui_put_at(x + w - 1, y + i, '|', COLOR_BORDER);
+        gui_put_at(x, y + i, '|', gui_current_border());
+        gui_put_at(x + w - 1, y + i, '|', gui_current_border());
     }
 
-    gui_put_at(x, y, '+', COLOR_BORDER);
-    gui_put_at(x + w - 1, y, '+', COLOR_BORDER);
-    gui_put_at(x, y + h - 1, '+', COLOR_BORDER);
-    gui_put_at(x + w - 1, y + h - 1, '+', COLOR_BORDER);
+    gui_put_at(x, y, '+', gui_current_border());
+    gui_put_at(x + w - 1, y, '+', gui_current_border());
+    gui_put_at(x, y + h - 1, '+', gui_current_border());
+    gui_put_at(x + w - 1, y + h - 1, '+', gui_current_border());
 
     if (title) {
-        gui_write_at(x + 2, y, title, COLOR_TITLE);
+        gui_write_at(x + 2, y, title, gui_current_title());
     }
 }
 
@@ -212,7 +245,7 @@ void gui_redraw(void) {
             continue;
         }
         gui_draw_window(w->x, w->y, w->w, w->h, w->title);
-        gui_write_at(w->x + 2, w->y + 2, "Window content", COLOR_TEXT);
+        gui_write_at(w->x + 2, w->y + 2, "Window content", gui_current_text());
     }
     gui_draw_taskbar();
 }
