@@ -2,6 +2,7 @@
 #include "diagnostics.h"
 #include "gui.h"
 #include "keyboard.h"
+#include "kernel_mode.h"
 #include "logger.h"
 #include "scheduler.h"
 #include "settings.h"
@@ -16,6 +17,7 @@ void kernel_main(void) {
     log_info("kernel", "boot start");
 
     allocator_init();
+    kernel_mode_init();
     scheduler_init();
     keyboard_init();
     shell_init();

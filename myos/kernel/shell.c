@@ -6,6 +6,7 @@
 #include "fs.h"
 #include "gui.h"
 #include "keyboard_buffer.h"
+#include "kernel_mode.h"
 #include "logger.h"
 #include "notifications.h"
 #include "settings.h"
@@ -68,6 +69,7 @@ static void shell_cmd_help(void) {
     vga_write_string("  calc, note, thispc, monitor, display, desktop\n");
     vga_write_string("  xox, tetris, snake, pong\n");
     vga_write_string("  features, feature run NAME, feature count\n");
+    vga_write_string("  kernelmode show|set hybrid|set monolithic|services\n");
 }
 
 static void shell_cmd_alloc(const char* arg) {
@@ -493,6 +495,36 @@ static void shell_cmd_feature(const char* args) {
 }
 
 
+
+static void shell_cmd_kernelmode(const char* args) {
+    if (kstrcmp(args, "show") == 0 || kstrcmp(args, "") == 0) {
+        vga_write_string("kernel mode: ");
+        vga_write_string(kernel_mode_name());
+        vga_write_string("\n");
+        return;
+    }
+
+    if (starts_with(args, "set ")) {
+        const char* mode = skip_spaces(args + 4);
+        if (kernel_mode_set_name(mode) == 0) {
+            vga_write_string("kernel mode updated: ");
+            vga_write_string(kernel_mode_name());
+            vga_write_string("\n");
+        } else {
+            vga_write_string("kernelmode: use hybrid or monolithic\n");
+        }
+        return;
+    }
+
+    if (kstrcmp(args, "services") == 0) {
+        kernel_mode_print_services();
+        return;
+    }
+
+    vga_write_string("kernelmode: show|set hybrid|set monolithic|services\n");
+}
+
+
 static void shell_execute(const char* line) {
     if (kstrcmp(line, "help") == 0) return shell_cmd_help();
     if (kstrcmp(line, "clear") == 0) return shell_clear();
@@ -546,6 +578,8 @@ static void shell_execute(const char* line) {
     if (kstrcmp(line, "pong") == 0) return shell_cmd_apps("open pong");
     if (kstrcmp(line, "features") == 0) return shell_cmd_feature("list");
     if (kstrncmp(line, "feature ", 8) == 0) return shell_cmd_feature(skip_spaces(line + 8));
+    if (kstrcmp(line, "kernelmode") == 0) return shell_cmd_kernelmode("show");
+    if (kstrncmp(line, "kernelmode ", 11) == 0) return shell_cmd_kernelmode(skip_spaces(line + 11));
 
     vga_write_string("unknown command\n");
 }

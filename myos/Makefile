@@ -36,7 +36,8 @@ KERNEL_OBJS= \
 	$(BUILD_DIR)/diagnostics.o \
 	$(BUILD_DIR)/fs.o \
 	$(BUILD_DIR)/system_apps.o \
-	$(BUILD_DIR)/feature_hub.o
+	$(BUILD_DIR)/feature_hub.o \
+	$(BUILD_DIR)/kernel_mode.o
 
 all: os.img
 

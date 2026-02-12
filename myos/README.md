@@ -22,6 +22,7 @@ Eğitsel amaçlı x86 (32-bit) bare-metal OS.
 - Sürücü bulucu/kurucu (driver manager)
 - Sistem uygulamaları (terminal/files/settings/browser/notifications/drivers/calculator/notepad/thispc/monitor/display/desktop/xox/tetris/snake/pong)
 - Feature Hub (900 eğitimsel özellik kaydı)
+- Hybrid kernel modu (monolithic + servis karmasi)
 
 ## Derleme
 ```bash
@@ -108,3 +109,9 @@ Bu proje öğretici sadelik için minimal ve anlaşılır bırakılmıştır.
 - `tetris`
 - `snake`
 - `pong`
+
+## Kernel Modu Komutları
+- `kernelmode` / `kernelmode show`
+- `kernelmode set hybrid`
+- `kernelmode set monolithic`
+- `kernelmode services`
