@@ -66,6 +66,7 @@ static void shell_cmd_help(void) {
     vga_write_string("  driver list|find TEXT|install NAME|uninstall NAME|info NAME|installed\n");
     vga_write_string("  tasks, apps, app open NAME\n");
     vga_write_string("  calc, note, thispc, monitor, display, desktop\n");
+    vga_write_string("  xox, tetris, snake, pong\n");
     vga_write_string("  features, feature run NAME, feature count\n");
 }
 
@@ -539,6 +540,10 @@ static void shell_execute(const char* line) {
     if (kstrcmp(line, "monitor") == 0) return shell_cmd_apps("open monitor");
     if (kstrcmp(line, "display") == 0) return shell_cmd_apps("open display");
     if (kstrcmp(line, "desktop") == 0) return shell_cmd_apps("open desktop");
+    if (kstrcmp(line, "xox") == 0) return shell_cmd_apps("open xox");
+    if (kstrcmp(line, "tetris") == 0) return shell_cmd_apps("open tetris");
+    if (kstrcmp(line, "snake") == 0) return shell_cmd_apps("open snake");
+    if (kstrcmp(line, "pong") == 0) return shell_cmd_apps("open pong");
     if (kstrcmp(line, "features") == 0) return shell_cmd_feature("list");
     if (kstrncmp(line, "feature ", 8) == 0) return shell_cmd_feature(skip_spaces(line + 8));
 

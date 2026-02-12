@@ -20,7 +20,7 @@ Eğitsel amaçlı x86 (32-bit) bare-metal OS.
 - Ayarlar sistemi (duvar kağıdı/bulut/taskbar modu)
 - Bildirim merkezi (taskbar unread sayacı)
 - Sürücü bulucu/kurucu (driver manager)
-- Sistem uygulamaları (terminal/files/settings/browser/notifications/drivers/calculator/notepad/thispc/monitor/display/desktop)
+- Sistem uygulamaları (terminal/files/settings/browser/notifications/drivers/calculator/notepad/thispc/monitor/display/desktop/xox/tetris/snake/pong)
 - Feature Hub (900 eğitimsel özellik kaydı)
 
 ## Derleme
@@ -89,8 +89,8 @@ Bu proje öğretici sadelik için minimal ve anlaşılır bırakılmıştır.
 
 ## Sistem Uygulamaları Komutları
 - `apps`
-- `app open NAME` (örn: `app open terminal`, `app open browser`, `app open calculator`, `app open notepad`, `app open thispc`, `app open monitor`, `app open display`, `app open desktop`)
-- Kısayollar: `calc`, `note`, `thispc`, `monitor`, `display`, `desktop`
+- `app open NAME` (örn: `app open terminal`, `app open browser`, `app open calculator`, `app open notepad`, `app open thispc`, `app open monitor`, `app open display`, `app open desktop`, `app open xox`, `app open tetris`, `app open snake`, `app open pong`)
+- Kısayollar: `calc`, `note`, `thispc`, `monitor`, `display`, `desktop`, `xox`, `tetris`, `snake`, `pong`
 
 ## Feature Hub Komutları
 - `features`
@@ -102,3 +102,9 @@ Bu proje öğretici sadelik için minimal ve anlaşılır bırakılmıştır.
 - `settings desktop 0|1`
 - `settings brightness N` (0..100)
 - `settings theme 0|1`
+
+## Oyunlar
+- `xox` (Tic-Tac-Toe)
+- `tetris`
+- `snake`
+- `pong`

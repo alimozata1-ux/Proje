@@ -9,8 +9,7 @@
 #include "task.h"
 #include "vga.h"
 
-#define APP_COUNT 12
-
+#define APP_COUNT 16
 #define NOTEPAD_FILE "notes.txt"
 
 typedef void (*app_entry_t)(void);
@@ -129,23 +128,18 @@ static void app_this_computer(void) {
     vga_write_string("[pc] files=");
     kitoa(fs_count(), buf);
     vga_write_string(buf);
-
     vga_write_string(" drivers=");
     kitoa(driver_installed_count(), buf);
     vga_write_string(buf);
-
     vga_write_string(" tasks=");
     kitoa(task_count(), buf);
     vga_write_string(buf);
-
     vga_write_string(" windows=");
     kitoa(gui_window_count(), buf);
     vga_write_string(buf);
-
     vga_write_string(" icons=");
     kitoa(gui_icon_count(), buf);
     vga_write_string(buf);
-
     vga_write_string("\n");
 }
 
@@ -177,7 +171,6 @@ static void app_system_monitor(void) {
     vga_write_string(buf);
     vga_write_string("\n");
 }
-
 
 static void app_display_settings(void) {
     os_settings_t* st = settings_get();
@@ -221,6 +214,49 @@ static void app_desktop(void) {
     vga_write_string("\n");
 }
 
+static void app_xox(void) {
+    (void)gui_window_open("XOX", 22, 4, 30, 13);
+    vga_write_string("[xox] Tic-Tac-Toe\n");
+    vga_write_string(" X | O | X \n");
+    vga_write_string("---+---+---\n");
+    vga_write_string(" O | X |   \n");
+    vga_write_string("---+---+---\n");
+    vga_write_string("   | O | X \n");
+    vga_write_string("[xox] kazanan: X\n");
+}
+
+static void app_tetris(void) {
+    (void)gui_window_open("Tetris", 18, 2, 40, 18);
+    vga_write_string("[tetris] demo board\n");
+    vga_write_string("|..........|\n");
+    vga_write_string("|....[]....|\n");
+    vga_write_string("|....[]....|\n");
+    vga_write_string("|....[]....|\n");
+    vga_write_string("|....[]....|\n");
+    vga_write_string("|..[][][]..|\n");
+    vga_write_string("|##########|\n");
+    vga_write_string("[tetris] score=120 lines=2\n");
+}
+
+static void app_snake(void) {
+    (void)gui_window_open("Snake", 20, 3, 36, 14);
+    vga_write_string("[snake] board\n");
+    vga_write_string("+----------+\n");
+    vga_write_string("|   o      |\n");
+    vga_write_string("|   OOO@   |\n");
+    vga_write_string("|          |\n");
+    vga_write_string("+----------+\n");
+    vga_write_string("[snake] len=4 score=30\n");
+}
+
+static void app_pong(void) {
+    (void)gui_window_open("Pong", 16, 4, 44, 12);
+    vga_write_string("[pong] left:3 right:2\n");
+    vga_write_string("|        o         |\n");
+    vga_write_string("| |            |   |\n");
+    vga_write_string("| |            |   |\n");
+    vga_write_string("| |            |   |\n");
+}
 
 static const system_app_t apps[APP_COUNT] = {
     {"terminal", "Command terminal", app_terminal},
@@ -234,7 +270,11 @@ static const system_app_t apps[APP_COUNT] = {
     {"thispc", "This Computer overview", app_this_computer},
     {"monitor", "System monitor", app_system_monitor},
     {"display", "Display settings", app_display_settings},
-    {"desktop", "Desktop manager", app_desktop}
+    {"desktop", "Desktop manager", app_desktop},
+    {"xox", "Tic-Tac-Toe game", app_xox},
+    {"tetris", "Block puzzle game", app_tetris},
+    {"snake", "Snake game", app_snake},
+    {"pong", "Pong game", app_pong}
 };
 
 void system_apps_init(void) {
@@ -247,6 +287,9 @@ void system_apps_init(void) {
     (void)gui_icon_add("monitor", 'M', 26, 14);
     (void)gui_icon_add("display", 'V', 38, 2);
     (void)gui_icon_add("desktop", 'T', 38, 6);
+    (void)gui_icon_add("xox", 'X', 50, 2);
+    (void)gui_icon_add("tetris", '#', 50, 6);
+    (void)gui_icon_add("snake", 'S', 50, 10);
 }
 
 void system_apps_list(void) {
@@ -298,6 +341,12 @@ int system_app_open(const char* name) {
 
     if (kstrcmp(name, "masaustu") == 0) {
         app_desktop();
+        gui_redraw();
+        return 0;
+    }
+
+    if (kstrcmp(name, "oyun-xox") == 0) {
+        app_xox();
         gui_redraw();
         return 0;
     }
