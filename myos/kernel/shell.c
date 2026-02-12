@@ -10,6 +10,7 @@
 #include "settings.h"
 #include "string.h"
 #include "syscall_table.h"
+#include "system_apps.h"
 #include "task.h"
 #include "vga.h"
 
@@ -62,7 +63,7 @@ static void shell_cmd_help(void) {
     vga_write_string("  settings show|wallpaper 0|1|clouds 0|1|taskbar 0|1\n");
     vga_write_string("  notif add TEXT|list|readall|clear\n");
     vga_write_string("  driver list|find TEXT|install NAME|uninstall NAME|info NAME|installed\n");
-    vga_write_string("  tasks\n");
+    vga_write_string("  tasks, apps, app open NAME\n");
 }
 
 static void shell_cmd_alloc(const char* arg) {
@@ -418,6 +419,30 @@ static void shell_cmd_tasks(void) {
     }
 }
 
+static void shell_cmd_apps(const char* args) {
+    if (kstrcmp(args, "list") == 0 || args[0] == '\0') {
+        system_apps_list();
+        return;
+    }
+
+    if (starts_with(args, "open ")) {
+        const char* name = skip_spaces(args + 5);
+        if (name[0] == '\0') {
+            vga_write_string("app: missing name\n");
+            return;
+        }
+
+        if (system_app_open(name) == 0) {
+            vga_write_string("app launched\n");
+        } else {
+            vga_write_string("app not found\n");
+        }
+        return;
+    }
+
+    vga_write_string("app: use 'apps' or 'app open NAME'\n");
+}
+
 static void shell_execute(const char* line) {
     if (kstrcmp(line, "help") == 0) return shell_cmd_help();
     if (kstrcmp(line, "clear") == 0) return shell_clear();
@@ -457,6 +482,8 @@ static void shell_execute(const char* line) {
     if (kstrncmp(line, "notif ", 6) == 0) return shell_cmd_notif(skip_spaces(line + 6));
     if (kstrncmp(line, "driver ", 7) == 0) return shell_cmd_driver(skip_spaces(line + 7));
     if (kstrcmp(line, "tasks") == 0) return shell_cmd_tasks();
+    if (kstrcmp(line, "apps") == 0) return shell_cmd_apps("list");
+    if (kstrncmp(line, "app ", 4) == 0) return shell_cmd_apps(skip_spaces(line + 4));
 
     vga_write_string("unknown command\n");
 }
@@ -470,6 +497,7 @@ void shell_init(void) {
     browser_init();
     notifications_init();
     driver_init();
+    system_apps_init();
     notifications_push("Welcome to MyOS");
     log_info("shell", "initialized");
     shell_prompt();

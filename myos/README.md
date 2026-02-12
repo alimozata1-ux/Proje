@@ -20,6 +20,7 @@ Eğitsel amaçlı x86 (32-bit) bare-metal OS.
 - Ayarlar sistemi (duvar kağıdı/bulut/taskbar modu)
 - Bildirim merkezi (taskbar unread sayacı)
 - Sürücü bulucu/kurucu (driver manager)
+- Sistem uygulamaları (terminal/files/settings/browser/notifications/drivers)
 
 ## Derleme
 ```bash
@@ -84,3 +85,7 @@ Bu proje öğretici sadelik için minimal ve anlaşılır bırakılmıştır.
 - `driver uninstall NAME`
 - `driver info NAME`
 - `driver installed`
+
+## Sistem Uygulamaları Komutları
+- `apps`
+- `app open NAME` (örn: `app open terminal`, `app open browser`)

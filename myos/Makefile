@@ -34,7 +34,8 @@ KERNEL_OBJS= \
 	$(BUILD_DIR)/driver.o \
 	$(BUILD_DIR)/syscall_table.o \
 	$(BUILD_DIR)/diagnostics.o \
-	$(BUILD_DIR)/fs.o
+	$(BUILD_DIR)/fs.o \
+	$(BUILD_DIR)/system_apps.o
 
 all: os.img
 
