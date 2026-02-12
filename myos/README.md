@@ -21,6 +21,7 @@ Eğitsel amaçlı x86 (32-bit) bare-metal OS.
 - Bildirim merkezi (taskbar unread sayacı)
 - Sürücü bulucu/kurucu (driver manager)
 - Sistem uygulamaları (terminal/files/settings/browser/notifications/drivers)
+- Feature Hub (900 eğitimsel özellik kaydı)
 
 ## Derleme
 ```bash
@@ -89,3 +90,8 @@ Bu proje öğretici sadelik için minimal ve anlaşılır bırakılmıştır.
 ## Sistem Uygulamaları Komutları
 - `apps`
 - `app open NAME` (örn: `app open terminal`, `app open browser`)
+
+## Feature Hub Komutları
+- `features`
+- `feature count`
+- `feature run feature_0001`

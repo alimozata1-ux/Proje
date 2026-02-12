@@ -2,6 +2,7 @@
 #include "allocator.h"
 #include "browser.h"
 #include "driver.h"
+#include "feature_hub.h"
 #include "fs.h"
 #include "gui.h"
 #include "keyboard_buffer.h"
@@ -64,6 +65,7 @@ static void shell_cmd_help(void) {
     vga_write_string("  notif add TEXT|list|readall|clear\n");
     vga_write_string("  driver list|find TEXT|install NAME|uninstall NAME|info NAME|installed\n");
     vga_write_string("  tasks, apps, app open NAME\n");
+    vga_write_string("  features, feature run NAME, feature count\n");
 }
 
 static void shell_cmd_alloc(const char* arg) {
@@ -443,6 +445,36 @@ static void shell_cmd_apps(const char* args) {
     vga_write_string("app: use 'apps' or 'app open NAME'\n");
 }
 
+
+static void shell_cmd_feature(const char* args) {
+    char num[16];
+
+    if (kstrcmp(args, "list") == 0 || kstrcmp(args, "") == 0) {
+        feature_hub_list();
+        return;
+    }
+
+    if (kstrcmp(args, "count") == 0) {
+        vga_write_string("feature count=");
+        kitoa(feature_hub_count(), num);
+        vga_write_string(num);
+        vga_write_string("\n");
+        return;
+    }
+
+    if (starts_with(args, "run ")) {
+        if (feature_hub_run(skip_spaces(args + 4)) == 0) {
+            vga_write_string("feature executed\n");
+        } else {
+            vga_write_string("feature not found\n");
+        }
+        return;
+    }
+
+    vga_write_string("feature: use 'features' or 'feature run NAME'\n");
+}
+
+
 static void shell_execute(const char* line) {
     if (kstrcmp(line, "help") == 0) return shell_cmd_help();
     if (kstrcmp(line, "clear") == 0) return shell_clear();
@@ -484,6 +516,8 @@ static void shell_execute(const char* line) {
     if (kstrcmp(line, "tasks") == 0) return shell_cmd_tasks();
     if (kstrcmp(line, "apps") == 0) return shell_cmd_apps("list");
     if (kstrncmp(line, "app ", 4) == 0) return shell_cmd_apps(skip_spaces(line + 4));
+    if (kstrcmp(line, "features") == 0) return shell_cmd_feature("list");
+    if (kstrncmp(line, "feature ", 8) == 0) return shell_cmd_feature(skip_spaces(line + 8));
 
     vga_write_string("unknown command\n");
 }
@@ -498,6 +532,7 @@ void shell_init(void) {
     notifications_init();
     driver_init();
     system_apps_init();
+    feature_hub_init();
     notifications_push("Welcome to MyOS");
     log_info("shell", "initialized");
     shell_prompt();

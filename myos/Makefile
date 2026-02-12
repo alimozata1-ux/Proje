@@ -35,7 +35,8 @@ KERNEL_OBJS= \
 	$(BUILD_DIR)/syscall_table.o \
 	$(BUILD_DIR)/diagnostics.o \
 	$(BUILD_DIR)/fs.o \
-	$(BUILD_DIR)/system_apps.o
+	$(BUILD_DIR)/system_apps.o \
+	$(BUILD_DIR)/feature_hub.o
 
 all: os.img
 
