@@ -4,6 +4,7 @@
 #include "keyboard.h"
 #include "logger.h"
 #include "scheduler.h"
+#include "settings.h"
 #include "serial.h"
 #include "shell.h"
 #include "vga.h"
@@ -18,6 +19,7 @@ void kernel_main(void) {
     scheduler_init();
     keyboard_init();
     shell_init();
+    settings_init();
     gui_init();
     diagnostics_init();
 

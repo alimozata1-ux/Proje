@@ -5,6 +5,7 @@
 #include "gui.h"
 #include "keyboard_buffer.h"
 #include "logger.h"
+#include "settings.h"
 #include "string.h"
 #include "syscall_table.h"
 #include "vga.h"
@@ -63,6 +64,10 @@ static void shell_cmd_help(void) {
     vga_write_string("  browser close ID     - close tab\n");
     vga_write_string("  browser bm URL       - bookmark URL\n");
     vga_write_string("  browser bms          - list bookmarks\n");
+    vga_write_string("  settings show        - show current settings\n");
+    vga_write_string("  settings wallpaper 0|1\n");
+    vga_write_string("  settings clouds 0|1\n");
+    vga_write_string("  settings taskbar 0|1\n");
 }
 
 static void shell_cmd_alloc(const char* arg) {
@@ -331,6 +336,58 @@ static void shell_cmd_browser(const char* args) {
     vga_write_string("browser: unknown subcommand\n");
 }
 
+static void shell_cmd_settings_show(void) {
+    os_settings_t* st = settings_get();
+    vga_write_string("settings:
+");
+    vga_write_string("  wallpaper=");
+    shell_print_number((unsigned int)st->wallpaper_enabled);
+    vga_write_string("
+");
+    vga_write_string("  clouds=");
+    shell_print_number((unsigned int)st->cloud_enabled);
+    vga_write_string("
+");
+    vga_write_string("  taskbar_compact=");
+    shell_print_number((unsigned int)st->taskbar_compact);
+    vga_write_string("
+");
+}
+
+static void shell_cmd_settings(const char* args) {
+    if (kstrcmp(args, "show") == 0) {
+        shell_cmd_settings_show();
+        return;
+    }
+
+    if (starts_with(args, "wallpaper ")) {
+        settings_set_wallpaper(katoi(args + 10));
+        gui_redraw();
+        vga_write_string("settings: wallpaper updated
+");
+        return;
+    }
+
+    if (starts_with(args, "clouds ")) {
+        settings_set_clouds(katoi(args + 7));
+        gui_redraw();
+        vga_write_string("settings: clouds updated
+");
+        return;
+    }
+
+    if (starts_with(args, "taskbar ")) {
+        settings_set_taskbar_compact(katoi(args + 8));
+        gui_redraw();
+        vga_write_string("settings: taskbar updated
+");
+        return;
+    }
+
+    vga_write_string("settings: unknown option
+");
+}
+
 static const char* skip_spaces(const char* s) {
     while (*s == ' ') {
         s++;
@@ -517,6 +574,11 @@ static void shell_execute(const char* line) {
 
     if (kstrncmp(line, "browser ", 8) == 0) {
         shell_cmd_browser(skip_spaces(line + 8));
+        return;
+    }
+
+    if (kstrncmp(line, "settings ", 9) == 0) {
+        shell_cmd_settings(skip_spaces(line + 9));
         return;
     }
 

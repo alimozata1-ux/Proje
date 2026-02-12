@@ -29,6 +29,7 @@ KERNEL_OBJS= \
 	$(BUILD_DIR)/shell.o \
 	$(BUILD_DIR)/gui.o \
 	$(BUILD_DIR)/browser.o \
+	$(BUILD_DIR)/settings.o \
 	$(BUILD_DIR)/syscall_table.o \
 	$(BUILD_DIR)/diagnostics.o \
 	$(BUILD_DIR)/fs.o

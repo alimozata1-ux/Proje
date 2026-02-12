@@ -17,6 +17,7 @@ Eğitsel amaçlı x86 (32-bit) bare-metal OS.
 - Bliss tarzı duvar kağıdı (gökyüzü + yeşil tepe)
 - Masaüstü ikon sistemi (ekle/sil/listele)
 - Text-mode web browser (sekme/geçmiş/yer imi, built-in sayfalar)
+- Ayarlar sistemi (duvar kağıdı/bulut/taskbar modu)
 
 ## Derleme
 ```bash
@@ -61,3 +62,9 @@ Bu proje öğretici sadelik için minimal ve anlaşılır bırakılmıştır.
 - `browser bm URL` / `browser bms`
 
 > Not: Bu sürüm eğitim amaçlı text-mode tarayıcıdır; TCP/IP ağı olmadığı için built-in sayfaları render eder.
+
+## Ayarlar Komutları
+- `settings show`
+- `settings wallpaper 0|1`
+- `settings clouds 0|1`
+- `settings taskbar 0|1`

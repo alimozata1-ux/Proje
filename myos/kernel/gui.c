@@ -1,5 +1,6 @@
 #include "gui.h"
 #include "memory.h"
+#include "settings.h"
 #include "string.h"
 
 #define VGA_MEMORY ((volatile unsigned short*)0xB8000)
@@ -65,10 +66,12 @@ static void gui_draw_wallpaper(void) {
         }
     }
 
-    /* Bulutlar */
-    gui_write_at(8, 2, " ~~  ~~ ", COLOR_TEXT);
-    gui_write_at(28, 4, "~~~~~~", COLOR_TEXT);
-    gui_write_at(54, 3, " ~~~~ ", COLOR_TEXT);
+    if (settings_get()->cloud_enabled) {
+        /* Bulutlar */
+        gui_write_at(8, 2, " ~~  ~~ ", COLOR_TEXT);
+        gui_write_at(28, 4, "~~~~~~", COLOR_TEXT);
+        gui_write_at(54, 3, " ~~~~ ", COLOR_TEXT);
+    }
 }
 
 static void gui_draw_taskbar(void) {
@@ -76,7 +79,7 @@ static void gui_draw_taskbar(void) {
     int cursor = 1;
     gui_fill_rect(0, VGA_HEIGHT - 1, VGA_WIDTH, 1, ' ', COLOR_TASKBAR);
     gui_write_at(1, VGA_HEIGHT - 1, "MyOS", COLOR_TASKBAR);
-    cursor = 7;
+    cursor = settings_get()->taskbar_compact ? 5 : 7;
 
     for (i = 0; i < GUI_MAX_WINDOWS; i++) {
         gui_window_t* w = &gui_windows[i];
@@ -137,7 +140,11 @@ void gui_init(void) {
 }
 
 void gui_draw_desktop(void) {
-    gui_draw_wallpaper();
+    if (settings_get()->wallpaper_enabled) {
+        gui_draw_wallpaper();
+    } else {
+        gui_fill_rect(0, 0, VGA_WIDTH, VGA_HEIGHT - 1, ' ', COLOR_BG);
+    }
     gui_draw_icons();
     gui_draw_taskbar();
 }
@@ -363,5 +370,6 @@ void gui_demo(void) {
     gui_window_open("System Monitor", 2, 1, 36, 10);
     gui_window_open("File Manager", 42, 2, 36, 12);
     gui_window_open("Console", 8, 13, 64, 9);
+    gui_window_open("Settings", 24, 7, 28, 8);
     gui_redraw();
 }
