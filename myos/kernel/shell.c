@@ -10,6 +10,7 @@
 #include "settings.h"
 #include "string.h"
 #include "syscall_table.h"
+#include "task.h"
 #include "vga.h"
 
 #define SHELL_INPUT_MAX 128
@@ -61,6 +62,7 @@ static void shell_cmd_help(void) {
     vga_write_string("  settings show|wallpaper 0|1|clouds 0|1|taskbar 0|1\n");
     vga_write_string("  notif add TEXT|list|readall|clear\n");
     vga_write_string("  driver list|find TEXT|install NAME|uninstall NAME|info NAME|installed\n");
+    vga_write_string("  tasks\n");
 }
 
 static void shell_cmd_alloc(const char* arg) {
@@ -386,6 +388,36 @@ static void shell_cmd_driver(const char* args) {
     vga_write_string("driver: unknown subcommand\n");
 }
 
+
+static void shell_cmd_tasks(void) {
+    int i;
+    int total = task_count();
+
+    vga_write_string("tasks:\n");
+    for (i = 0; i < total; i++) {
+        task_t* t = task_get(i);
+        char num[16];
+
+        if (!t) {
+            continue;
+        }
+
+        vga_write_string("  #");
+        kitoa(i, num);
+        vga_write_string(num);
+        vga_write_string(" ");
+        vga_write_string(t->name ? t->name : "unnamed");
+        vga_write_string(" mode=");
+        vga_write_string(t->mode == TASK_USER ? "user" : "kernel");
+        vga_write_string(" state=");
+        vga_write_string(t->state == TASK_RUNNING ? "running" : "ready");
+        vga_write_string(" runs=");
+        kitoa((int)t->run_count, num);
+        vga_write_string(num);
+        vga_write_string("\n");
+    }
+}
+
 static void shell_execute(const char* line) {
     if (kstrcmp(line, "help") == 0) return shell_cmd_help();
     if (kstrcmp(line, "clear") == 0) return shell_clear();
@@ -424,6 +456,7 @@ static void shell_execute(const char* line) {
     if (kstrncmp(line, "settings ", 9) == 0) return shell_cmd_settings(skip_spaces(line + 9));
     if (kstrncmp(line, "notif ", 6) == 0) return shell_cmd_notif(skip_spaces(line + 6));
     if (kstrncmp(line, "driver ", 7) == 0) return shell_cmd_driver(skip_spaces(line + 7));
+    if (kstrcmp(line, "tasks") == 0) return shell_cmd_tasks();
 
     vga_write_string("unknown command\n");
 }

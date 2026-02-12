@@ -2,7 +2,8 @@
 #include "keyboard.h"
 #include "paging.h"
 #include "task.h"
-#include "user.h"
+#include "string.h"
+#include "vga.h"
 
 extern void isr_irq0(void);
 extern void isr_irq1(void);
@@ -29,6 +30,9 @@ static struct idt_ptr idt_descriptor;
 
 static int current_task = -1;
 static int user_task_started = 0;
+static unsigned int sched_ticks = 0;
+static unsigned int quantum_ticks = 5;
+static unsigned int quantum_progress = 0;
 
 static void outb(unsigned short port, unsigned char value) {
     __asm__ __volatile__("outb %0, %1" : : "a"(value), "dN"(port));
@@ -79,6 +83,30 @@ static void pit_init(unsigned int frequency) {
     outb(0x40, (unsigned char)((divisor >> 8) & 0xFF));
 }
 
+static void scheduler_note_tick(void) {
+    task_t* current;
+    char num[16];
+
+    if ((sched_ticks % 100U) != 0U) {
+        return;
+    }
+
+    current = task_get(current_task);
+    if (!current) {
+        return;
+    }
+
+    vga_write_string("[sched] tick=");
+    kitoa((int)sched_ticks, num);
+    vga_write_string(num);
+    vga_write_string(" task=");
+    vga_write_string(current->name ? current->name : "unknown");
+    vga_write_string(" runs=");
+    kitoa((int)current->run_count, num);
+    vga_write_string(num);
+    vga_write_string("\n");
+}
+
 void scheduler_init(void) {
     int i;
 
@@ -100,33 +128,45 @@ void scheduler_init(void) {
 
     paging_init();
     task_setup();
-    pit_init(50);
+    pit_init(100);
 }
 
 void scheduler_tick(void) {
     task_t* tasks = task_list();
     int total = task_count();
 
+    sched_ticks++;
+    quantum_progress++;
+
     if (total <= 0) {
         return;
     }
 
-    if (current_task >= 0) {
-        tasks[current_task].state = TASK_READY;
+    if (current_task < 0) {
+        current_task = 0;
+        tasks[current_task].state = TASK_RUNNING;
     }
 
-    current_task = (current_task + 1) % total;
-    tasks[current_task].state = TASK_RUNNING;
+    if (quantum_progress >= quantum_ticks) {
+        tasks[current_task].state = TASK_READY;
+        current_task = (current_task + 1) % total;
+        tasks[current_task].state = TASK_RUNNING;
+        quantum_progress = 0;
+    }
+
+    tasks[current_task].run_count++;
 
     if (tasks[current_task].mode == TASK_USER) {
         if (!user_task_started) {
             user_task_started = 1;
             enter_user_mode(tasks[current_task].eip, tasks[current_task].esp);
         }
+        scheduler_note_tick();
         return;
     }
 
     tasks[current_task].entry();
+    scheduler_note_tick();
 }
 
 void timer_irq_handler(void) {

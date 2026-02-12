@@ -16,6 +16,8 @@ typedef struct {
     unsigned int eip;
     task_state_t state;
     task_mode_t mode;
+    const char* name;
+    unsigned int run_count;
     void (*entry)(void);
     unsigned char stack[4096];
 } task_t;
@@ -23,5 +25,6 @@ typedef struct {
 void task_setup(void);
 task_t* task_list(void);
 int task_count(void);
+task_t* task_get(int index);
 
 #endif
