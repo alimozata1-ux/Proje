@@ -1,6 +1,7 @@
 #include "shell.h"
 #include "allocator.h"
 #include "browser.h"
+#include "driver.h"
 #include "fs.h"
 #include "gui.h"
 #include "keyboard_buffer.h"
@@ -20,265 +21,17 @@ static void shell_prompt(void) {
     vga_write_string("\nmyos> ");
 }
 
-static void shell_clear(void) {
-    vga_clear();
-    vga_write_string("MyOS educational shell\n");
-}
-
-static void shell_print_number(unsigned int value) {
+static void shell_print_number(int value) {
     char buf[16];
-    kutoa(value, buf);
+    kitoa(value, buf);
     vga_write_string(buf);
 }
 
-static void shell_cmd_help(void) {
-    vga_write_string("Commands:\n");
-    vga_write_string("  help                 - show command list\n");
-    vga_write_string("  clear                - clear screen\n");
-    vga_write_string("  echo TEXT            - print TEXT\n");
-    vga_write_string("  alloc N              - allocate N bytes\n");
-    vga_write_string("  info                 - print kernel info\n");
-    vga_write_string("  map                  - paging summary\n");
-    vga_write_string("  sched                - scheduler summary\n");
-    vga_write_string("  sys                  - syscall summary\n");
-    vga_write_string("  ls                   - list files\n");
-    vga_write_string("  touch NAME           - create file\n");
-    vga_write_string("  rm NAME              - delete file\n");
-    vga_write_string("  cat NAME             - show file content\n");
-    vga_write_string("  write NAME TEXT      - overwrite file\n");
-    vga_write_string("  append NAME TEXT     - append to file\n");
-    vga_write_string("  run NAME             - run exe-like file\n");
-    vga_write_string("  gui                  - draw GUI demo\n");
-    vga_write_string("  winopen TITLE        - open new window\n");
-    vga_write_string("  winclose ID          - close window\n");
-    vga_write_string("  winfocus ID          - focus/bring-to-front\n");
-    vga_write_string("  winlist              - list windows\n");
-    vga_write_string("  iconlist             - list desktop icons\n");
-    vga_write_string("  iconadd NAME         - add desktop icon\n");
-    vga_write_string("  icondel ID           - remove desktop icon\n");
-    vga_write_string("  browser home         - open home page\n");
-    vga_write_string("  browser open URL     - open URL\n");
-    vga_write_string("  browser back         - back history\n");
-    vga_write_string("  browser forward      - forward history\n");
-    vga_write_string("  browser tabs         - list tabs\n");
-    vga_write_string("  browser tab ID       - switch tab\n");
-    vga_write_string("  browser close ID     - close tab\n");
-    vga_write_string("  browser bm URL       - bookmark URL\n");
-    vga_write_string("  browser bms          - list bookmarks\n");
-    vga_write_string("  settings show        - show current settings\n");
-    vga_write_string("  settings wallpaper 0|1\n");
-    vga_write_string("  settings clouds 0|1\n");
-    vga_write_string("  settings taskbar 0|1\n");
-    vga_write_string("  notif add TEXT       - add notification\n");
-    vga_write_string("  notif list           - list notifications\n");
-    vga_write_string("  notif readall        - mark all read\n");
-    vga_write_string("  notif clear          - clear all notifications\n");
-}
-
-static void shell_cmd_alloc(const char* arg) {
-    unsigned int size = (unsigned int)katoi(arg);
-    void* ptr = kmalloc(size);
-    if (!ptr) {
-        vga_write_string("alloc failed\n");
-        return;
+static const char* skip_spaces(const char* s) {
+    while (*s == ' ') {
+        s++;
     }
-    vga_write_string("allocated ");
-    shell_print_number(size);
-    vga_write_string(" bytes\n");
-}
-
-static void shell_cmd_info(void) {
-    vga_write_string("kernel: 32-bit protected mode\n");
-    vga_write_string("paging: enabled, first 4MB identity map\n");
-    vga_write_string("scheduler: preemptive round-robin\n");
-    vga_write_string("input: irq keyboard + buffer\n");
-    vga_write_string("filesystem: in-memory ramfs\n");
-}
-
-static void shell_cmd_map(void) {
-    vga_write_string("PDE[0] present\n");
-    vga_write_string("PTE[0..1023] 4KB identity\n");
-    vga_write_string("VGA page supervisor-only\n");
-}
-
-static void shell_cmd_sched(void) {
-    vga_write_string("tick source: PIT IRQ0\n");
-    vga_write_string("policy: round-robin\n");
-    vga_write_string("supports: kernel + user task\n");
-}
-
-static void shell_cmd_sys(void) {
-    vga_write_string("syscall int: 0x80\n");
-    vga_write_string("id=1: write string\n");
-}
-
-static void shell_cmd_ls(void) {
-    int i;
-    int found = 0;
-    for (i = 0; i < FS_MAX_FILES; i++) {
-        fs_node_t* node = fs_get(i);
-        if (node && node->used) {
-            vga_write_string(node->name);
-            if (node->type == FS_FILE_EXEC) {
-                vga_write_string(" [exe]");
-            }
-            vga_write_string(" (");
-            shell_print_number(node->size);
-            vga_write_string(" bytes)\n");
-            found = 1;
-        }
-    }
-
-    if (!found) {
-        vga_write_string("(empty)\n");
-    }
-}
-
-static void shell_cmd_touch(const char* name) {
-    int rc = fs_create(name);
-    if (rc == 0) {
-        vga_write_string("created\n");
-    } else {
-        vga_write_string("create failed\n");
-    }
-}
-
-static void shell_cmd_rm(const char* name) {
-    int rc = fs_delete(name);
-    if (rc == 0) {
-        vga_write_string("deleted\n");
-    } else {
-        vga_write_string("delete failed\n");
-    }
-}
-
-static void shell_cmd_cat(const char* name) {
-    char buffer[FS_DATA_MAX];
-    int rc = fs_read(name, buffer, FS_DATA_MAX);
-    if (rc < 0) {
-        vga_write_string("read failed\n");
-        return;
-    }
-    vga_write_string(buffer);
-    vga_write_string("\n");
-}
-
-static void shell_cmd_run(const char* name) {
-    char buffer[FS_DATA_MAX];
-
-    if (!fs_exists(name)) {
-        vga_write_string("run failed: missing file\n");
-        return;
-    }
-
-    if (!fs_is_exec(name)) {
-        vga_write_string("run failed: not executable\n");
-        return;
-    }
-
-    if (fs_read(name, buffer, FS_DATA_MAX) < 0) {
-        vga_write_string("run failed: read error\n");
-        return;
-    }
-
-    vga_write_string("[exec] ");
-    vga_write_string(name);
-    vga_write_string("\n");
-    vga_write_string(buffer);
-}
-
-static void shell_cmd_winlist(void) {
-    int i;
-    int found = 0;
-    for (i = 0; i < GUI_MAX_WINDOWS; i++) {
-        gui_window_t* w = gui_window_get(i);
-        if (!w) {
-            continue;
-        }
-        vga_write_string("id=");
-        shell_print_number((unsigned int)w->id);
-        vga_write_string(" title=");
-        vga_write_string(w->title);
-        vga_write_string("\n");
-        found = 1;
-    }
-    if (!found) {
-        vga_write_string("no windows\n");
-    }
-}
-
-static void shell_cmd_winopen(const char* title) {
-    int id = gui_window_open(title, 6, 4, 40, 10);
-    if (id < 0) {
-        vga_write_string("winopen failed\n");
-        return;
-    }
-    vga_write_string("opened window id=");
-    shell_print_number((unsigned int)id);
-    vga_write_string("\n");
-}
-
-static void shell_cmd_winclose(const char* arg) {
-    int id = katoi(arg);
-    if (gui_window_close(id) == 0) {
-        vga_write_string("window closed\n");
-    } else {
-        vga_write_string("winclose failed\n");
-    }
-}
-
-static void shell_cmd_winfocus(const char* arg) {
-    int id = katoi(arg);
-    if (gui_window_focus(id) == 0) {
-        vga_write_string("window focused\n");
-    } else {
-        vga_write_string("winfocus failed\n");
-    }
-}
-
-static void shell_cmd_iconlist(void) {
-    int i;
-    int found = 0;
-    for (i = 0; i < GUI_MAX_ICONS; i++) {
-        gui_icon_t* icon = gui_icon_get(i);
-        if (!icon) {
-            continue;
-        }
-        vga_write_string("id=");
-        shell_print_number((unsigned int)icon->id);
-        vga_write_string(" label=");
-        vga_write_string(icon->label);
-        vga_write_string("\n");
-        found = 1;
-    }
-    if (!found) {
-        vga_write_string("no icons\n");
-    }
-}
-
-static void shell_cmd_iconadd(const char* label) {
-    int count = gui_icon_count();
-    int x = 2 + ((count % 4) * 10);
-    int y = 2 + ((count / 4) * 4);
-    int id = gui_icon_add(label, '*', x, y);
-
-    if (id < 0) {
-        vga_write_string("iconadd failed\n");
-        return;
-    }
-
-    vga_write_string("icon added id=");
-    shell_print_number((unsigned int)id);
-    vga_write_string("\n");
-}
-
-static void shell_cmd_icondel(const char* arg) {
-    int id = katoi(arg);
-    if (gui_icon_remove(id) == 0) {
-        vga_write_string("icon removed\n");
-    } else {
-        vga_write_string("icondel failed\n");
-    }
+    return s;
 }
 
 static int starts_with(const char* text, const char* prefix) {
@@ -292,163 +45,74 @@ static int starts_with(const char* text, const char* prefix) {
     return 1;
 }
 
-static void shell_cmd_browser(const char* args) {
-    if (kstrcmp(args, "home") == 0) {
-        browser_home();
-        return;
-    }
-
-    if (kstrcmp(args, "back") == 0) {
-        browser_back();
-        return;
-    }
-
-    if (kstrcmp(args, "forward") == 0) {
-        browser_forward();
-        return;
-    }
-
-    if (kstrcmp(args, "tabs") == 0) {
-        browser_tabs();
-        return;
-    }
-
-    if (kstrcmp(args, "bms") == 0) {
-        browser_bookmarks();
-        return;
-    }
-
-    if (starts_with(args, "open ")) {
-        browser_open(args + 5);
-        return;
-    }
-
-    if (starts_with(args, "tab ")) {
-        browser_switch(katoi(args + 4));
-        return;
-    }
-
-    if (starts_with(args, "close ")) {
-        browser_close(katoi(args + 6));
-        return;
-    }
-
-    if (starts_with(args, "bm ")) {
-        browser_bookmark_add(args + 3);
-        return;
-    }
-
-    vga_write_string("browser: unknown subcommand\n");
+static void shell_clear(void) {
+    vga_clear();
+    vga_write_string("MyOS educational shell\n");
 }
 
-static void shell_cmd_settings_show(void) {
-    os_settings_t* st = settings_get();
-    vga_write_string("settings:
-");
-    vga_write_string("  wallpaper=");
-    shell_print_number((unsigned int)st->wallpaper_enabled);
-    vga_write_string("
-");
-    vga_write_string("  clouds=");
-    shell_print_number((unsigned int)st->cloud_enabled);
-    vga_write_string("
-");
-    vga_write_string("  taskbar_compact=");
-    shell_print_number((unsigned int)st->taskbar_compact);
-    vga_write_string("
-");
+static void shell_cmd_help(void) {
+    vga_write_string("Commands:\n");
+    vga_write_string("  help, clear, echo TEXT, alloc N\n");
+    vga_write_string("  ls, touch NAME, rm NAME, cat NAME\n");
+    vga_write_string("  write NAME TEXT, append NAME TEXT, run NAME\n");
+    vga_write_string("  gui, winopen TITLE, winclose ID, winfocus ID, winlist\n");
+    vga_write_string("  iconlist, iconadd NAME, icondel ID\n");
+    vga_write_string("  browser home|open URL|back|forward|tabs|tab ID|close ID|bm URL|bms\n");
+    vga_write_string("  settings show|wallpaper 0|1|clouds 0|1|taskbar 0|1\n");
+    vga_write_string("  notif add TEXT|list|readall|clear\n");
+    vga_write_string("  driver list|find TEXT|install NAME|uninstall NAME|info NAME|installed\n");
 }
 
-static void shell_cmd_settings(const char* args) {
-    if (kstrcmp(args, "show") == 0) {
-        shell_cmd_settings_show();
+static void shell_cmd_alloc(const char* arg) {
+    int size = katoi(arg);
+    void* ptr = kmalloc((unsigned int)size);
+    if (!ptr) {
+        vga_write_string("alloc failed\n");
         return;
     }
-
-    if (starts_with(args, "wallpaper ")) {
-        settings_set_wallpaper(katoi(args + 10));
-        gui_redraw();
-        vga_write_string("settings: wallpaper updated
-");
-        return;
-    }
-
-    if (starts_with(args, "clouds ")) {
-        settings_set_clouds(katoi(args + 7));
-        gui_redraw();
-        vga_write_string("settings: clouds updated
-");
-        return;
-    }
-
-    if (starts_with(args, "taskbar ")) {
-        settings_set_taskbar_compact(katoi(args + 8));
-        gui_redraw();
-        vga_write_string("settings: taskbar updated
-");
-        return;
-    }
-
-    vga_write_string("settings: unknown option
-");
+    vga_write_string("allocated bytes=");
+    shell_print_number(size);
+    vga_write_string("\n");
 }
 
-static void shell_cmd_notif(const char* args) {
-    if (kstrncmp(args, "add ", 4) == 0) {
-        notifications_push(args + 4);
-        gui_redraw();
-        vga_write_string("notification added
-");
-        return;
-    }
-
-    if (kstrcmp(args, "list") == 0) {
-        int i;
-        int found = 0;
-        for (i = 0; i < NOTIFY_MAX; i++) {
-            notification_t* n = notifications_get(i);
-            if (!n) {
-                continue;
-            }
-            vga_write_string("- ");
-            vga_write_string(n->read ? "[read] " : "[new] ");
-            vga_write_string(n->text);
-            vga_write_string("
-");
-            found = 1;
+static void shell_cmd_ls(void) {
+    int i;
+    int found = 0;
+    for (i = 0; i < FS_MAX_FILES; i++) {
+        fs_node_t* node = fs_get(i);
+        if (!node || !node->used) {
+            continue;
         }
-        if (!found) {
-            vga_write_string("no notifications
-");
+        vga_write_string(node->name);
+        if (node->type == FS_FILE_EXEC) {
+            vga_write_string(" [exe]");
         }
-        return;
+        vga_write_string(" (");
+        shell_print_number((int)node->size);
+        vga_write_string(" bytes)\n");
+        found = 1;
     }
-
-    if (kstrcmp(args, "readall") == 0) {
-        notifications_mark_all_read();
-        gui_redraw();
-        vga_write_string("notifications marked read
-");
-        return;
+    if (!found) {
+        vga_write_string("(empty)\n");
     }
-
-    if (kstrcmp(args, "clear") == 0) {
-        notifications_clear();
-        gui_redraw();
-        vga_write_string("notifications cleared
-");
-        return;
-    }
-
-    vga_write_string("notif: unknown subcommand
-");
 }
 
-static const char* skip_spaces(const char* s) {
-    while (*s == ' ') {
-        s++;
+static void shell_cmd_touch(const char* name) {
+    vga_write_string(fs_create(name) == 0 ? "created\n" : "create failed\n");
+}
+
+static void shell_cmd_rm(const char* name) {
+    vga_write_string(fs_delete(name) == 0 ? "deleted\n" : "delete failed\n");
+}
+
+static void shell_cmd_cat(const char* name) {
+    char buf[FS_DATA_MAX];
+    if (fs_read(name, buf, FS_DATA_MAX) < 0) {
+        vga_write_string("read failed\n");
+        return;
     }
-    return s;
+    vga_write_string(buf);
+    vga_write_string("\n");
 }
 
 static int split_token(const char* src, char* out, int out_cap, const char** next) {
@@ -456,21 +120,14 @@ static int split_token(const char* src, char* out, int out_cap, const char** nex
     src = skip_spaces(src);
     if (*src == '\0') {
         out[0] = '\0';
-        if (next) {
-            *next = src;
-        }
+        if (next) *next = src;
         return 0;
     }
-
     while (*src && *src != ' ' && i < out_cap - 1) {
         out[i++] = *src++;
     }
     out[i] = '\0';
-
-    if (next) {
-        *next = src;
-    }
-
+    if (next) *next = src;
     return i;
 }
 
@@ -482,166 +139,291 @@ static void shell_cmd_write(const char* args, int append) {
         vga_write_string("missing name\n");
         return;
     }
-
     rest = skip_spaces(rest);
     if (*rest == '\0') {
         vga_write_string("missing text\n");
         return;
     }
 
-    if (!fs_exists(name)) {
-        if (fs_create(name) != 0) {
-            vga_write_string("create failed\n");
-            return;
-        }
+    if (!fs_exists(name) && fs_create(name) != 0) {
+        vga_write_string("create failed\n");
+        return;
     }
 
     if (append) {
-        if (fs_append(name, rest) == 0) {
-            vga_write_string("appended\n");
-        } else {
-            vga_write_string("append failed\n");
-        }
+        vga_write_string(fs_append(name, rest) == 0 ? "appended\n" : "append failed\n");
     } else {
-        if (fs_write(name, rest) == 0) {
-            vga_write_string("written\n");
-        } else {
-            vga_write_string("write failed\n");
-        }
+        vga_write_string(fs_write(name, rest) == 0 ? "written\n" : "write failed\n");
     }
 }
 
-static void shell_execute(const char* line) {
-    if (kstrcmp(line, "help") == 0) {
-        shell_cmd_help();
+static void shell_cmd_run(const char* name) {
+    char buffer[FS_DATA_MAX];
+    if (!fs_exists(name)) {
+        vga_write_string("run failed: missing file\n");
+        return;
+    }
+    if (!fs_is_exec(name)) {
+        vga_write_string("run failed: not executable\n");
+        return;
+    }
+    if (fs_read(name, buffer, FS_DATA_MAX) < 0) {
+        vga_write_string("run failed: read error\n");
+        return;
+    }
+    vga_write_string("[exec] ");
+    vga_write_string(name);
+    vga_write_string("\n");
+    vga_write_string(buffer);
+}
+
+static void shell_cmd_winlist(void) {
+    int i;
+    int found = 0;
+    for (i = 0; i < GUI_MAX_WINDOWS; i++) {
+        gui_window_t* w = gui_window_get(i);
+        if (!w) continue;
+        vga_write_string("id=");
+        shell_print_number(w->id);
+        vga_write_string(" title=");
+        vga_write_string(w->title);
+        vga_write_string("\n");
+        found = 1;
+    }
+    if (!found) vga_write_string("no windows\n");
+}
+
+static void shell_cmd_winopen(const char* title) {
+    int id = gui_window_open(title, 6, 4, 40, 10);
+    if (id < 0) {
+        vga_write_string("winopen failed\n");
+        return;
+    }
+    vga_write_string("opened window id=");
+    shell_print_number(id);
+    vga_write_string("\n");
+}
+
+static void shell_cmd_iconlist(void) {
+    int i;
+    int found = 0;
+    for (i = 0; i < GUI_MAX_ICONS; i++) {
+        gui_icon_t* icon = gui_icon_get(i);
+        if (!icon) continue;
+        vga_write_string("id=");
+        shell_print_number(icon->id);
+        vga_write_string(" label=");
+        vga_write_string(icon->label);
+        vga_write_string("\n");
+        found = 1;
+    }
+    if (!found) vga_write_string("no icons\n");
+}
+
+static void shell_cmd_iconadd(const char* label) {
+    int count = gui_icon_count();
+    int id = gui_icon_add(label, '*', 2 + ((count % 4) * 10), 2 + ((count / 4) * 4));
+    if (id < 0) {
+        vga_write_string("iconadd failed\n");
+        return;
+    }
+    vga_write_string("icon added id=");
+    shell_print_number(id);
+    vga_write_string("\n");
+}
+
+static void shell_cmd_browser(const char* args) {
+    if (kstrcmp(args, "home") == 0) return browser_home();
+    if (kstrcmp(args, "back") == 0) return browser_back();
+    if (kstrcmp(args, "forward") == 0) return browser_forward();
+    if (kstrcmp(args, "tabs") == 0) return browser_tabs();
+    if (kstrcmp(args, "bms") == 0) return browser_bookmarks();
+    if (starts_with(args, "open ")) return browser_open(args + 5);
+    if (starts_with(args, "tab ")) return browser_switch(katoi(args + 4));
+    if (starts_with(args, "close ")) return browser_close(katoi(args + 6));
+    if (starts_with(args, "bm ")) return browser_bookmark_add(args + 3);
+    vga_write_string("browser: unknown subcommand\n");
+}
+
+static void shell_cmd_settings_show(void) {
+    os_settings_t* st = settings_get();
+    vga_write_string("settings:\n  wallpaper=");
+    shell_print_number(st->wallpaper_enabled);
+    vga_write_string("\n  clouds=");
+    shell_print_number(st->cloud_enabled);
+    vga_write_string("\n  taskbar_compact=");
+    shell_print_number(st->taskbar_compact);
+    vga_write_string("\n");
+}
+
+static void shell_cmd_settings(const char* args) {
+    if (kstrcmp(args, "show") == 0) return shell_cmd_settings_show();
+    if (starts_with(args, "wallpaper ")) {
+        settings_set_wallpaper(katoi(args + 10)); gui_redraw(); vga_write_string("settings: wallpaper updated\n"); return;
+    }
+    if (starts_with(args, "clouds ")) {
+        settings_set_clouds(katoi(args + 7)); gui_redraw(); vga_write_string("settings: clouds updated\n"); return;
+    }
+    if (starts_with(args, "taskbar ")) {
+        settings_set_taskbar_compact(katoi(args + 8)); gui_redraw(); vga_write_string("settings: taskbar updated\n"); return;
+    }
+    vga_write_string("settings: unknown option\n");
+}
+
+static void shell_cmd_notif(const char* args) {
+    if (starts_with(args, "add ")) {
+        notifications_push(args + 4);
+        gui_redraw();
+        vga_write_string("notification added\n");
+        return;
+    }
+    if (kstrcmp(args, "list") == 0) {
+        int i; int found = 0;
+        for (i = 0; i < NOTIFY_MAX; i++) {
+            notification_t* n = notifications_get(i);
+            if (!n) continue;
+            vga_write_string("- ");
+            vga_write_string(n->read ? "[read] " : "[new] ");
+            vga_write_string(n->text);
+            vga_write_string("\n");
+            found = 1;
+        }
+        if (!found) vga_write_string("no notifications\n");
+        return;
+    }
+    if (kstrcmp(args, "readall") == 0) {
+        notifications_mark_all_read(); gui_redraw(); vga_write_string("notifications marked read\n"); return;
+    }
+    if (kstrcmp(args, "clear") == 0) {
+        notifications_clear(); gui_redraw(); vga_write_string("notifications cleared\n"); return;
+    }
+    vga_write_string("notif: unknown subcommand\n");
+}
+
+static void shell_cmd_driver(const char* args) {
+    if (kstrcmp(args, "list") == 0 || kstrcmp(args, "installed") == 0) {
+        int i;
+        int found = 0;
+        for (i = 0; i < DRIVER_MAX; i++) {
+            driver_info_t* d = driver_get(i);
+            if (!d) continue;
+            if (kstrcmp(args, "installed") == 0 && !d->installed) continue;
+            vga_write_string(d->installed ? "[on] " : "[off] ");
+            vga_write_string(d->name);
+            vga_write_string(" - ");
+            vga_write_string(d->description);
+            vga_write_string("\n");
+            found = 1;
+        }
+        if (!found) vga_write_string("no drivers\n");
         return;
     }
 
-    if (kstrcmp(line, "clear") == 0) {
-        shell_clear();
+    if (starts_with(args, "find ")) {
+        int idx[DRIVER_MAX];
+        int n = driver_find(args + 5, idx, DRIVER_MAX);
+        int i;
+        if (n <= 0) {
+            vga_write_string("driver: no match\n");
+            return;
+        }
+        for (i = 0; i < n; i++) {
+            driver_info_t* d = driver_get(idx[i]);
+            if (!d) continue;
+            vga_write_string(d->installed ? "[on] " : "[off] ");
+            vga_write_string(d->name);
+            vga_write_string(" - ");
+            vga_write_string(d->description);
+            vga_write_string("\n");
+        }
         return;
     }
 
-    if (kstrcmp(line, "info") == 0) {
-        shell_cmd_info();
+    if (starts_with(args, "install ")) {
+        int rc = driver_install(args + 8);
+        if (rc == 0) {
+            notifications_push("Driver installed");
+            gui_redraw();
+            vga_write_string("driver installed\n");
+        } else if (rc == 1) {
+            vga_write_string("driver already installed\n");
+        } else {
+            vga_write_string("driver not found\n");
+        }
         return;
     }
 
-    if (kstrcmp(line, "map") == 0) {
-        shell_cmd_map();
+    if (starts_with(args, "uninstall ")) {
+        int rc = driver_uninstall(args + 10);
+        if (rc == 0) {
+            notifications_push("Driver uninstalled");
+            gui_redraw();
+            vga_write_string("driver uninstalled\n");
+        } else if (rc == 1) {
+            vga_write_string("driver already disabled\n");
+        } else {
+            vga_write_string("driver not found\n");
+        }
         return;
     }
 
-    if (kstrcmp(line, "sched") == 0) {
-        shell_cmd_sched();
-        return;
-    }
-
-    if (kstrcmp(line, "sys") == 0) {
-        shell_cmd_sys();
-        return;
-    }
-
-    if (kstrcmp(line, "ls") == 0) {
-        shell_cmd_ls();
-        return;
-    }
-
-    if (kstrncmp(line, "echo ", 5) == 0) {
-        vga_write_string(line + 5);
+    if (starts_with(args, "info ")) {
+        driver_info_t* d = driver_get_by_name(args + 5);
+        if (!d) {
+            vga_write_string("driver not found\n");
+            return;
+        }
+        vga_write_string("name=");
+        vga_write_string(d->name);
+        vga_write_string("\nstatus=");
+        vga_write_string(d->installed ? "installed" : "not-installed");
+        vga_write_string("\ndesc=");
+        vga_write_string(d->description);
         vga_write_string("\n");
         return;
     }
 
-    if (kstrncmp(line, "alloc ", 6) == 0) {
-        shell_cmd_alloc(line + 6);
-        return;
-    }
+    vga_write_string("driver: unknown subcommand\n");
+}
 
-    if (kstrncmp(line, "touch ", 6) == 0) {
-        shell_cmd_touch(skip_spaces(line + 6));
-        return;
-    }
+static void shell_execute(const char* line) {
+    if (kstrcmp(line, "help") == 0) return shell_cmd_help();
+    if (kstrcmp(line, "clear") == 0) return shell_clear();
+    if (kstrcmp(line, "ls") == 0) return shell_cmd_ls();
+    if (kstrncmp(line, "echo ", 5) == 0) { vga_write_string(line + 5); vga_write_string("\n"); return; }
+    if (kstrncmp(line, "alloc ", 6) == 0) return shell_cmd_alloc(line + 6);
+    if (kstrncmp(line, "touch ", 6) == 0) return shell_cmd_touch(skip_spaces(line + 6));
+    if (kstrncmp(line, "rm ", 3) == 0) return shell_cmd_rm(skip_spaces(line + 3));
+    if (kstrncmp(line, "cat ", 4) == 0) return shell_cmd_cat(skip_spaces(line + 4));
+    if (kstrncmp(line, "write ", 6) == 0) return shell_cmd_write(line + 6, 0);
+    if (kstrncmp(line, "append ", 7) == 0) return shell_cmd_write(line + 7, 1);
+    if (kstrncmp(line, "run ", 4) == 0) return shell_cmd_run(skip_spaces(line + 4));
 
-    if (kstrncmp(line, "rm ", 3) == 0) {
-        shell_cmd_rm(skip_spaces(line + 3));
-        return;
-    }
-
-    if (kstrncmp(line, "cat ", 4) == 0) {
-        shell_cmd_cat(skip_spaces(line + 4));
-        return;
-    }
-
-    if (kstrncmp(line, "write ", 6) == 0) {
-        shell_cmd_write(line + 6, 0);
-        return;
-    }
-
-    if (kstrncmp(line, "append ", 7) == 0) {
-        shell_cmd_write(line + 7, 1);
-        return;
-    }
-
-    if (kstrncmp(line, "run ", 4) == 0) {
-        shell_cmd_run(skip_spaces(line + 4));
-        return;
-    }
-
-    if (kstrcmp(line, "gui") == 0) {
-        gui_demo();
-        return;
-    }
-
-    if (kstrcmp(line, "winlist") == 0) {
-        shell_cmd_winlist();
-        return;
-    }
-
-    if (kstrncmp(line, "winopen ", 8) == 0) {
-        shell_cmd_winopen(skip_spaces(line + 8));
-        return;
-    }
-
+    if (kstrcmp(line, "gui") == 0) return gui_demo();
+    if (kstrcmp(line, "winlist") == 0) return shell_cmd_winlist();
+    if (kstrncmp(line, "winopen ", 8) == 0) return shell_cmd_winopen(skip_spaces(line + 8));
     if (kstrncmp(line, "winclose ", 9) == 0) {
-        shell_cmd_winclose(skip_spaces(line + 9));
+        if (gui_window_close(katoi(skip_spaces(line + 9))) == 0) vga_write_string("window closed\n");
+        else vga_write_string("winclose failed\n");
         return;
     }
-
     if (kstrncmp(line, "winfocus ", 9) == 0) {
-        shell_cmd_winfocus(skip_spaces(line + 9));
+        if (gui_window_focus(katoi(skip_spaces(line + 9))) == 0) vga_write_string("window focused\n");
+        else vga_write_string("winfocus failed\n");
         return;
     }
-
-    if (kstrcmp(line, "iconlist") == 0) {
-        shell_cmd_iconlist();
-        return;
-    }
-
-    if (kstrncmp(line, "iconadd ", 8) == 0) {
-        shell_cmd_iconadd(skip_spaces(line + 8));
-        return;
-    }
-
+    if (kstrcmp(line, "iconlist") == 0) return shell_cmd_iconlist();
+    if (kstrncmp(line, "iconadd ", 8) == 0) return shell_cmd_iconadd(skip_spaces(line + 8));
     if (kstrncmp(line, "icondel ", 8) == 0) {
-        shell_cmd_icondel(skip_spaces(line + 8));
+        if (gui_icon_remove(katoi(skip_spaces(line + 8))) == 0) vga_write_string("icon removed\n");
+        else vga_write_string("icondel failed\n");
         return;
     }
 
-    if (kstrncmp(line, "browser ", 8) == 0) {
-        shell_cmd_browser(skip_spaces(line + 8));
-        return;
-    }
-
-    if (kstrncmp(line, "settings ", 9) == 0) {
-        shell_cmd_settings(skip_spaces(line + 9));
-        return;
-    }
-
-    if (kstrncmp(line, "notif ", 6) == 0) {
-        shell_cmd_notif(skip_spaces(line + 6));
-        return;
-    }
+    if (kstrncmp(line, "browser ", 8) == 0) return shell_cmd_browser(skip_spaces(line + 8));
+    if (kstrncmp(line, "settings ", 9) == 0) return shell_cmd_settings(skip_spaces(line + 9));
+    if (kstrncmp(line, "notif ", 6) == 0) return shell_cmd_notif(skip_spaces(line + 6));
+    if (kstrncmp(line, "driver ", 7) == 0) return shell_cmd_driver(skip_spaces(line + 7));
 
     vga_write_string("unknown command\n");
 }
@@ -654,16 +436,14 @@ void shell_init(void) {
     fs_init();
     browser_init();
     notifications_init();
+    driver_init();
     notifications_push("Welcome to MyOS");
     log_info("shell", "initialized");
     shell_prompt();
 }
 
 void shell_on_key(char c) {
-    if (c == '\r') {
-        c = '\n';
-    }
-
+    if (c == '\r') c = '\n';
     if (c == '\b') {
         if (shell_len > 0) {
             shell_len--;
@@ -671,7 +451,6 @@ void shell_on_key(char c) {
         }
         return;
     }
-
     if (c == '\n') {
         shell_input[shell_len] = '\0';
         shell_execute(shell_input);
@@ -680,7 +459,6 @@ void shell_on_key(char c) {
         shell_prompt();
         return;
     }
-
     if (shell_len < SHELL_INPUT_MAX - 1) {
         shell_input[shell_len++] = c;
         shell_input[shell_len] = '\0';

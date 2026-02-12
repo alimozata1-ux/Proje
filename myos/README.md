@@ -19,6 +19,7 @@ Eğitsel amaçlı x86 (32-bit) bare-metal OS.
 - Text-mode web browser (sekme/geçmiş/yer imi, built-in sayfalar)
 - Ayarlar sistemi (duvar kağıdı/bulut/taskbar modu)
 - Bildirim merkezi (taskbar unread sayacı)
+- Sürücü bulucu/kurucu (driver manager)
 
 ## Derleme
 ```bash
@@ -75,3 +76,11 @@ Bu proje öğretici sadelik için minimal ve anlaşılır bırakılmıştır.
 - `notif list`
 - `notif readall`
 - `notif clear`
+
+## Driver Komutları
+- `driver list`
+- `driver find TEXT`
+- `driver install NAME`
+- `driver uninstall NAME`
+- `driver info NAME`
+- `driver installed`
