@@ -204,7 +204,7 @@ class EnigmaGUI:
         main.pack(fill="both", expand=True)
 
         ttk.Label(main, text="Enigma Benzeri Mesaj Şifreleme / Çözme", style="Header.TLabel").pack(anchor="w")
-        ttk.Label(main, text="Daha modern ve anlaşılır düzen: ayarlar solda, metin ve izleme sağda.", style="Sub.TLabel").pack(anchor="w", pady=(0, 10))
+        ttk.Label(main, text="Daha modern ve anlaşılır düzen: ayarlar solda, sağ bölüm sekmeli yapıdadır.", style="Sub.TLabel").pack(anchor="w", pady=(0, 10))
 
         body = ttk.Panedwindow(main, orient="horizontal")
         body.pack(fill="both", expand=True)
@@ -266,29 +266,32 @@ class EnigmaGUI:
         self.stats_var = tk.StringVar(value="Girdi: 0 karakter | Çıktı: 0 karakter")
         ttk.Label(info_card, textvariable=self.stats_var, wraplength=250).pack(anchor="w", pady=(4, 0))
 
-        message_card = ttk.LabelFrame(right_panel, text="Mesaj Alanı", style="Card.TLabelframe", padding=10)
-        message_card.pack(fill="both", expand=True, pady=(0, 8))
+        tabs = ttk.Notebook(right_panel)
+        tabs.pack(fill="both", expand=True)
 
-        ttk.Label(message_card, text="Giriş Mesajı").pack(anchor="w")
-        self.input_text = scrolledtext.ScrolledText(message_card, height=8, font=("Consolas", 10), relief="flat", bd=1)
-        self.input_text.pack(fill="x", pady=(2, 8))
+        message_tab = ttk.Frame(tabs, padding=10)
+        trace_tab = ttk.Frame(tabs, padding=10)
+        history_tab = ttk.Frame(tabs, padding=10)
+        tabs.add(message_tab, text="Mesaj")
+        tabs.add(trace_tab, text="Rotor İzleme")
+        tabs.add(history_tab, text="Geçmiş")
+
+        ttk.Label(message_tab, text="Giriş Mesajı").pack(anchor="w")
+        self.input_text = scrolledtext.ScrolledText(message_tab, height=10, font=("Consolas", 10), relief="flat", bd=1)
+        self.input_text.pack(fill="both", expand=True, pady=(2, 8))
         self.input_text.bind("<KeyRelease>", lambda _e: self.update_stats())
 
-        ttk.Label(message_card, text="Çıktı Mesajı").pack(anchor="w")
-        self.output_text = scrolledtext.ScrolledText(message_card, height=8, font=("Consolas", 10), relief="flat", bd=1)
-        self.output_text.pack(fill="x", pady=(2, 0))
+        ttk.Label(message_tab, text="Çıktı Mesajı").pack(anchor="w")
+        self.output_text = scrolledtext.ScrolledText(message_tab, height=10, font=("Consolas", 10), relief="flat", bd=1)
+        self.output_text.pack(fill="both", expand=True, pady=(2, 0))
 
-        trace_card = ttk.LabelFrame(right_panel, text="Rotor İzleme (Tuş Bazlı)", style="Card.TLabelframe", padding=10)
-        trace_card.pack(fill="both", expand=True)
+        ttk.Label(trace_tab, text="Her tuşta rotor değişimi").pack(anchor="w")
+        self.trace_text = scrolledtext.ScrolledText(trace_tab, height=20, font=("Consolas", 9), relief="flat", bd=1)
+        self.trace_text.pack(fill="both", expand=True, pady=(2, 0))
 
-        self.trace_text = scrolledtext.ScrolledText(trace_card, height=11, font=("Consolas", 9), relief="flat", bd=1)
-        self.trace_text.pack(fill="both", expand=True)
-
-        history_card = ttk.LabelFrame(right_panel, text="İşlem Geçmişi", style="Card.TLabelframe", padding=10)
-        history_card.pack(fill="both", expand=True, pady=(8, 0))
-
-        self.history_list = tk.Listbox(history_card, height=5)
-        self.history_list.pack(fill="both", expand=True)
+        ttk.Label(history_tab, text="Son işlemleri seçip geri yükleyebilirsiniz").pack(anchor="w")
+        self.history_list = tk.Listbox(history_tab, height=10)
+        self.history_list.pack(fill="both", expand=True, pady=(4, 0))
         self.history_list.bind("<<ListboxSelect>>", self.load_selected_history)
 
         self.reset()
