@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import scrolledtext
+from tkinter import ttk
 
 ALPHABET = string.ascii_uppercase
 
@@ -102,7 +103,6 @@ class EnigmaMachine:
             plugboard=Plugboard(plug_spec),
         )
 
-    # Enigma double-step mechanism.
     def step_rotors(self) -> None:
         mid_notch = self.middle.at_notch()
         right_notch = self.right.at_notch()
@@ -112,7 +112,6 @@ class EnigmaMachine:
             self.middle.step()
         self.right.step()
 
-    # Same flow encrypts and decrypts (Enigma symmetry).
     def process_char(self, ch: str) -> str:
         if ch not in ALPHABET:
             return ch
@@ -166,73 +165,110 @@ def build_exe() -> tuple[bool, str]:
 class EnigmaGUI:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        root.title("Python Enigma Benzeri Şifreleme")
-        root.geometry("980x780")
+        self.root.title("Python Enigma - Modern Arayüz")
+        self.root.geometry("1120x760")
+        self.root.minsize(980, 680)
 
+        self._setup_theme()
         self._build_widgets()
 
+    def _setup_theme(self) -> None:
+        style = ttk.Style(self.root)
+        if "clam" in style.theme_names():
+            style.theme_use("clam")
+
+        bg = "#f4f6fb"
+        card_bg = "#ffffff"
+        primary = "#1f6feb"
+
+        self.root.configure(bg=bg)
+        style.configure("App.TFrame", background=bg)
+        style.configure("Card.TLabelframe", background=card_bg)
+        style.configure("Card.TLabelframe.Label", background=card_bg, foreground="#1f2937", font=("Segoe UI", 10, "bold"))
+        style.configure("Header.TLabel", background=bg, foreground="#0f172a", font=("Segoe UI", 16, "bold"))
+        style.configure("Sub.TLabel", background=bg, foreground="#475569", font=("Segoe UI", 10))
+        style.configure("Status.TLabel", background=bg, foreground="#0b3d91", font=("Segoe UI", 10, "bold"))
+        style.configure("Primary.TButton", padding=8)
+        style.map("Primary.TButton", background=[("active", "#2b7cff"), ("!active", primary)], foreground=[("!disabled", "white")])
+
     def _build_widgets(self) -> None:
-        frm = tk.Frame(self.root, padx=10, pady=10)
-        frm.pack(fill="both", expand=True)
+        main = ttk.Frame(self.root, style="App.TFrame", padding=14)
+        main.pack(fill="both", expand=True)
 
-        tk.Label(frm, text="Enigma Benzeri Mesaj Şifreleme / Çözme", font=("Arial", 14, "bold")).pack(anchor="w")
-        tk.Label(frm, text="A-Z işlenir. Şifrele ve Çöz simetriktir.").pack(anchor="w", pady=(0, 8))
+        ttk.Label(main, text="Enigma Benzeri Mesaj Şifreleme / Çözme", style="Header.TLabel").pack(anchor="w")
+        ttk.Label(main, text="Daha modern ve anlaşılır düzen: ayarlar solda, metin ve izleme sağda.", style="Sub.TLabel").pack(anchor="w", pady=(0, 10))
 
-        settings = tk.Frame(frm)
-        settings.pack(fill="x")
+        body = ttk.Panedwindow(main, orient="horizontal")
+        body.pack(fill="both", expand=True)
 
-        tk.Label(settings, text="Sol Rotor (0-25)").grid(row=0, column=0, sticky="w")
-        tk.Label(settings, text="Orta Rotor (0-25)").grid(row=0, column=1, sticky="w")
-        tk.Label(settings, text="Sağ Rotor (0-25)").grid(row=0, column=2, sticky="w")
+        left_panel = ttk.Frame(body, style="App.TFrame")
+        right_panel = ttk.Frame(body, style="App.TFrame")
+        body.add(left_panel, weight=1)
+        body.add(right_panel, weight=3)
 
-        self.left_entry = tk.Entry(settings, width=8)
-        self.mid_entry = tk.Entry(settings, width=8)
-        self.right_entry = tk.Entry(settings, width=8)
-        self.left_entry.grid(row=1, column=0, padx=4, sticky="w")
-        self.mid_entry.grid(row=1, column=1, padx=4, sticky="w")
-        self.right_entry.grid(row=1, column=2, padx=4, sticky="w")
-        self.left_entry.insert(0, "0")
-        self.mid_entry.insert(0, "0")
-        self.right_entry.insert(0, "0")
+        settings_card = ttk.LabelFrame(left_panel, text="Ayarlar", style="Card.TLabelframe", padding=12)
+        settings_card.pack(fill="x", pady=(0, 8))
 
-        tk.Label(settings, text="Plugboard (örn: AB CD EF)").grid(row=2, column=0, columnspan=3, sticky="w", pady=(8, 0))
-        self.plug_entry = tk.Entry(settings, width=40)
-        self.plug_entry.grid(row=3, column=0, columnspan=3, sticky="w")
+        ttk.Label(settings_card, text="Sol Rotor (0-25)").grid(row=0, column=0, sticky="w", pady=(0, 4))
+        ttk.Label(settings_card, text="Orta Rotor (0-25)").grid(row=2, column=0, sticky="w", pady=(4, 4))
+        ttk.Label(settings_card, text="Sağ Rotor (0-25)").grid(row=4, column=0, sticky="w", pady=(4, 4))
+
+        self.left_entry = ttk.Entry(settings_card, width=12)
+        self.mid_entry = ttk.Entry(settings_card, width=12)
+        self.right_entry = ttk.Entry(settings_card, width=12)
+        self.left_entry.grid(row=1, column=0, sticky="ew")
+        self.mid_entry.grid(row=3, column=0, sticky="ew")
+        self.right_entry.grid(row=5, column=0, sticky="ew")
+
+        ttk.Label(settings_card, text="Plugboard (örn: AB CD EF)").grid(row=6, column=0, sticky="w", pady=(8, 4))
+        self.plug_entry = ttk.Entry(settings_card)
+        self.plug_entry.grid(row=7, column=0, sticky="ew")
 
         self.keep_spaces_var = tk.BooleanVar(value=True)
         self.trace_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(settings, text="Boşlukları koru", variable=self.keep_spaces_var).grid(row=4, column=0, sticky="w", pady=8)
-        tk.Checkbutton(settings, text="Tuş başına rotor izleme", variable=self.trace_var).grid(row=4, column=1, sticky="w", pady=8)
+        ttk.Checkbutton(settings_card, text="Boşlukları koru", variable=self.keep_spaces_var).grid(row=8, column=0, sticky="w", pady=(8, 2))
+        ttk.Checkbutton(settings_card, text="Tuş başına rotor izleme", variable=self.trace_var).grid(row=9, column=0, sticky="w")
 
-        tk.Label(frm, text="Giriş Mesajı").pack(anchor="w")
-        self.input_text = scrolledtext.ScrolledText(frm, height=6)
-        self.input_text.pack(fill="x", pady=(0, 8))
+        settings_card.columnconfigure(0, weight=1)
 
-        btns1 = tk.Frame(frm)
-        btns1.pack(fill="x", pady=(0, 4))
-        tk.Button(btns1, text="Şifrele", command=self.encrypt).pack(side="left", padx=4)
-        tk.Button(btns1, text="Çöz", command=self.decrypt).pack(side="left", padx=4)
-        tk.Button(btns1, text="Sıfırla", command=self.reset).pack(side="left", padx=4)
-        tk.Button(btns1, text="Girdi/Çıktı Değiştir", command=self.swap_in_out).pack(side="left", padx=4)
+        actions_card = ttk.LabelFrame(left_panel, text="Hızlı İşlemler", style="Card.TLabelframe", padding=12)
+        actions_card.pack(fill="x", pady=(0, 8))
 
-        btns2 = tk.Frame(frm)
-        btns2.pack(fill="x", pady=(0, 8))
-        tk.Button(btns2, text="Rastgele Ayar", command=self.randomize).pack(side="left", padx=4)
-        tk.Button(btns2, text="Çıktıyı Girdiye Kopyala", command=self.copy_out_to_in).pack(side="left", padx=4)
-        tk.Button(btns2, text="EXE Yapıcı", command=self.make_exe).pack(side="left", padx=4)
+        ttk.Button(actions_card, text="Şifrele", command=self.encrypt, style="Primary.TButton").pack(fill="x", pady=2)
+        ttk.Button(actions_card, text="Çöz", command=self.decrypt).pack(fill="x", pady=2)
+        ttk.Button(actions_card, text="Sıfırla", command=self.reset).pack(fill="x", pady=2)
+        ttk.Separator(actions_card, orient="horizontal").pack(fill="x", pady=8)
+        ttk.Button(actions_card, text="Rastgele Ayar", command=self.randomize).pack(fill="x", pady=2)
+        ttk.Button(actions_card, text="Girdi / Çıktı Değiştir", command=self.swap_in_out).pack(fill="x", pady=2)
+        ttk.Button(actions_card, text="Çıktıyı Girdiye Kopyala", command=self.copy_out_to_in).pack(fill="x", pady=2)
+        ttk.Button(actions_card, text="EXE Yapıcı", command=self.make_exe).pack(fill="x", pady=2)
 
-        tk.Label(frm, text="Çıktı Mesajı").pack(anchor="w")
-        self.output_text = scrolledtext.ScrolledText(frm, height=6)
-        self.output_text.pack(fill="x", pady=(0, 8))
-
-        tk.Label(frm, text="Rotor İzleme").pack(anchor="w")
-        self.trace_text = scrolledtext.ScrolledText(frm, height=10)
-        self.trace_text.pack(fill="both", expand=True)
+        info_card = ttk.LabelFrame(left_panel, text="Durum", style="Card.TLabelframe", padding=12)
+        info_card.pack(fill="x")
 
         self.rotor_state = tk.StringVar(value="Rotorlar (L-M-R): 0-0-0")
         self.status = tk.StringVar(value="Hazır")
-        tk.Label(frm, textvariable=self.rotor_state).pack(anchor="w", pady=(6, 0))
-        tk.Label(frm, textvariable=self.status, fg="blue").pack(anchor="w")
+        ttk.Label(info_card, textvariable=self.rotor_state).pack(anchor="w")
+        ttk.Label(info_card, textvariable=self.status, style="Status.TLabel", wraplength=250).pack(anchor="w", pady=(4, 0))
+
+        message_card = ttk.LabelFrame(right_panel, text="Mesaj Alanı", style="Card.TLabelframe", padding=10)
+        message_card.pack(fill="both", expand=True, pady=(0, 8))
+
+        ttk.Label(message_card, text="Giriş Mesajı").pack(anchor="w")
+        self.input_text = scrolledtext.ScrolledText(message_card, height=8, font=("Consolas", 10), relief="flat", bd=1)
+        self.input_text.pack(fill="x", pady=(2, 8))
+
+        ttk.Label(message_card, text="Çıktı Mesajı").pack(anchor="w")
+        self.output_text = scrolledtext.ScrolledText(message_card, height=8, font=("Consolas", 10), relief="flat", bd=1)
+        self.output_text.pack(fill="x", pady=(2, 0))
+
+        trace_card = ttk.LabelFrame(right_panel, text="Rotor İzleme (Tuş Bazlı)", style="Card.TLabelframe", padding=10)
+        trace_card.pack(fill="both", expand=True)
+
+        self.trace_text = scrolledtext.ScrolledText(trace_card, height=11, font=("Consolas", 9), relief="flat", bd=1)
+        self.trace_text.pack(fill="both", expand=True)
+
+        self.reset()
 
     def _read_positions(self) -> tuple[int, int, int]:
         try:
@@ -274,12 +310,11 @@ class EnigmaGUI:
         self.input_text.delete("1.0", "end")
         self.output_text.delete("1.0", "end")
         self.trace_text.delete("1.0", "end")
-        self.left_entry.delete(0, "end")
-        self.mid_entry.delete(0, "end")
-        self.right_entry.delete(0, "end")
-        self.left_entry.insert(0, "0")
-        self.mid_entry.insert(0, "0")
-        self.right_entry.insert(0, "0")
+
+        for entry in (self.left_entry, self.mid_entry, self.right_entry):
+            entry.delete(0, "end")
+            entry.insert(0, "0")
+
         self.plug_entry.delete(0, "end")
         self.keep_spaces_var.set(True)
         self.trace_var.set(True)
