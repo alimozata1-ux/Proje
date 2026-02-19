@@ -6,9 +6,10 @@ from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import filedialog, messagebox
 from tkinter import scrolledtext
 from tkinter import ttk
+import json
 
 ALPHABET = string.ascii_uppercase
 
@@ -243,6 +244,9 @@ class EnigmaGUI:
         ttk.Button(actions_card, text="Rastgele Ayar", command=self.randomize).pack(fill="x", pady=2)
         ttk.Button(actions_card, text="Girdi / Çıktı Değiştir", command=self.swap_in_out).pack(fill="x", pady=2)
         ttk.Button(actions_card, text="Çıktıyı Girdiye Kopyala", command=self.copy_out_to_in).pack(fill="x", pady=2)
+        ttk.Button(actions_card, text="Çıktıyı Panoya Kopyala", command=self.copy_output_to_clipboard).pack(fill="x", pady=2)
+        ttk.Button(actions_card, text="Profili Kaydet (.json)", command=self.save_profile_file).pack(fill="x", pady=2)
+        ttk.Button(actions_card, text="Profil Yükle (.json)", command=self.load_profile_file).pack(fill="x", pady=2)
         ttk.Button(actions_card, text="Şifreyi .Password Olarak Kaydet", command=self.save_password_file).pack(fill="x", pady=2)
         ttk.Button(actions_card, text="EXE Yapıcı", command=self.make_exe).pack(fill="x", pady=2)
 
@@ -253,6 +257,8 @@ class EnigmaGUI:
         self.status = tk.StringVar(value="Hazır")
         ttk.Label(info_card, textvariable=self.rotor_state).pack(anchor="w")
         ttk.Label(info_card, textvariable=self.status, style="Status.TLabel", wraplength=250).pack(anchor="w", pady=(4, 0))
+        self.stats_var = tk.StringVar(value="Girdi: 0 karakter | Çıktı: 0 karakter")
+        ttk.Label(info_card, textvariable=self.stats_var, wraplength=250).pack(anchor="w", pady=(4, 0))
 
         message_card = ttk.LabelFrame(right_panel, text="Mesaj Alanı", style="Card.TLabelframe", padding=10)
         message_card.pack(fill="both", expand=True, pady=(0, 8))
@@ -260,6 +266,7 @@ class EnigmaGUI:
         ttk.Label(message_card, text="Giriş Mesajı").pack(anchor="w")
         self.input_text = scrolledtext.ScrolledText(message_card, height=8, font=("Consolas", 10), relief="flat", bd=1)
         self.input_text.pack(fill="x", pady=(2, 8))
+        self.input_text.bind("<KeyRelease>", lambda _e: self.update_stats())
 
         ttk.Label(message_card, text="Çıktı Mesajı").pack(anchor="w")
         self.output_text = scrolledtext.ScrolledText(message_card, height=8, font=("Consolas", 10), relief="flat", bd=1)
@@ -299,6 +306,7 @@ class EnigmaGUI:
             if self.trace_var.get():
                 self.trace_text.insert("1.0", "\n".join(trace))
             self.status.set(f"{action} tamamlandı")
+            self.update_stats()
         except Exception as exc:
             messagebox.showerror("Hata", str(exc))
             self.status.set(f"Hata: {exc}")
@@ -323,6 +331,7 @@ class EnigmaGUI:
         self.trace_var.set(True)
         self.rotor_state.set("Rotorlar (L-M-R): 0-0-0")
         self.status.set("Sıfırlandı")
+        self.update_stats()
 
     def randomize(self) -> None:
         self.left_entry.delete(0, "end")
@@ -350,6 +359,77 @@ class EnigmaGUI:
         self.input_text.insert("1.0", o)
         self.status.set("Çıktı girdiye kopyalandı")
 
+
+
+    def update_stats(self) -> None:
+        input_len = len(self.input_text.get("1.0", "end-1c"))
+        output_len = len(self.output_text.get("1.0", "end-1c"))
+        self.stats_var.set(f"Girdi: {input_len} karakter | Çıktı: {output_len} karakter")
+
+    def copy_output_to_clipboard(self) -> None:
+        out = self.output_text.get("1.0", "end-1c")
+        if not out.strip():
+            self.status.set("Panoya kopyalamak için çıktı yok")
+            messagebox.showwarning("Uyarı", "Panoya kopyalanacak çıktı yok.")
+            return
+        self.root.clipboard_clear()
+        self.root.clipboard_append(out)
+        self.status.set("Çıktı panoya kopyalandı")
+
+    def save_profile_file(self) -> None:
+        try:
+            desktop = Path.home() / "Desktop"
+            desktop.mkdir(parents=True, exist_ok=True)
+            default = desktop / "EnigmaProfil.json"
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".json",
+                initialfile=default.name,
+                initialdir=str(desktop),
+                filetypes=[("JSON", "*.json")],
+                title="Profili Kaydet",
+            )
+            if not file_path:
+                return
+            data = {
+                "left": self.left_entry.get().strip(),
+                "middle": self.mid_entry.get().strip(),
+                "right": self.right_entry.get().strip(),
+                "plugboard": self.plug_entry.get().strip(),
+                "keep_spaces": self.keep_spaces_var.get(),
+                "trace": self.trace_var.get(),
+            }
+            Path(file_path).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+            self.status.set(f"Profil kaydedildi: {file_path}")
+        except Exception as exc:
+            self.status.set(f"Profil kaydetme hatası: {exc}")
+            messagebox.showerror("Profil Hatası", str(exc))
+
+    def load_profile_file(self) -> None:
+        try:
+            desktop = Path.home() / "Desktop"
+            file_path = filedialog.askopenfilename(
+                initialdir=str(desktop),
+                filetypes=[("JSON", "*.json")],
+                title="Profil Yükle",
+            )
+            if not file_path:
+                return
+            data = json.loads(Path(file_path).read_text(encoding="utf-8"))
+
+            self.left_entry.delete(0, "end")
+            self.mid_entry.delete(0, "end")
+            self.right_entry.delete(0, "end")
+            self.left_entry.insert(0, str(data.get("left", "0")))
+            self.mid_entry.insert(0, str(data.get("middle", "0")))
+            self.right_entry.insert(0, str(data.get("right", "0")))
+            self.plug_entry.delete(0, "end")
+            self.plug_entry.insert(0, data.get("plugboard", ""))
+            self.keep_spaces_var.set(bool(data.get("keep_spaces", True)))
+            self.trace_var.set(bool(data.get("trace", True)))
+            self.status.set(f"Profil yüklendi: {file_path}")
+        except Exception as exc:
+            self.status.set(f"Profil yükleme hatası: {exc}")
+            messagebox.showerror("Profil Hatası", str(exc))
 
     def save_password_file(self) -> None:
         try:
