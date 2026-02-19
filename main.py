@@ -2,6 +2,8 @@ import random
 import string
 import subprocess
 import sys
+from datetime import datetime
+from pathlib import Path
 from dataclasses import dataclass
 import tkinter as tk
 from tkinter import messagebox
@@ -241,6 +243,7 @@ class EnigmaGUI:
         ttk.Button(actions_card, text="Rastgele Ayar", command=self.randomize).pack(fill="x", pady=2)
         ttk.Button(actions_card, text="Girdi / Çıktı Değiştir", command=self.swap_in_out).pack(fill="x", pady=2)
         ttk.Button(actions_card, text="Çıktıyı Girdiye Kopyala", command=self.copy_out_to_in).pack(fill="x", pady=2)
+        ttk.Button(actions_card, text="Şifreyi .Password Olarak Kaydet", command=self.save_password_file).pack(fill="x", pady=2)
         ttk.Button(actions_card, text="EXE Yapıcı", command=self.make_exe).pack(fill="x", pady=2)
 
         info_card = ttk.LabelFrame(left_panel, text="Durum", style="Card.TLabelframe", padding=12)
@@ -346,6 +349,42 @@ class EnigmaGUI:
         self.input_text.delete("1.0", "end")
         self.input_text.insert("1.0", o)
         self.status.set("Çıktı girdiye kopyalandı")
+
+
+    def save_password_file(self) -> None:
+        try:
+            desktop = Path.home() / "Desktop"
+            desktop.mkdir(parents=True, exist_ok=True)
+
+            base_name = "Şifre.Password"
+            file_path = desktop / base_name
+
+            if file_path.exists():
+                stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                file_path = desktop / f"Şifre_{stamp}.Password"
+
+            encrypted_text = self.output_text.get("1.0", "end-1c").strip()
+            if not encrypted_text:
+                raise ValueError("Kaydedilecek çıktı yok. Önce şifreleme/çözme yapın.")
+
+            rotor_info = self.rotor_state.get()
+            plugboard = self.plug_entry.get().strip() or "(boş)"
+            content = (
+                "ENIGMA PASSWORD DOSYASI\n"
+                "======================\n"
+                f"Tarih: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"{rotor_info}\n"
+                f"Plugboard: {plugboard}\n\n"
+                "Şifreli Metin:\n"
+                f"{encrypted_text}\n"
+            )
+
+            file_path.write_text(content, encoding="utf-8")
+            self.status.set(f"Dosya kaydedildi: {file_path}")
+            messagebox.showinfo("Kayıt Başarılı", f"Şifre dosyası kaydedildi:\n{file_path}")
+        except Exception as exc:
+            self.status.set(f"Kaydetme hatası: {exc}")
+            messagebox.showerror("Kayıt Hatası", str(exc))
 
     def make_exe(self) -> None:
         ok, msg = build_exe()
