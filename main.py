@@ -5,6 +5,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from dataclasses import dataclass
+from collections import deque
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import scrolledtext
@@ -171,9 +172,13 @@ class EnigmaGUI:
         self.root.title("Python Enigma - Modern Arayüz")
         self.root.geometry("1120x760")
         self.root.minsize(980, 680)
+        self.history = deque(maxlen=30)
+        self.session_file = Path.home() / "Desktop" / "EnigmaSession.json"
 
         self._setup_theme()
         self._build_widgets()
+        self.load_session()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def _setup_theme(self) -> None:
         style = ttk.Style(self.root)
@@ -247,6 +252,7 @@ class EnigmaGUI:
         ttk.Button(actions_card, text="Çıktıyı Panoya Kopyala", command=self.copy_output_to_clipboard).pack(fill="x", pady=2)
         ttk.Button(actions_card, text="Profili Kaydet (.json)", command=self.save_profile_file).pack(fill="x", pady=2)
         ttk.Button(actions_card, text="Profil Yükle (.json)", command=self.load_profile_file).pack(fill="x", pady=2)
+        ttk.Button(actions_card, text="Sadece Metni Temizle", command=self.clear_texts_only).pack(fill="x", pady=2)
         ttk.Button(actions_card, text="Şifreyi .Password Olarak Kaydet", command=self.save_password_file).pack(fill="x", pady=2)
         ttk.Button(actions_card, text="EXE Yapıcı", command=self.make_exe).pack(fill="x", pady=2)
 
@@ -278,6 +284,13 @@ class EnigmaGUI:
         self.trace_text = scrolledtext.ScrolledText(trace_card, height=11, font=("Consolas", 9), relief="flat", bd=1)
         self.trace_text.pack(fill="both", expand=True)
 
+        history_card = ttk.LabelFrame(right_panel, text="İşlem Geçmişi", style="Card.TLabelframe", padding=10)
+        history_card.pack(fill="both", expand=True, pady=(8, 0))
+
+        self.history_list = tk.Listbox(history_card, height=5)
+        self.history_list.pack(fill="both", expand=True)
+        self.history_list.bind("<<ListboxSelect>>", self.load_selected_history)
+
         self.reset()
 
     def _read_positions(self) -> tuple[int, int, int]:
@@ -306,6 +319,7 @@ class EnigmaGUI:
             if self.trace_var.get():
                 self.trace_text.insert("1.0", "\n".join(trace))
             self.status.set(f"{action} tamamlandı")
+            self.add_history_item(action, text, output)
             self.update_stats()
         except Exception as exc:
             messagebox.showerror("Hata", str(exc))
@@ -359,6 +373,13 @@ class EnigmaGUI:
         self.input_text.insert("1.0", o)
         self.status.set("Çıktı girdiye kopyalandı")
 
+    def clear_texts_only(self) -> None:
+        self.input_text.delete("1.0", "end")
+        self.output_text.delete("1.0", "end")
+        self.trace_text.delete("1.0", "end")
+        self.status.set("Sadece metin alanları temizlendi")
+        self.update_stats()
+
 
 
     def update_stats(self) -> None:
@@ -403,6 +424,38 @@ class EnigmaGUI:
         except Exception as exc:
             self.status.set(f"Profil kaydetme hatası: {exc}")
             messagebox.showerror("Profil Hatası", str(exc))
+
+    def add_history_item(self, action: str, original: str, result: str) -> None:
+        stamp = datetime.now().strftime("%H:%M:%S")
+        short_src = original.replace("\n", " ")[:24]
+        short_dst = result.replace("\n", " ")[:24]
+        label = f"[{stamp}] {action}: {short_src} -> {short_dst}"
+        self.history.append(
+            {
+                "label": label,
+                "source": original,
+                "result": result,
+            }
+        )
+        self.refresh_history_list()
+
+    def refresh_history_list(self) -> None:
+        self.history_list.delete(0, "end")
+        for item in reversed(self.history):
+            self.history_list.insert("end", item["label"])
+
+    def load_selected_history(self, _event=None) -> None:
+        selection = self.history_list.curselection()
+        if not selection:
+            return
+        idx = selection[0]
+        item = list(reversed(self.history))[idx]
+        self.input_text.delete("1.0", "end")
+        self.output_text.delete("1.0", "end")
+        self.input_text.insert("1.0", item["source"])
+        self.output_text.insert("1.0", item["result"])
+        self.status.set("Geçmiş kaydı yüklendi")
+        self.update_stats()
 
     def load_profile_file(self) -> None:
         try:
@@ -474,6 +527,51 @@ class EnigmaGUI:
         else:
             messagebox.showerror("EXE Yapıcı", msg)
             self.status.set(f"EXE hatası: {msg}")
+
+    def save_session(self) -> None:
+        try:
+            data = {
+                "left": self.left_entry.get().strip(),
+                "middle": self.mid_entry.get().strip(),
+                "right": self.right_entry.get().strip(),
+                "plugboard": self.plug_entry.get().strip(),
+                "keep_spaces": self.keep_spaces_var.get(),
+                "trace": self.trace_var.get(),
+                "input_text": self.input_text.get("1.0", "end-1c"),
+                "output_text": self.output_text.get("1.0", "end-1c"),
+            }
+            self.session_file.parent.mkdir(parents=True, exist_ok=True)
+            self.session_file.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
+    def load_session(self) -> None:
+        if not self.session_file.exists():
+            return
+        try:
+            data = json.loads(self.session_file.read_text(encoding="utf-8"))
+            self.left_entry.delete(0, "end")
+            self.mid_entry.delete(0, "end")
+            self.right_entry.delete(0, "end")
+            self.left_entry.insert(0, str(data.get("left", "0")))
+            self.mid_entry.insert(0, str(data.get("middle", "0")))
+            self.right_entry.insert(0, str(data.get("right", "0")))
+            self.plug_entry.delete(0, "end")
+            self.plug_entry.insert(0, data.get("plugboard", ""))
+            self.keep_spaces_var.set(bool(data.get("keep_spaces", True)))
+            self.trace_var.set(bool(data.get("trace", True)))
+            self.input_text.delete("1.0", "end")
+            self.output_text.delete("1.0", "end")
+            self.input_text.insert("1.0", data.get("input_text", ""))
+            self.output_text.insert("1.0", data.get("output_text", ""))
+            self.update_stats()
+            self.status.set("Önceki oturum geri yüklendi")
+        except Exception:
+            pass
+
+    def on_close(self) -> None:
+        self.save_session()
+        self.root.destroy()
 
 
 def main() -> None:
