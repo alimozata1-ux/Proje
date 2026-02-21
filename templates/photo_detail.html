@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fotoğraf Detay</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 2rem; }
+      .wrap { max-width: 920px; margin: auto; }
+      img { max-width: 100%; border-radius: 12px; }
+      .meta { margin-top: 1rem; background: #f3f4f6; padding: 1rem; border-radius: 10px; }
+      a { text-decoration: none; color: #2563eb; }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <p><a href="{{ url_for('index') }}">← Galeriye dön</a></p>
+      <h1>{{ photo.original_name }}</h1>
+      <img src="{{ url_for('uploaded_file', filename=photo.saved_name) }}" alt="{{ photo.original_name }}" />
+      <section class="meta">
+        <p><strong>ID:</strong> {{ photo.id }}</p>
+        <p><strong>Uzantı:</strong> {{ photo.extension|upper }}</p>
+        <p><strong>Boyut:</strong> {{ readable_size }}</p>
+        <p><strong>Yüklenme:</strong> {{ photo.uploaded_at }}</p>
+        <p><strong>Favori:</strong> {% if photo.favorite %}Evet{% else %}Hayır{% endif %}</p>
+      </section>
+    </main>
+  </body>
+</html>
