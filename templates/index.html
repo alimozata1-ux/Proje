@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Python Fotoğraflar Uygulaması+</title>
+    <style>
+      :root { font-family: Inter, Arial, sans-serif; }
+      body { margin: 0; background: #f3f6fb; color: #1f2937; }
+      .container { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem 2rem; }
+      .panel { background: #fff; border-radius: 14px; padding: 1rem; box-shadow: 0 10px 24px rgba(0,0,0,.06); }
+      h1 { margin: .3rem 0 1rem; }
+      form { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+      input, select, button { padding: .55rem .75rem; border: 1px solid #d1d5db; border-radius: 10px; }
+      button { cursor: pointer; border: 0; background: #2563eb; color: #fff; }
+      .muted { color: #6b7280; font-size: .9rem; }
+      .flash { margin: .8rem 0; padding: .7rem .9rem; background: #dcfce7; border-left: 4px solid #22c55e; border-radius: 8px; }
+      .stats { display: grid; gap: .8rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 1rem; }
+      .stat { background: #eef2ff; padding: .7rem .8rem; border-radius: 10px; }
+      .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); margin-top: 1rem; }
+      .card { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 22px rgba(0,0,0,.07); }
+      .card img { width: 100%; height: 180px; object-fit: cover; display: block; }
+      .card .body { padding: .75rem; }
+      .card h3 { font-size: .95rem; margin: 0 0 .3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .actions { display: flex; gap: .4rem; margin-top: .6rem; }
+      .actions form { margin: 0; }
+      .btn-danger { background: #dc2626; }
+      .btn-ghost { background: #4b5563; text-decoration: none; color: #fff; padding: .5rem .7rem; border-radius: 8px; font-size: .85rem; }
+      @media (max-width: 760px) { .stats { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <section class="panel">
+        <h1>📸 Python Fotoğraflar Uygulaması+</h1>
+        <p class="muted">Yükle, ara, filtrele, favorile, sil ve JSON API üzerinden listele.</p>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="flash">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="post" action="{{ url_for('upload_photo') }}" enctype="multipart/form-data">
+          <input type="file" name="photo" accept="image/*" required />
+          <button type="submit">Yükle</button>
+        </form>
+
+        <form method="get" action="{{ url_for('index') }}" style="margin-top: .8rem">
+          <input type="text" name="q" placeholder="Dosya adında ara..." value="{{ q }}" />
+          <select name="ext">
+            <option value="" {% if not ext %}selected{% endif %}>Tüm uzantılar</option>
+            <option value="jpg" {% if ext == 'jpg' %}selected{% endif %}>JPG</option>
+            <option value="jpeg" {% if ext == 'jpeg' %}selected{% endif %}>JPEG</option>
+            <option value="png" {% if ext == 'png' %}selected{% endif %}>PNG</option>
+            <option value="gif" {% if ext == 'gif' %}selected{% endif %}>GIF</option>
+            <option value="webp" {% if ext == 'webp' %}selected{% endif %}>WEBP</option>
+          </select>
+          <select name="sort">
+            <option value="latest" {% if sort == 'latest' %}selected{% endif %}>En yeni</option>
+            <option value="name" {% if sort == 'name' %}selected{% endif %}>Ada göre</option>
+            <option value="size" {% if sort == 'size' %}selected{% endif %}>Boyuta göre</option>
+            <option value="favorite" {% if sort == 'favorite' %}selected{% endif %}>Favorilere göre</option>
+          </select>
+          <button type="submit">Uygula</button>
+        </form>
+
+        <section class="stats">
+          <div class="stat"><strong>Toplam:</strong> {{ stats.count }}</div>
+          <div class="stat"><strong>Favoriler:</strong> {{ stats.favorites }}</div>
+          <div class="stat"><strong>Toplam Boyut:</strong> {{ stats.total_size }}</div>
+        </section>
+      </section>
+
+      <section class="grid">
+        {% for photo in photos %}
+          <article class="card">
+            <img src="{{ url_for('uploaded_file', filename=photo.saved_name) }}" alt="{{ photo.original_name }}" />
+            <div class="body">
+              <h3 title="{{ photo.original_name }}">{{ photo.original_name }}</h3>
+              <div class="muted">{{ photo.extension|upper }} · {{ photo.uploaded_at }} {% if photo.favorite %}· ⭐{% endif %}</div>
+              <div class="actions">
+                <a class="btn-ghost" href="{{ url_for('photo_detail', photo_id=photo.id) }}">Detay</a>
+                <form method="post" action="{{ url_for('toggle_favorite', photo_id=photo.id) }}">
+                  <button type="submit">{% if photo.favorite %}Fav Çıkar{% else %}Favori{% endif %}</button>
+                </form>
+                <form method="post" action="{{ url_for('delete_photo', photo_id=photo.id) }}" onsubmit="return confirm('Silinsin mi?')">
+                  <button type="submit" class="btn-danger">Sil</button>
+                </form>
+              </div>
+            </div>
+          </article>
+        {% else %}
+          <section class="panel"><p>Henüz fotoğraf yok. İlk fotoğrafı yükleyebilirsin.</p></section>
+        {% endfor %}
+      </section>
+    </main>
+  </body>
+</html>
