@@ -538,6 +538,8 @@
           </div>
           <div class="menu-item" id="saveLayoutBtn">Düzeni Kaydet</div>
           <div class="menu-item" id="restoreLayoutBtn">Düzeni Yükle</div>
+          <div class="menu-item" id="exportStateBtn">Ayarları Dışa Aktar</div>
+          <div class="menu-item" id="importStateBtn">Ayarları İçe Aktar</div>
           <div class="menu-item" id="lockBtn">Kilitle</div>
           <div class="menu-item" id="shutdownBtn">Kapat</div>
         </div>
@@ -601,6 +603,18 @@
       </div>
     </div>
 
+
+
+    <div class="dialog" id="commandPaletteBox">
+      <div><b>Komut Paleti</b></div>
+      <div class="row"><input id="commandPaletteInput" placeholder="Komut: open notepad | tile | cascade | lock" /></div>
+      <div class="row">
+        <button id="commandPaletteRun">Çalıştır</button>
+        <button id="commandPaletteClose">Kapat</button>
+      </div>
+    </div>
+
+    <input type="file" id="importStateFile" accept="application/json" style="display:none" />
     <div class="lock-screen" id="lockScreen">
       <h2>Bilgisayar Kilitlendi</h2>
       <p><span class="kbd">Ctrl</span> + <span class="kbd">L</span> ile açıldı.</p>
@@ -623,6 +637,8 @@
     const quickNoteBox = document.getElementById('quickNoteBox');
     const notificationsBox = document.getElementById('notificationsBox');
     const notificationList = document.getElementById('notificationList');
+    const commandPaletteBox = document.getElementById('commandPaletteBox');
+    const importStateFile = document.getElementById('importStateFile');
 
     const wallpapers = [
       { bg: 'radial-gradient(circle at 20% 20%, #82c7ff 0%, #4d8ef0 35%, #2a63ce 100%)', hill: 'radial-gradient(130% 120% at 50% 100%, #7ed62b 20%, #4ea318 80%)' },
@@ -2295,6 +2311,64 @@
       notify('Pencere düzeni yüklendi');
     }
 
+    function exportStateFile() {
+      const state = {
+        wallpaperIndex,
+        muted,
+        notifications,
+        iconPositions: getIconPositions(),
+        taskbarColor: getComputedStyle(desktop).getPropertyValue('--taskbar').trim(),
+        titlebarColor: getComputedStyle(desktop).getPropertyValue('--titlebar-start').trim(),
+        quickNote: localStorage.getItem('xp_quick_note') || ''
+      };
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'xp-state.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      notify('Ayarlar dışa aktarıldı');
+    }
+
+    function importStateObject(st) {
+      if (!st || typeof st !== 'object') return;
+      if (typeof st.wallpaperIndex === 'number') wallpaperIndex = st.wallpaperIndex % wallpapers.length;
+      muted = !!st.muted;
+      const arr = Array.isArray(st.notifications) ? st.notifications : [];
+      notifications.splice(0, notifications.length, ...arr.slice(0, 100));
+      desktop.style.setProperty('--desktop-bg', wallpapers[wallpaperIndex].bg);
+      desktop.style.setProperty('--hill', wallpapers[wallpaperIndex].hill);
+      applyBarColors(st.taskbarColor, st.titlebarColor);
+      restoreIconPositions(st.iconPositions);
+      document.getElementById('muteToggle').textContent = muted ? '🔇' : '🔊';
+      if (typeof st.quickNote === 'string') {
+        localStorage.setItem('xp_quick_note', st.quickNote);
+        const noteText = document.getElementById('quickNoteText');
+        if (noteText) noteText.value = st.quickNote;
+      }
+      renderNotifications();
+      saveState();
+      notify('Ayarlar içe aktarıldı');
+    }
+
+    function runCommandPalette(input) {
+      const cmd = (input || '').trim().toLowerCase();
+      if (!cmd) return;
+      if (cmd === 'tile') return tileWindows();
+      if (cmd === 'cascade') return cascadeWindows();
+      if (cmd === 'lock') return (lockScreen.style.display = 'flex');
+      if (cmd === 'desktop') return hideAllWindows();
+      if (cmd.startsWith('open ')) {
+        const app = cmd.replace('open ', '').trim();
+        if (apps[app]) createWindow(app); else notify('Komut: uygulama bulunamadı');
+        return;
+      }
+      notify('Bilinmeyen komut');
+    }
+
     function saveState() {
       localStorage.setItem('xp_state', JSON.stringify({
         wallpaperIndex,
@@ -2409,6 +2483,29 @@
         startMenu.style.display = 'none';
       });
 
+      document.getElementById('exportStateBtn').addEventListener('click', () => {
+        exportStateFile();
+        startMenu.style.display = 'none';
+      });
+
+      document.getElementById('importStateBtn').addEventListener('click', () => {
+        importStateFile.click();
+        startMenu.style.display = 'none';
+      });
+
+      importStateFile.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+          const txt = await file.text();
+          const parsed = JSON.parse(txt);
+          importStateObject(parsed);
+        } catch {
+          notify('Geçersiz ayar dosyası');
+        }
+        e.target.value = '';
+      });
+
       document.getElementById('shutdownBtn').addEventListener('click', () => {
         startMenu.style.display = 'none';
         notify('Kapatılamaz 😄 Simülatör modunda.');
@@ -2477,6 +2574,13 @@
         startMenu.style.display = 'none';
       });
 
+      document.getElementById('commandPaletteRun').addEventListener('click', () => {
+        runCommandPalette(document.getElementById('commandPaletteInput').value);
+      });
+      document.getElementById('commandPaletteClose').addEventListener('click', () => {
+        commandPaletteBox.style.display = 'none';
+      });
+
       document.getElementById('unlockBtn').addEventListener('click', () => {
         lockScreen.style.display = 'none';
         notify('Hoş geldin!');
@@ -2522,11 +2626,17 @@
           quickNoteBox.style.display = 'none';
           desktopMenu.style.display = 'none';
           notificationsBox.style.display = 'none';
+          commandPaletteBox.style.display = 'none';
         }
         if (e.ctrlKey && e.key.toLowerCase() === 'n') createWindow('notepad');
         if (e.ctrlKey && e.key.toLowerCase() === 'l') lockScreen.style.display = 'flex';
         if (e.key === 'F2') cycleWallpaper();
         if (e.altKey && e.key.toLowerCase() === 'd') createWindow('dashboard');
+        if (e.ctrlKey && e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          commandPaletteBox.style.display = 'block';
+          document.getElementById('commandPaletteInput').focus();
+        }
       });
     }
 
