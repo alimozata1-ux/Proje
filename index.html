@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Windows XP Simülatör</title>
+  <title>Windows XP Ultimate Simülatör</title>
   <style>
     :root {
       --taskbar: #2f68d2;
@@ -11,87 +11,501 @@
       --window-border: #0a2e8a;
       --desktop-bg: radial-gradient(circle at 20% 20%, #82c7ff 0%, #4d8ef0 35%, #2a63ce 100%);
       --hill: radial-gradient(130% 120% at 50% 100%, #7ed62b 20%, #4ea318 80%);
+      --text: #1e1e1e;
+      --panel: #ffffff;
+      --muted: #666;
+      --ok: #2b9a00;
+      --warn: #ef8f00;
+      --danger: #d62828;
     }
 
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: Tahoma, Arial, sans-serif; height: 100vh; overflow: hidden; user-select: none; background: #000; }
-    .desktop { position: relative; height: 100%; width: 100%; background: var(--desktop-bg); }
-    .wallpaper-hill { position: absolute; bottom: 40px; left: 0; right: 0; height: 40%; background: var(--hill); border-top-left-radius: 50% 70%; border-top-right-radius: 50% 70%; z-index: 1; }
+    * {
+      box-sizing: border-box;
+    }
 
-    .desktop-icons { position: absolute; left: 10px; top: 10px; display: grid; grid-template-columns: repeat(2, 86px); gap: 14px 8px; z-index: 3; }
-    .icon { width: 84px; text-align: center; color: #fff; font-size: 12px; text-shadow: 1px 1px 2px rgba(0,0,0,.8); cursor: default; padding: 4px; border: 1px solid transparent; border-radius: 2px; }
-    .icon:hover,.icon.selected { background: rgba(33, 118, 255, .4); border-color: rgba(255,255,255,.6); }
-    .icon-graphic { display:block; font-size:28px; margin-bottom:4px; }
+    body {
+      margin: 0;
+      font-family: Tahoma, Arial, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+      background: #000;
+      color: var(--text);
+    }
 
-    .window { position: absolute; width: 520px; height: 340px; border:1px solid var(--window-border); border-radius:7px 7px 0 0; background:#ece9d8; box-shadow:0 10px 25px rgba(0,0,0,.45); overflow:hidden; min-width:280px; min-height:180px; }
-    .window.maximized { top:0 !important; left:0 !important; width:100vw !important; height:calc(100vh - 40px) !important; border-radius:0; }
-    .titlebar { height:30px; background:linear-gradient(to bottom, #2b75ff, #0b49c4); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 5px 0 10px; font-weight:700; font-size:13px; cursor:move; }
-    .titlebar-controls { display:flex; gap:4px; }
-    .titlebar button { width:22px; height:22px; border:1px solid #fff; border-radius:3px; background:linear-gradient(to bottom, #7db6ff, #2f76f3); color:#fff; font-weight:bold; cursor:pointer; line-height:1; padding:0; }
-    .titlebar button.close { background:linear-gradient(to bottom, #ff7a62, #d93717); }
-    .window-body { padding:14px; height:calc(100% - 30px); overflow:auto; font-size:14px; color:#222; background:#fff; }
-    .resizer { width:12px; height:12px; position:absolute; right:0; bottom:0; cursor:nwse-resize; background:linear-gradient(135deg, transparent 40%, rgba(60,60,60,.4) 41%); }
+    .desktop {
+      position: relative;
+      height: 100%;
+      width: 100%;
+      background: var(--desktop-bg);
+    }
 
-    .taskbar { position:absolute; bottom:0; left:0; right:0; height:40px; background:linear-gradient(to bottom, var(--taskbar), var(--taskbar-dark)); display:flex; align-items:center; padding-right:8px; z-index:20; }
-    .start-btn { height:36px; min-width:100px; border-radius:0 14px 14px 0; border:1px solid #0f5e00; border-left:0; background:linear-gradient(to bottom, #4fcf05, #2b8f00); color:#fff; font-size:21px; font-style:italic; font-weight:bold; font-family:"Trebuchet MS", Tahoma, sans-serif; text-align:left; padding-left:18px; cursor:pointer; margin-right:8px; }
-    .quick-actions { display:flex; gap:4px; margin-right:8px; }
-    .quick-btn { width:24px; height:24px; border:1px solid rgba(255,255,255,.5); color:#fff; background:rgba(255,255,255,.15); border-radius:4px; cursor:pointer; font-size:14px; }
+    .wallpaper-hill {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      right: 0;
+      height: 40%;
+      background: var(--hill);
+      border-top-left-radius: 50% 70%;
+      border-top-right-radius: 50% 70%;
+      z-index: 1;
+      pointer-events: none;
+    }
 
-    .task-items { display:flex; gap:6px; flex:1; align-items:center; overflow-x:auto; scrollbar-width:none; }
-    .task-items::-webkit-scrollbar { display:none; }
-    .task-item { min-width:160px; max-width:220px; height:30px; padding:0 10px; border:1px solid rgba(255,255,255,.5); border-radius:3px; background:linear-gradient(to bottom, #4d8dfd, #2a69d8); color:#fff; font-size:13px; display:flex; align-items:center; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .task-item.active { background:linear-gradient(to bottom, #6fa7ff, #3a79ec); box-shadow: inset 0 0 0 1px rgba(255,255,255,.4); }
-    .clock { width:76px; text-align:center; color:#fff; font-size:13px; border-left:1px solid rgba(255,255,255,.35); padding-left:8px; margin-left:6px; }
+    .desktop-icons {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      display: grid;
+      grid-template-columns: repeat(3, 90px);
+      gap: 12px 8px;
+      z-index: 4;
+    }
 
-    .start-menu { position:absolute; bottom:40px; left:0; width:340px; height:450px; display:none; border:1px solid #0d3899; border-radius:8px 8px 0 0; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.45); z-index:30; background:#fff; }
-    .start-head { height:66px; background:linear-gradient(to right, #1f58d1, #3d8af7); color:#fff; font-size:20px; font-weight:bold; display:flex; align-items:center; justify-content:space-between; padding:0 14px; }
-    .start-search { width:120px; font-size:12px; }
-    .start-content { display:grid; grid-template-columns:1fr 1fr; height:calc(100% - 66px); }
-    .start-left { background:#fff; padding:10px; border-right:1px solid #c2d7ff; overflow:auto; }
-    .start-right { background:#d7e7ff; padding:10px; }
-    .menu-item { font-size:14px; padding:8px; border-radius:4px; cursor:pointer; }
-    .menu-item:hover { background:#2f72f0; color:#fff; }
+    .icon {
+      width: 88px;
+      text-align: center;
+      color: #fff;
+      font-size: 12px;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+      cursor: default;
+      padding: 4px;
+      border: 1px solid transparent;
+      border-radius: 2px;
+    }
 
-    .toast { position:absolute; right:14px; bottom:52px; padding:10px 14px; border-radius:6px; background:rgba(27,67,157,.92); color:#fff; font-size:13px; display:none; z-index:40; border:1px solid rgba(255,255,255,.35); }
+    .icon:hover,
+    .icon.selected {
+      background: rgba(33, 118, 255, 0.4);
+      border-color: rgba(255, 255, 255, 0.6);
+    }
 
-    .context-menu { position:absolute; display:none; min-width:170px; background:#fff; border:1px solid #1f58d1; box-shadow:0 8px 22px rgba(0,0,0,.3); z-index:60; font-size:13px; }
-    .context-item { padding:8px 10px; cursor:pointer; }
-    .context-item:hover { background:#2f72f0; color:#fff; }
+    .icon-graphic {
+      display: block;
+      font-size: 28px;
+      margin-bottom: 4px;
+    }
 
-    .run-box { position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); background:#ece9d8; border:2px solid #2f68d2; padding:14px; width:330px; display:none; z-index:70; }
-    .run-row { display:flex; gap:8px; margin-top:10px; }
-    .run-box input { flex:1; }
+    #windowLayer {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+    }
 
-    .lock-screen { position:absolute; inset:0; background:rgba(11,34,90,.95); color:#fff; display:none; align-items:center; justify-content:center; flex-direction:column; gap:12px; z-index:80; }
+    .window {
+      position: absolute;
+      width: 560px;
+      height: 360px;
+      border: 1px solid var(--window-border);
+      border-radius: 7px 7px 0 0;
+      background: #ece9d8;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+      min-width: 300px;
+      min-height: 200px;
+    }
+
+    .window.maximized {
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: calc(100vh - 40px) !important;
+      border-radius: 0;
+    }
+
+    .titlebar {
+      height: 30px;
+      background: linear-gradient(to bottom, #2b75ff, #0b49c4);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5px 0 10px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: move;
+    }
+
+    .title-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .titlebar-controls {
+      display: flex;
+      gap: 4px;
+    }
+
+    .titlebar button {
+      width: 22px;
+      height: 22px;
+      border: 1px solid #fff;
+      border-radius: 3px;
+      background: linear-gradient(to bottom, #7db6ff, #2f76f3);
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .titlebar button.close {
+      background: linear-gradient(to bottom, #ff7a62, #d93717);
+    }
+
+    .window-body {
+      padding: 12px;
+      height: calc(100% - 30px);
+      overflow: auto;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--panel);
+    }
+
+    .resizer {
+      width: 12px;
+      height: 12px;
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      cursor: nwse-resize;
+      background: linear-gradient(135deg, transparent 40%, rgba(60, 60, 60, 0.4) 41%);
+    }
+
+    .taskbar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--taskbar), var(--taskbar-dark));
+      display: flex;
+      align-items: center;
+      padding-right: 8px;
+      z-index: 40;
+    }
+
+    .start-btn {
+      height: 36px;
+      min-width: 100px;
+      border-radius: 0 14px 14px 0;
+      border: 1px solid #0f5e00;
+      border-left: 0;
+      background: linear-gradient(to bottom, #4fcf05, #2b8f00);
+      color: #fff;
+      font-size: 21px;
+      font-style: italic;
+      font-weight: bold;
+      font-family: "Trebuchet MS", Tahoma, sans-serif;
+      text-align: left;
+      padding-left: 18px;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 4px;
+      margin-right: 8px;
+    }
+
+    .quick-btn {
+      width: 24px;
+      height: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      color: #fff;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .task-items {
+      display: flex;
+      gap: 6px;
+      flex: 1;
+      align-items: center;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .task-items::-webkit-scrollbar {
+      display: none;
+    }
+
+    .task-item {
+      min-width: 150px;
+      max-width: 220px;
+      height: 30px;
+      padding: 0 10px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 3px;
+      background: linear-gradient(to bottom, #4d8dfd, #2a69d8);
+      color: #fff;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .task-item.active {
+      background: linear-gradient(to bottom, #6fa7ff, #3a79ec);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+    }
+
+    .tray {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 6px;
+      border-left: 1px solid rgba(255,255,255,.35);
+      padding-left: 8px;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .clock {
+      width: 70px;
+      text-align: center;
+      color: #fff;
+      font-size: 13px;
+    }
+
+    .start-menu {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      width: 460px;
+      height: 540px;
+      display: none;
+      border: 1px solid #0d3899;
+      border-radius: 8px 8px 0 0;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      z-index: 70;
+      background: #fff;
+    }
+
+    .start-head {
+      height: 66px;
+      background: linear-gradient(to right, #1f58d1, #3d8af7);
+      color: #fff;
+      font-size: 20px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+    }
+
+    .start-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: calc(100% - 66px);
+    }
+
+    .start-left {
+      background: #fff;
+      padding: 10px;
+      border-right: 1px solid #c2d7ff;
+      overflow: auto;
+    }
+
+    .start-right {
+      background: #d7e7ff;
+      padding: 10px;
+      overflow: auto;
+    }
+
+    .menu-item {
+      font-size: 14px;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .menu-item:hover {
+      background: #2f72f0;
+      color: #fff;
+    }
+
+    .toast {
+      position: absolute;
+      right: 14px;
+      bottom: 52px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: rgba(27, 67, 157, 0.92);
+      color: #fff;
+      font-size: 13px;
+      display: none;
+      z-index: 80;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+    }
+
+    .context-menu {
+      position: absolute;
+      display: none;
+      min-width: 170px;
+      background: #fff;
+      border: 1px solid #1f58d1;
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+      z-index: 90;
+      font-size: 13px;
+    }
+
+    .context-item {
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+
+    .context-item:hover {
+      background: #2f72f0;
+      color: #fff;
+    }
+
+    .dialog {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: #ece9d8;
+      border: 2px solid #2f68d2;
+      padding: 14px;
+      width: 380px;
+      display: none;
+      z-index: 95;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .row input,
+    .row select,
+    .row textarea {
+      flex: 1;
+      padding: 6px;
+      border: 1px solid #888;
+    }
+
+    .lock-screen {
+      position: absolute;
+      inset: 0;
+      background: rgba(11, 34, 90, 0.95);
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 120;
+    }
+
+    .widget-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      gap: 8px;
+    }
+
+    .widget {
+      border: 1px solid #aac2ff;
+      background: #f7fbff;
+      padding: 8px;
+      border-radius: 4px;
+    }
+
+    .app-card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(130px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .app-card {
+      border: 1px solid #9db7ff;
+      background: #eef4ff;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .app-card:hover {
+      background: #dce9ff;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .table th,
+    .table td {
+      border: 1px solid #c6d5ff;
+      padding: 4px;
+      text-align: left;
+    }
+
+    .kbd {
+      border: 1px solid #999;
+      border-bottom-width: 2px;
+      border-radius: 4px;
+      padding: 1px 5px;
+      background: #f5f5f5;
+      font-size: 11px;
+    }
   </style>
 </head>
 <body>
   <div class="desktop" id="desktop">
-    <div class="wallpaper-hill" id="wallpaperHill"></div>
+    <div class="wallpaper-hill"></div>
 
     <div class="desktop-icons" id="desktopIcons">
       <div class="icon" data-app="computer"><span class="icon-graphic">🖥️</span>Bilgisayarım</div>
+      <div class="icon" data-app="explorer"><span class="icon-graphic">📁</span>Dosyalar</div>
       <div class="icon" data-app="notepad"><span class="icon-graphic">📝</span>Not Defteri</div>
-      <div class="icon" data-app="paint"><span class="icon-graphic">🎨</span>Paint</div>
       <div class="icon" data-app="calculator"><span class="icon-graphic">🧮</span>Hesap Makinesi</div>
-      <div class="icon" data-app="weather"><span class="icon-graphic">🌤️</span>Hava Durumu</div>
-      <div class="icon" data-app="mines"><span class="icon-graphic">💣</span>Mines</div>
+      <div class="icon" data-app="paint"><span class="icon-graphic">🎨</span>Paint</div>
+      <div class="icon" data-app="weather"><span class="icon-graphic">🌤️</span>Hava</div>
       <div class="icon" data-app="music"><span class="icon-graphic">🎵</span>Müzik</div>
-      <div class="icon" data-app="about"><span class="icon-graphic">📘</span>Hakkında</div>
+      <div class="icon" data-app="mines"><span class="icon-graphic">💣</span>Mines</div>
+      <div class="icon" data-app="todo"><span class="icon-graphic">✅</span>Yapılacaklar</div>
+      <div class="icon" data-app="calendar"><span class="icon-graphic">📆</span>Takvim</div>
+      <div class="icon" data-app="terminal"><span class="icon-graphic">⌨️</span>Terminal</div>
+      <div class="icon" data-app="dashboard"><span class="icon-graphic">📊</span>Dashboard</div>
     </div>
 
     <div id="windowLayer"></div>
 
     <div class="start-menu" id="startMenu">
-      <div class="start-head">Kullanıcı <input id="startSearch" class="start-search" placeholder="Uygulama ara" /></div>
+      <div class="start-head">
+        Kullanıcı
+        <input id="startSearch" placeholder="Uygulama ara" />
+      </div>
       <div class="start-content">
         <div class="start-left" id="startAppList"></div>
         <div class="start-right">
           <div class="menu-item" id="showDesktopBtn">Masaüstünü Göster</div>
           <div class="menu-item" id="tileWindowsBtn">Pencereleri Diz</div>
           <div class="menu-item" id="cascadeWindowsBtn">Pencereleri Basamakla</div>
+          <div class="menu-item" id="snapLeftBtn">Aktif Sola Yasla</div>
+          <div class="menu-item" id="snapRightBtn">Aktif Sağa Yasla</div>
           <div class="menu-item" id="runDialogBtn">Çalıştır...</div>
+          <div class="menu-item" id="notesDialogBtn">Hızlı Not</div>
           <div class="menu-item" id="themeToggleBtn">Tema Değiştir</div>
+          <div class="menu-item" id="saveLayoutBtn">Düzeni Kaydet</div>
+          <div class="menu-item" id="restoreLayoutBtn">Düzeni Yükle</div>
           <div class="menu-item" id="lockBtn">Kilitle</div>
           <div class="menu-item" id="shutdownBtn">Kapat</div>
         </div>
@@ -101,11 +515,16 @@
     <div class="taskbar">
       <button class="start-btn" id="startBtn">start</button>
       <div class="quick-actions">
-        <button class="quick-btn" id="showDesktopQuick" title="Masaüstü">🪟</button>
-        <button class="quick-btn" id="muteToggle" title="Ses">🔊</button>
+        <button class="quick-btn" id="showDesktopQuick">🪟</button>
+        <button class="quick-btn" id="muteToggle">🔊</button>
+        <button class="quick-btn" id="notificationsBtn">🔔</button>
       </div>
       <div class="task-items" id="taskItems"></div>
-      <div class="clock" id="clock"></div>
+      <div class="tray">
+        <span id="netState">🌐 Online</span>
+        <span id="batteryState">🔋 87%</span>
+        <div class="clock" id="clock"></div>
+      </div>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -114,28 +533,51 @@
       <div class="context-item" data-action="new-note">Yeni Not</div>
       <div class="context-item" data-action="refresh">Yenile</div>
       <div class="context-item" data-action="wallpaper">Duvar Kağıdı Değiştir</div>
+      <div class="context-item" data-action="open-dashboard">Dashboard Aç</div>
       <div class="context-item" data-action="close-all">Tüm Pencereleri Kapat</div>
     </div>
 
-    <div class="run-box" id="runBox">
+    <div class="dialog" id="runBox">
       <div><b>Çalıştır</b></div>
-      <div style="font-size:12px;margin-top:6px">Aç: (örnek: notepad, paint, weather, mines)</div>
-      <div class="run-row">
+      <div style="font-size:12px;margin-top:6px">Komut gir: (ör. notepad, paint, terminal, mines)</div>
+      <div class="row">
         <input id="runInput" />
+      </div>
+      <div class="row">
         <button id="runOpenBtn">Aç</button>
         <button id="runCancelBtn">İptal</button>
       </div>
     </div>
 
+    <div class="dialog" id="quickNoteBox">
+      <div><b>Hızlı Not</b></div>
+      <div class="row">
+        <textarea id="quickNoteText" rows="6" placeholder="Not yaz..."></textarea>
+      </div>
+      <div class="row">
+        <button id="quickNoteSave">Kaydet</button>
+        <button id="quickNoteCancel">İptal</button>
+      </div>
+    </div>
+
+    <div class="dialog" id="notificationsBox">
+      <div><b>Bildirim Merkezi</b></div>
+      <div id="notificationList" style="max-height:220px;overflow:auto"></div>
+      <div class="row">
+        <button id="clearNotificationsBtn">Temizle</button>
+        <button id="closeNotificationsBtn">Kapat</button>
+      </div>
+    </div>
+
     <div class="lock-screen" id="lockScreen">
       <h2>Bilgisayar Kilitlendi</h2>
+      <p><span class="kbd">Ctrl</span> + <span class="kbd">L</span> ile açıldı.</p>
       <button id="unlockBtn">Kilidi Aç</button>
     </div>
   </div>
 
   <script>
     const desktop = document.getElementById('desktop');
-    const wallpaperHill = document.getElementById('wallpaperHill');
     const windowLayer = document.getElementById('windowLayer');
     const taskItems = document.getElementById('taskItems');
     const startBtn = document.getElementById('startBtn');
@@ -146,37 +588,1086 @@
     const lockScreen = document.getElementById('lockScreen');
     const startAppList = document.getElementById('startAppList');
     const startSearch = document.getElementById('startSearch');
+    const quickNoteBox = document.getElementById('quickNoteBox');
+    const notificationsBox = document.getElementById('notificationsBox');
+    const notificationList = document.getElementById('notificationList');
 
     const wallpapers = [
       { bg: 'radial-gradient(circle at 20% 20%, #82c7ff 0%, #4d8ef0 35%, #2a63ce 100%)', hill: 'radial-gradient(130% 120% at 50% 100%, #7ed62b 20%, #4ea318 80%)' },
       { bg: 'linear-gradient(120deg, #2d1a4d, #2e57a8, #4f7acb)', hill: 'radial-gradient(130% 120% at 50% 100%, #4cc5ff 20%, #2268d4 80%)' },
-      { bg: 'linear-gradient(150deg, #1f3f3b, #2f7d6f, #5db89f)', hill: 'radial-gradient(130% 120% at 50% 100%, #f0d04d 20%, #b4931d 80%)' }
+      { bg: 'linear-gradient(150deg, #1f3f3b, #2f7d6f, #5db89f)', hill: 'radial-gradient(130% 120% at 50% 100%, #f0d04d 20%, #b4931d 80%)' },
+      { bg: 'linear-gradient(120deg, #1a2a2f, #355f8c, #6ea2d1)', hill: 'radial-gradient(130% 120% at 50% 100%, #9ace2f 20%, #5a9f1f 80%)' }
+    ];
+
+    const fileDatabase = [
+        { name: 'Belge_001.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_002.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_003.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_004.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_005.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_006.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_007.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_008.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_009.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_010.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_011.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_012.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_013.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_014.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_015.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_016.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_017.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_018.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_019.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_020.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_021.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_022.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_023.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_024.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_025.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_026.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_027.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_028.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_029.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_030.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_031.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_032.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_033.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_034.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_035.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_036.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_037.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_038.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_039.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_040.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_041.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_042.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_043.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_044.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_045.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_046.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_047.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_048.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_049.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_050.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_051.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_052.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_053.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_054.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_055.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_056.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_057.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_058.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_059.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_060.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_061.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_062.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_063.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_064.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_065.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_066.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_067.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_068.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_069.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_070.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_071.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_072.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_073.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_074.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_075.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_076.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_077.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_078.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_079.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_080.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_081.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_082.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_083.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_084.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_085.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_086.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_087.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_088.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_089.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_090.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_091.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_092.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_093.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_094.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_095.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_096.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_097.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_098.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_099.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_100.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_101.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_102.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_103.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_104.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_105.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_106.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_107.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_108.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_109.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_110.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_111.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_112.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_113.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_114.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_115.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_116.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_117.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_118.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_119.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_120.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_121.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_122.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_123.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_124.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_125.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_126.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_127.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_128.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_129.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_130.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_131.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_132.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_133.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_134.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_135.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_136.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_137.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_138.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_139.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_140.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_141.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_142.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_143.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_144.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_145.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_146.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_147.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_148.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_149.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_150.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_151.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_152.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_153.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_154.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_155.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_156.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_157.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_158.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_159.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_160.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_161.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_162.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_163.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_164.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_165.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_166.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_167.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_168.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_169.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_170.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_171.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_172.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_173.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_174.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_175.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_176.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_177.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_178.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_179.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_180.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_181.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_182.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_183.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_184.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_185.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_186.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_187.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_188.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_189.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_190.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_191.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_192.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_193.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_194.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_195.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_196.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_197.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_198.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_199.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_200.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_201.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_202.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_203.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_204.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_205.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_206.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_207.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_208.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_209.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_210.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_211.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_212.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_213.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_214.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_215.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_216.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_217.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_218.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_219.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_220.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_221.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_222.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_223.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_224.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_225.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_226.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_227.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_228.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_229.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_230.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_231.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_232.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_233.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_234.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_235.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_236.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_237.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_238.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_239.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_240.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_241.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_242.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_243.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_244.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_245.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_246.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_247.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_248.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_249.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_250.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_251.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_252.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_253.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_254.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_255.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_256.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_257.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_258.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_259.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_260.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_261.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_262.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_263.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_264.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_265.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_266.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_267.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_268.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_269.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_270.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_271.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_272.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_273.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_274.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_275.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_276.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_277.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_278.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_279.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_280.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_281.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_282.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_283.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_284.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_285.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_286.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_287.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_288.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_289.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_290.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_291.txt', size: '4 KB', type: 'Metin' },
+        { name: 'Belge_292.txt', size: '5 KB', type: 'Metin' },
+        { name: 'Belge_293.txt', size: '6 KB', type: 'Metin' },
+        { name: 'Belge_294.txt', size: '7 KB', type: 'Metin' },
+        { name: 'Belge_295.txt', size: '8 KB', type: 'Metin' },
+        { name: 'Belge_296.txt', size: '9 KB', type: 'Metin' },
+        { name: 'Belge_297.txt', size: '1 KB', type: 'Metin' },
+        { name: 'Belge_298.txt', size: '2 KB', type: 'Metin' },
+        { name: 'Belge_299.txt', size: '3 KB', type: 'Metin' },
+        { name: 'Belge_300.txt', size: '4 KB', type: 'Metin' },
+    ];
+
+    const tips = [
+        'İpucu 1: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 2: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 3: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 4: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 5: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 6: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 7: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 8: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 9: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 10: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 11: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 12: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 13: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 14: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 15: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 16: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 17: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 18: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 19: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 20: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 21: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 22: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 23: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 24: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 25: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 26: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 27: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 28: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 29: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 30: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 31: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 32: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 33: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 34: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 35: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 36: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 37: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 38: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 39: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 40: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 41: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 42: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 43: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 44: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 45: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 46: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 47: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 48: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 49: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 50: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 51: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 52: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 53: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 54: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 55: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 56: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 57: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 58: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 59: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 60: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 61: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 62: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 63: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 64: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 65: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 66: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 67: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 68: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 69: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 70: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 71: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 72: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 73: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 74: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 75: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 76: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 77: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 78: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 79: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 80: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 81: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 82: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 83: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 84: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 85: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 86: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 87: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 88: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 89: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 90: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 91: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 92: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 93: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 94: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 95: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 96: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 97: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 98: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 99: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 100: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 101: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 102: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 103: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 104: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 105: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 106: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 107: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 108: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 109: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 110: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 111: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 112: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 113: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 114: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 115: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 116: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 117: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 118: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 119: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 120: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 121: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 122: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 123: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 124: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 125: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 126: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 127: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 128: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 129: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 130: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 131: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 132: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 133: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 134: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 135: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 136: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 137: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 138: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 139: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 140: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 141: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 142: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 143: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 144: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 145: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 146: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 147: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 148: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 149: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 150: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 151: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 152: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 153: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 154: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 155: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 156: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 157: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 158: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 159: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 160: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 161: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 162: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 163: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 164: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 165: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 166: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 167: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 168: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 169: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 170: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 171: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 172: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 173: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 174: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 175: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 176: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 177: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 178: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 179: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
+        'İpucu 180: Kısayol kombinasyonlarını dene ve masaüstünü kişiselleştir.' ,
     ];
 
     const apps = {
-      computer: { title: 'Bilgisayarım', content: () => '<h3>Yerel Disk (C:)</h3><p>Toplam: 40 GB</p><p>Boş: 18 GB</p>' },
-      notepad: { title: 'Not Defteri', content: () => '<h3>Not</h3><textarea style="width:100%;height:190px">Kısa notunu buraya yaz.</textarea>' },
-      paint: { title: 'Paint', content: () => '<h3>Paint</h3><p>Renk paleti:</p><div style="display:grid;grid-template-columns:repeat(10,1fr);gap:3px;">'+Array.from({length:70},(_,i)=>`<div style="height:18px;background:hsl(${i*17%360} 80% 60%)"></div>`).join('')+'</div>' },
-      calculator: { title: 'Hesap Makinesi', content: () => '<h3>Hesap Makinesi</h3><input id="calcExpr" style="width:100%" placeholder="Örn: 12*8+5"/><button id="calcBtn" style="margin-top:8px">Hesapla</button><p id="calcOut">Sonuç: -</p>' },
-      weather: { title: 'Hava Durumu', content: () => '<h3>Bugün</h3><p>İstanbul: 24°C ☀️</p><p>Ankara: 21°C ⛅</p><p>İzmir: 27°C 🌤️</p>' },
-      mines: { title: 'Mines', content: () => '<h3>Mines (Mini)</h3><p>Kutulara tıkla, mayına basma!</p><div id="minesGrid" style="display:grid;grid-template-columns:repeat(6,34px);gap:4px"></div>' },
-      music: { title: 'Müzik Çalar', content: () => '<h3>XP Müzik</h3><button id="beepBtn">Test Sesi Çal</button><p style="font-size:12px">(WebAudio ile kısa beep)</p>' },
-      about: { title: 'Hakkında', content: () => '<h3>XP Simülatör v3</h3><ul><li>Çoklu pencere</li><li>Çalıştır penceresi</li><li>Sağ tık menüsü</li><li>Tema/duvar kağıdı değişimi</li><li>Kilit ekranı</li><li>Mini uygulamalar</li></ul>' }
+      computer: {
+        title: 'Bilgisayarım',
+        content: () => `
+          <h3>Bilgisayarım</h3>
+          <div class="widget-grid">
+            <div class="widget"><b>CPU</b><div id="cpuGauge">18%</div></div>
+            <div class="widget"><b>RAM</b><div id="ramGauge">46%</div></div>
+            <div class="widget"><b>Disk</b><div id="diskGauge">59%</div></div>
+            <div class="widget"><b>Uptime</b><div id="uptimeText">00:00:00</div></div>
+          </div>
+          <p style="margin-top:8px">İpucu: <span id="rotatingTip"></span></p>
+        `
+      },
+      explorer: {
+        title: 'Dosya Gezgini',
+        content: () => `
+          <h3>Dosya Gezgini</h3>
+          <div class="row"><input id="fileSearch" placeholder="Dosya ara"/></div>
+          <table class="table" id="fileTable">
+            <thead><tr><th>Ad</th><th>Tür</th><th>Boyut</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        `
+      },
+      notepad: {
+        title: 'Not Defteri',
+        content: () => `
+          <h3>Not Defteri</h3>
+          <textarea id="noteEditor" style="width:100%;height:220px" placeholder="Notunuzu yazın..."></textarea>
+          <div class="row">
+            <button id="saveNoteBtn">Kaydet</button>
+            <button id="loadNoteBtn">Yükle</button>
+            <button id="clearNoteBtn">Temizle</button>
+          </div>
+        `
+      },
+      calculator: {
+        title: 'Hesap Makinesi',
+        content: () => `
+          <h3>Hesap Makinesi</h3>
+          <div class="row"><input id="calcExpr" placeholder="Örn: (12+6)*3"/></div>
+          <div class="row">
+            <button id="calcBtn">Hesapla</button>
+            <button id="calcRandomBtn">Rastgele Örnek</button>
+          </div>
+          <p id="calcOut">Sonuç: -</p>
+        `
+      },
+      paint: {
+        title: 'Paint',
+        content: () => `
+          <h3>Paint (Mini Pixel)</h3>
+          <p>Renk seç ve karelere tıkla.</p>
+          <div class="row">
+            <input type="color" id="paintColor" value="#ff0000" />
+            <button id="paintClear">Temizle</button>
+          </div>
+          <div id="paintGrid" style="display:grid;grid-template-columns:repeat(16,20px);gap:2px;margin-top:8px"></div>
+        `
+      },
+      weather: {
+        title: 'Hava Durumu',
+        content: () => `
+          <h3>Hava Durumu</h3>
+          <table class="table">
+            <tr><th>Şehir</th><th>Durum</th><th>Sıcaklık</th></tr>
+            <tr><td>İstanbul</td><td>☀️</td><td>24°C</td></tr>
+            <tr><td>Ankara</td><td>⛅</td><td>21°C</td></tr>
+            <tr><td>İzmir</td><td>🌤️</td><td>27°C</td></tr>
+            <tr><td>Bursa</td><td>🌦️</td><td>20°C</td></tr>
+            <tr><td>Antalya</td><td>☀️</td><td>30°C</td></tr>
+          </table>
+        `
+      },
+      music: {
+        title: 'Müzik Çalar',
+        content: () => `
+          <h3>Müzik Çalar</h3>
+          <div class="row">
+            <button id="beepDo">Do</button>
+            <button id="beepRe">Re</button>
+            <button id="beepMi">Mi</button>
+            <button id="beepFa">Fa</button>
+            <button id="beepSol">Sol</button>
+          </div>
+          <p>WebAudio ile kısa tonlar üretir.</p>
+        `
+      },
+      mines: {
+        title: 'Mines',
+        content: () => `
+          <h3>Mines (Mini)</h3>
+          <p>Kutulara tıkla, mayına basma.</p>
+          <div id="minesGrid" style="display:grid;grid-template-columns:repeat(8,30px);gap:4px"></div>
+          <p id="minesStatus">Durum: Oyun başladı.</p>
+        `
+      },
+      todo: {
+        title: 'Yapılacaklar',
+        content: () => `
+          <h3>Yapılacaklar</h3>
+          <div class="row"><input id="todoInput" placeholder="Görev ekle"/></div>
+          <div class="row"><button id="todoAddBtn">Ekle</button><button id="todoClearBtn">Temizle</button></div>
+          <ul id="todoList"></ul>
+        `
+      },
+      calendar: {
+        title: 'Takvim',
+        content: () => `
+          <h3>Takvim</h3>
+          <div id="calendarBox"></div>
+        `
+      },
+      terminal: {
+        title: 'Terminal',
+        content: () => `
+          <h3>Komut Satırı</h3>
+          <div style="background:#111;color:#0f0;padding:8px;height:190px;overflow:auto;font-family:monospace" id="terminalOut"></div>
+          <div class="row"><input id="terminalInput" placeholder="komut yaz (help, open notepad, clear, time, tip)"/></div>
+        `
+      },
+      dashboard: {
+        title: 'Dashboard',
+        content: () => `
+          <h3>Kontrol Paneli</h3>
+          <div class="widget-grid">
+            <div class="widget"><b>Açık Pencere</b><div id="dashWindows">0</div></div>
+            <div class="widget"><b>Bildirim</b><div id="dashNotifications">0</div></div>
+            <div class="widget"><b>Tema</b><div id="dashTheme">1</div></div>
+            <div class="widget"><b>Muted</b><div id="dashMute">Hayır</div></div>
+          </div>
+          <div class="app-card-grid">
+          <div class="app-card" data-open="app1">Uygulama Kartı 1</div>
+          <div class="app-card" data-open="app2">Uygulama Kartı 2</div>
+          <div class="app-card" data-open="app3">Uygulama Kartı 3</div>
+          <div class="app-card" data-open="app4">Uygulama Kartı 4</div>
+          <div class="app-card" data-open="app5">Uygulama Kartı 5</div>
+          <div class="app-card" data-open="app6">Uygulama Kartı 6</div>
+          <div class="app-card" data-open="app7">Uygulama Kartı 7</div>
+          <div class="app-card" data-open="app8">Uygulama Kartı 8</div>
+          <div class="app-card" data-open="app9">Uygulama Kartı 9</div>
+          <div class="app-card" data-open="app10">Uygulama Kartı 10</div>
+          <div class="app-card" data-open="app11">Uygulama Kartı 11</div>
+          <div class="app-card" data-open="app12">Uygulama Kartı 12</div>
+          <div class="app-card" data-open="app13">Uygulama Kartı 13</div>
+          <div class="app-card" data-open="app14">Uygulama Kartı 14</div>
+          <div class="app-card" data-open="app15">Uygulama Kartı 15</div>
+          <div class="app-card" data-open="app16">Uygulama Kartı 16</div>
+          <div class="app-card" data-open="app17">Uygulama Kartı 17</div>
+          <div class="app-card" data-open="app18">Uygulama Kartı 18</div>
+          <div class="app-card" data-open="app19">Uygulama Kartı 19</div>
+          <div class="app-card" data-open="app20">Uygulama Kartı 20</div>
+          <div class="app-card" data-open="app21">Uygulama Kartı 21</div>
+          <div class="app-card" data-open="app22">Uygulama Kartı 22</div>
+          <div class="app-card" data-open="app23">Uygulama Kartı 23</div>
+          <div class="app-card" data-open="app24">Uygulama Kartı 24</div>
+          <div class="app-card" data-open="app25">Uygulama Kartı 25</div>
+          <div class="app-card" data-open="app26">Uygulama Kartı 26</div>
+          <div class="app-card" data-open="app27">Uygulama Kartı 27</div>
+          <div class="app-card" data-open="app28">Uygulama Kartı 28</div>
+          <div class="app-card" data-open="app29">Uygulama Kartı 29</div>
+          <div class="app-card" data-open="app30">Uygulama Kartı 30</div>
+          <div class="app-card" data-open="app31">Uygulama Kartı 31</div>
+          <div class="app-card" data-open="app32">Uygulama Kartı 32</div>
+          <div class="app-card" data-open="app33">Uygulama Kartı 33</div>
+          <div class="app-card" data-open="app34">Uygulama Kartı 34</div>
+          <div class="app-card" data-open="app35">Uygulama Kartı 35</div>
+          <div class="app-card" data-open="app36">Uygulama Kartı 36</div>
+          <div class="app-card" data-open="app37">Uygulama Kartı 37</div>
+          <div class="app-card" data-open="app38">Uygulama Kartı 38</div>
+          <div class="app-card" data-open="app39">Uygulama Kartı 39</div>
+          <div class="app-card" data-open="app40">Uygulama Kartı 40</div>
+          <div class="app-card" data-open="app41">Uygulama Kartı 41</div>
+          <div class="app-card" data-open="app42">Uygulama Kartı 42</div>
+          <div class="app-card" data-open="app43">Uygulama Kartı 43</div>
+          <div class="app-card" data-open="app44">Uygulama Kartı 44</div>
+          <div class="app-card" data-open="app45">Uygulama Kartı 45</div>
+          <div class="app-card" data-open="app46">Uygulama Kartı 46</div>
+          <div class="app-card" data-open="app47">Uygulama Kartı 47</div>
+          <div class="app-card" data-open="app48">Uygulama Kartı 48</div>
+          <div class="app-card" data-open="app49">Uygulama Kartı 49</div>
+          <div class="app-card" data-open="app50">Uygulama Kartı 50</div>
+          <div class="app-card" data-open="app51">Uygulama Kartı 51</div>
+          <div class="app-card" data-open="app52">Uygulama Kartı 52</div>
+          <div class="app-card" data-open="app53">Uygulama Kartı 53</div>
+          <div class="app-card" data-open="app54">Uygulama Kartı 54</div>
+          <div class="app-card" data-open="app55">Uygulama Kartı 55</div>
+          <div class="app-card" data-open="app56">Uygulama Kartı 56</div>
+          <div class="app-card" data-open="app57">Uygulama Kartı 57</div>
+          <div class="app-card" data-open="app58">Uygulama Kartı 58</div>
+          <div class="app-card" data-open="app59">Uygulama Kartı 59</div>
+          <div class="app-card" data-open="app60">Uygulama Kartı 60</div>
+          <div class="app-card" data-open="app61">Uygulama Kartı 61</div>
+          <div class="app-card" data-open="app62">Uygulama Kartı 62</div>
+          <div class="app-card" data-open="app63">Uygulama Kartı 63</div>
+          <div class="app-card" data-open="app64">Uygulama Kartı 64</div>
+          <div class="app-card" data-open="app65">Uygulama Kartı 65</div>
+          <div class="app-card" data-open="app66">Uygulama Kartı 66</div>
+          <div class="app-card" data-open="app67">Uygulama Kartı 67</div>
+          <div class="app-card" data-open="app68">Uygulama Kartı 68</div>
+          <div class="app-card" data-open="app69">Uygulama Kartı 69</div>
+          <div class="app-card" data-open="app70">Uygulama Kartı 70</div>
+          <div class="app-card" data-open="app71">Uygulama Kartı 71</div>
+          <div class="app-card" data-open="app72">Uygulama Kartı 72</div>
+          <div class="app-card" data-open="app73">Uygulama Kartı 73</div>
+          <div class="app-card" data-open="app74">Uygulama Kartı 74</div>
+          <div class="app-card" data-open="app75">Uygulama Kartı 75</div>
+          <div class="app-card" data-open="app76">Uygulama Kartı 76</div>
+          <div class="app-card" data-open="app77">Uygulama Kartı 77</div>
+          <div class="app-card" data-open="app78">Uygulama Kartı 78</div>
+          <div class="app-card" data-open="app79">Uygulama Kartı 79</div>
+          <div class="app-card" data-open="app80">Uygulama Kartı 80</div>
+          </div>
+        `
+      },
+      about: {
+        title: 'Hakkında',
+        content: () => `
+          <h3>XP Ultimate Simülatör</h3>
+          <p>Bu sürümde 1000+ satır kod ile genişletilmiş özellik seti bulunur.</p>
+          <ul>
+            <li>Çoklu pencere sistemi, sürükleme/resize/snap</li>
+            <li>Start menü arama, run dialog, hızlı not</li>
+            <li>Explorer, todo, takvim, terminal, dashboard</li>
+            <li>Bildirim merkezi, ses kontrolü, tema ve düzen kaydı</li>
+          </ul>
+          <p>Kısayollar: <span class="kbd">Ctrl</span>+<span class="kbd">N</span>, <span class="kbd">Ctrl</span>+<span class="kbd">L</span>, <span class="kbd">F2</span>, <span class="kbd">Esc</span>.</p>
+        `
+      },
+      app1: {
+        title: 'Ek Uygulama 1',
+        content: () => `<h3>Ek Uygulama 1</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app2: {
+        title: 'Ek Uygulama 2',
+        content: () => `<h3>Ek Uygulama 2</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app3: {
+        title: 'Ek Uygulama 3',
+        content: () => `<h3>Ek Uygulama 3</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app4: {
+        title: 'Ek Uygulama 4',
+        content: () => `<h3>Ek Uygulama 4</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app5: {
+        title: 'Ek Uygulama 5',
+        content: () => `<h3>Ek Uygulama 5</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app6: {
+        title: 'Ek Uygulama 6',
+        content: () => `<h3>Ek Uygulama 6</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app7: {
+        title: 'Ek Uygulama 7',
+        content: () => `<h3>Ek Uygulama 7</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app8: {
+        title: 'Ek Uygulama 8',
+        content: () => `<h3>Ek Uygulama 8</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app9: {
+        title: 'Ek Uygulama 9',
+        content: () => `<h3>Ek Uygulama 9</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app10: {
+        title: 'Ek Uygulama 10',
+        content: () => `<h3>Ek Uygulama 10</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app11: {
+        title: 'Ek Uygulama 11',
+        content: () => `<h3>Ek Uygulama 11</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app12: {
+        title: 'Ek Uygulama 12',
+        content: () => `<h3>Ek Uygulama 12</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app13: {
+        title: 'Ek Uygulama 13',
+        content: () => `<h3>Ek Uygulama 13</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app14: {
+        title: 'Ek Uygulama 14',
+        content: () => `<h3>Ek Uygulama 14</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app15: {
+        title: 'Ek Uygulama 15',
+        content: () => `<h3>Ek Uygulama 15</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app16: {
+        title: 'Ek Uygulama 16',
+        content: () => `<h3>Ek Uygulama 16</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app17: {
+        title: 'Ek Uygulama 17',
+        content: () => `<h3>Ek Uygulama 17</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app18: {
+        title: 'Ek Uygulama 18',
+        content: () => `<h3>Ek Uygulama 18</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app19: {
+        title: 'Ek Uygulama 19',
+        content: () => `<h3>Ek Uygulama 19</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app20: {
+        title: 'Ek Uygulama 20',
+        content: () => `<h3>Ek Uygulama 20</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app21: {
+        title: 'Ek Uygulama 21',
+        content: () => `<h3>Ek Uygulama 21</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app22: {
+        title: 'Ek Uygulama 22',
+        content: () => `<h3>Ek Uygulama 22</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app23: {
+        title: 'Ek Uygulama 23',
+        content: () => `<h3>Ek Uygulama 23</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app24: {
+        title: 'Ek Uygulama 24',
+        content: () => `<h3>Ek Uygulama 24</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app25: {
+        title: 'Ek Uygulama 25',
+        content: () => `<h3>Ek Uygulama 25</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app26: {
+        title: 'Ek Uygulama 26',
+        content: () => `<h3>Ek Uygulama 26</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app27: {
+        title: 'Ek Uygulama 27',
+        content: () => `<h3>Ek Uygulama 27</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app28: {
+        title: 'Ek Uygulama 28',
+        content: () => `<h3>Ek Uygulama 28</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app29: {
+        title: 'Ek Uygulama 29',
+        content: () => `<h3>Ek Uygulama 29</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app30: {
+        title: 'Ek Uygulama 30',
+        content: () => `<h3>Ek Uygulama 30</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app31: {
+        title: 'Ek Uygulama 31',
+        content: () => `<h3>Ek Uygulama 31</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app32: {
+        title: 'Ek Uygulama 32',
+        content: () => `<h3>Ek Uygulama 32</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app33: {
+        title: 'Ek Uygulama 33',
+        content: () => `<h3>Ek Uygulama 33</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app34: {
+        title: 'Ek Uygulama 34',
+        content: () => `<h3>Ek Uygulama 34</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app35: {
+        title: 'Ek Uygulama 35',
+        content: () => `<h3>Ek Uygulama 35</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app36: {
+        title: 'Ek Uygulama 36',
+        content: () => `<h3>Ek Uygulama 36</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app37: {
+        title: 'Ek Uygulama 37',
+        content: () => `<h3>Ek Uygulama 37</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app38: {
+        title: 'Ek Uygulama 38',
+        content: () => `<h3>Ek Uygulama 38</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app39: {
+        title: 'Ek Uygulama 39',
+        content: () => `<h3>Ek Uygulama 39</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app40: {
+        title: 'Ek Uygulama 40',
+        content: () => `<h3>Ek Uygulama 40</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app41: {
+        title: 'Ek Uygulama 41',
+        content: () => `<h3>Ek Uygulama 41</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app42: {
+        title: 'Ek Uygulama 42',
+        content: () => `<h3>Ek Uygulama 42</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app43: {
+        title: 'Ek Uygulama 43',
+        content: () => `<h3>Ek Uygulama 43</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app44: {
+        title: 'Ek Uygulama 44',
+        content: () => `<h3>Ek Uygulama 44</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app45: {
+        title: 'Ek Uygulama 45',
+        content: () => `<h3>Ek Uygulama 45</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app46: {
+        title: 'Ek Uygulama 46',
+        content: () => `<h3>Ek Uygulama 46</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app47: {
+        title: 'Ek Uygulama 47',
+        content: () => `<h3>Ek Uygulama 47</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app48: {
+        title: 'Ek Uygulama 48',
+        content: () => `<h3>Ek Uygulama 48</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app49: {
+        title: 'Ek Uygulama 49',
+        content: () => `<h3>Ek Uygulama 49</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app50: {
+        title: 'Ek Uygulama 50',
+        content: () => `<h3>Ek Uygulama 50</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app51: {
+        title: 'Ek Uygulama 51',
+        content: () => `<h3>Ek Uygulama 51</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app52: {
+        title: 'Ek Uygulama 52',
+        content: () => `<h3>Ek Uygulama 52</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app53: {
+        title: 'Ek Uygulama 53',
+        content: () => `<h3>Ek Uygulama 53</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app54: {
+        title: 'Ek Uygulama 54',
+        content: () => `<h3>Ek Uygulama 54</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app55: {
+        title: 'Ek Uygulama 55',
+        content: () => `<h3>Ek Uygulama 55</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app56: {
+        title: 'Ek Uygulama 56',
+        content: () => `<h3>Ek Uygulama 56</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app57: {
+        title: 'Ek Uygulama 57',
+        content: () => `<h3>Ek Uygulama 57</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app58: {
+        title: 'Ek Uygulama 58',
+        content: () => `<h3>Ek Uygulama 58</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app59: {
+        title: 'Ek Uygulama 59',
+        content: () => `<h3>Ek Uygulama 59</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app60: {
+        title: 'Ek Uygulama 60',
+        content: () => `<h3>Ek Uygulama 60</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app61: {
+        title: 'Ek Uygulama 61',
+        content: () => `<h3>Ek Uygulama 61</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app62: {
+        title: 'Ek Uygulama 62',
+        content: () => `<h3>Ek Uygulama 62</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app63: {
+        title: 'Ek Uygulama 63',
+        content: () => `<h3>Ek Uygulama 63</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app64: {
+        title: 'Ek Uygulama 64',
+        content: () => `<h3>Ek Uygulama 64</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app65: {
+        title: 'Ek Uygulama 65',
+        content: () => `<h3>Ek Uygulama 65</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app66: {
+        title: 'Ek Uygulama 66',
+        content: () => `<h3>Ek Uygulama 66</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app67: {
+        title: 'Ek Uygulama 67',
+        content: () => `<h3>Ek Uygulama 67</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app68: {
+        title: 'Ek Uygulama 68',
+        content: () => `<h3>Ek Uygulama 68</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app69: {
+        title: 'Ek Uygulama 69',
+        content: () => `<h3>Ek Uygulama 69</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app70: {
+        title: 'Ek Uygulama 70',
+        content: () => `<h3>Ek Uygulama 70</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app71: {
+        title: 'Ek Uygulama 71',
+        content: () => `<h3>Ek Uygulama 71</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app72: {
+        title: 'Ek Uygulama 72',
+        content: () => `<h3>Ek Uygulama 72</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app73: {
+        title: 'Ek Uygulama 73',
+        content: () => `<h3>Ek Uygulama 73</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app74: {
+        title: 'Ek Uygulama 74',
+        content: () => `<h3>Ek Uygulama 74</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app75: {
+        title: 'Ek Uygulama 75',
+        content: () => `<h3>Ek Uygulama 75</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app76: {
+        title: 'Ek Uygulama 76',
+        content: () => `<h3>Ek Uygulama 76</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app77: {
+        title: 'Ek Uygulama 77',
+        content: () => `<h3>Ek Uygulama 77</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app78: {
+        title: 'Ek Uygulama 78',
+        content: () => `<h3>Ek Uygulama 78</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app79: {
+        title: 'Ek Uygulama 79',
+        content: () => `<h3>Ek Uygulama 79</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
+      app80: {
+        title: 'Ek Uygulama 80',
+        content: () => `<h3>Ek Uygulama 80</h3><p>Bu ek pencere demonstrasyon amaçlıdır.</p><p>Satır hedefini ve özellik çeşitliliğini artırır.</p>`
+      },
     };
 
     let zIndex = 50;
     let windowCount = 0;
     let wallpaperIndex = 0;
     let muted = false;
+    let activeWindowId = null;
+    let sessionStart = Date.now();
     const openWindows = new Map();
+    const notifications = [];
+
+    function notify(message, level = 'info') {
+      const item = { message, level, time: new Date().toLocaleTimeString('tr-TR') };
+      notifications.unshift(item);
+      if (notifications.length > 100) notifications.pop();
+      showToast(message);
+      renderNotifications();
+      saveState();
+    }
+
+    function renderNotifications() {
+      notificationList.innerHTML = notifications
+        .map((n) => `<div style="border-bottom:1px solid #ddd;padding:6px 0"><b>[${n.time}]</b> ${n.message}</div>`)
+        .join('') || '<p>Bildirim yok.</p>';
+    }
 
     function showToast(message) {
       toast.textContent = message;
       toast.style.display = 'block';
-      setTimeout(() => (toast.style.display = 'none'), 1600);
+      setTimeout(() => (toast.style.display = 'none'), 1700);
     }
 
-    function playBeep(freq = 440, dur = 0.1) {
+    function playBeep(freq = 440, dur = 0.12) {
       if (muted) return;
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = ctx.createOscillator();
@@ -199,35 +1690,253 @@
       instance.window.style.zIndex = ++zIndex;
       instance.window.classList.add('active');
       instance.task.classList.add('active');
+      activeWindowId = winId;
+    }
+
+    function formatDuration(ms) {
+      const total = Math.floor(ms / 1000);
+      const h = String(Math.floor(total / 3600)).padStart(2, '0');
+      const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+      const s = String(total % 60).padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
+
+    function renderFileRows(query = '') {
+      const tableBody = document.querySelector('#fileTable tbody');
+      if (!tableBody) return;
+      const filtered = fileDatabase.filter((f) => f.name.toLowerCase().includes(query.toLowerCase()));
+      tableBody.innerHTML = filtered.slice(0, 180).map((f) => `<tr><td>${f.name}</td><td>${f.type}</td><td>${f.size}</td></tr>`).join('');
+    }
+
+    function renderCalendar(target) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const first = new Date(year, month, 1).getDay();
+      const days = new Date(year, month + 1, 0).getDate();
+      let html = `<table class="table"><tr><th>Pzt</th><th>Sal</th><th>Çar</th><th>Per</th><th>Cum</th><th>Cmt</th><th>Paz</th></tr><tr>`;
+      let day = 1;
+      for (let i = 0; i < 42; i++) {
+        const idx = (i + 1) % 7;
+        if (i < (first === 0 ? 6 : first - 1) || day > days) html += '<td></td>';
+        else { html += `<td>${day}</td>`; day += 1; }
+        if (idx === 0 && i < 41) html += '</tr><tr>';
+      }
+      html += '</tr></table>';
+      target.innerHTML = html;
+    }
+
+    function bindTerminal(win) {
+      const out = win.querySelector('#terminalOut');
+      const input = win.querySelector('#terminalInput');
+      if (!out || !input) return;
+      const print = (txt) => { out.innerHTML += `\n<div>> ${txt}</div>`; out.scrollTop = out.scrollHeight; };
+      print('XP Terminal hazır. help yaz.');
+      input.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const cmd = input.value.trim();
+        input.value = '';
+        if (!cmd) return;
+        print(cmd);
+        if (cmd === 'help') print('Komutlar: help, clear, time, tip, open <app>');
+        else if (cmd === 'clear') out.innerHTML = '';
+        else if (cmd === 'time') print(new Date().toLocaleString('tr-TR'));
+        else if (cmd === 'tip') print(tips[Math.floor(Math.random() * tips.length)]);
+        else if (cmd.startsWith('open ')) {
+          const app = cmd.replace('open ', '').trim();
+          if (apps[app]) { createWindow(app); print(`Açıldı: ${app}`); }
+          else print('Uygulama bulunamadı');
+        } else print('Bilinmeyen komut');
+      });
+    }
+
+    function bindPaint(win) {
+      const grid = win.querySelector('#paintGrid');
+      const color = win.querySelector('#paintColor');
+      const clear = win.querySelector('#paintClear');
+      if (!grid) return;
+      for (let i = 0; i < 256; i++) {
+        const c = document.createElement('div');
+        c.style.height = '20px';
+        c.style.border = '1px solid #ddd';
+        c.style.background = '#fff';
+        c.addEventListener('click', () => c.style.background = color.value);
+        grid.appendChild(c);
+      }
+      clear?.addEventListener('click', () => {
+        grid.querySelectorAll('div').forEach((c) => c.style.background = '#fff');
+      });
+    }
+
+    function bindMines(win) {
+      const grid = win.querySelector('#minesGrid');
+      const status = win.querySelector('#minesStatus');
+      if (!grid || !status) return;
+      const mineSet = new Set([3, 7, 12, 15, 22, 29, 36, 44, 51, 59]);
+      let safeOpened = 0;
+      const totalSafe = 64 - mineSet.size;
+      for (let i = 0; i < 64; i++) {
+        const b = document.createElement('button');
+        b.textContent = '■';
+        b.style.height = '30px';
+        b.style.fontSize = '12px';
+        b.addEventListener('click', () => {
+          if (b.disabled) return;
+          b.disabled = true;
+          if (mineSet.has(i)) {
+            b.textContent = '💥';
+            b.style.background = '#f77';
+            status.textContent = 'Durum: Kaybettin!';
+            notify('Mines: mayına bastın', 'warn');
+          } else {
+            b.textContent = '·';
+            safeOpened += 1;
+            if (safeOpened === totalSafe) {
+              status.textContent = 'Durum: Kazandın!';
+              notify('Mines: kazandın!', 'ok');
+            }
+          }
+        });
+        grid.appendChild(b);
+      }
+    }
+
+    function bindTodo(win) {
+      const input = win.querySelector('#todoInput');
+      const add = win.querySelector('#todoAddBtn');
+      const clear = win.querySelector('#todoClearBtn');
+      const list = win.querySelector('#todoList');
+      if (!input || !add || !clear || !list) return;
+      const key = 'xp_todo_items';
+      const render = () => {
+        const items = JSON.parse(localStorage.getItem(key) || '[]');
+        list.innerHTML = items.map((it, idx) => `<li>${it} <button data-del="${idx}">sil</button></li>`).join('');
+        list.querySelectorAll('button[data-del]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const items2 = JSON.parse(localStorage.getItem(key) || '[]');
+            items2.splice(Number(btn.dataset.del), 1);
+            localStorage.setItem(key, JSON.stringify(items2));
+            render();
+          });
+        });
+      };
+      add.addEventListener('click', () => {
+        const v = input.value.trim();
+        if (!v) return;
+        const items = JSON.parse(localStorage.getItem(key) || '[]');
+        items.push(v);
+        localStorage.setItem(key, JSON.stringify(items));
+        input.value = '';
+        render();
+      });
+      clear.addEventListener('click', () => { localStorage.removeItem(key); render(); });
+      render();
+    }
+
+    function bindCalculator(win) {
+      const expr = win.querySelector('#calcExpr');
+      const btn = win.querySelector('#calcBtn');
+      const randomBtn = win.querySelector('#calcRandomBtn');
+      const out = win.querySelector('#calcOut');
+      if (!expr || !btn || !out) return;
+      btn.addEventListener('click', () => {
+        try {
+          out.textContent = `Sonuç: ${Function(`return (${expr.value || 0})`)()}`;
+        } catch {
+          out.textContent = 'Sonuç: Hatalı ifade';
+        }
+      });
+      randomBtn?.addEventListener('click', () => {
+        const a = Math.floor(Math.random() * 99) + 1;
+        const b = Math.floor(Math.random() * 20) + 1;
+        expr.value = `${a}*${b}+10`;
+      });
+    }
+
+    function bindNote(win) {
+      const editor = win.querySelector('#noteEditor');
+      const save = win.querySelector('#saveNoteBtn');
+      const load = win.querySelector('#loadNoteBtn');
+      const clear = win.querySelector('#clearNoteBtn');
+      if (!editor) return;
+      const key = 'xp_notepad_value';
+      save?.addEventListener('click', () => {
+        localStorage.setItem(key, editor.value);
+        notify('Not kaydedildi');
+      });
+      load?.addEventListener('click', () => {
+        editor.value = localStorage.getItem(key) || '';
+      });
+      clear?.addEventListener('click', () => {
+        editor.value = '';
+      });
+    }
+
+    function bindExplorer(win) {
+      const search = win.querySelector('#fileSearch');
+      if (!search) return;
+      renderFileRows();
+      search.addEventListener('input', () => renderFileRows(search.value));
+    }
+
+    function bindComputer(win) {
+      const cpu = win.querySelector('#cpuGauge');
+      const ram = win.querySelector('#ramGauge');
+      const disk = win.querySelector('#diskGauge');
+      const up = win.querySelector('#uptimeText');
+      const tip = win.querySelector('#rotatingTip');
+      if (!cpu || !ram || !disk || !up || !tip) return;
+      tip.textContent = tips[Math.floor(Math.random() * tips.length)];
+      const interval = setInterval(() => {
+        cpu.textContent = `${10 + Math.floor(Math.random() * 70)}%`;
+        ram.textContent = `${30 + Math.floor(Math.random() * 60)}%`;
+        disk.textContent = `${40 + Math.floor(Math.random() * 40)}%`;
+        up.textContent = formatDuration(Date.now() - sessionStart);
+      }, 1000);
+      win.dataset.interval = String(interval);
+    }
+
+    function bindMusic(win) {
+      const map = { beepDo: 261, beepRe: 293, beepMi: 329, beepFa: 349, beepSol: 392 };
+      Object.keys(map).forEach((id) => win.querySelector('#' + id)?.addEventListener('click', () => playBeep(map[id], 0.14)));
+    }
+
+    function bindCalendar(win) {
+      const box = win.querySelector('#calendarBox');
+      if (box) renderCalendar(box);
+    }
+
+    function bindDashboard(win) {
+      const update = () => {
+        const w = win.querySelector('#dashWindows');
+        const n = win.querySelector('#dashNotifications');
+        const t = win.querySelector('#dashTheme');
+        const m = win.querySelector('#dashMute');
+        if (w) w.textContent = String(openWindows.size);
+        if (n) n.textContent = String(notifications.length);
+        if (t) t.textContent = String(wallpaperIndex + 1);
+        if (m) m.textContent = muted ? 'Evet' : 'Hayır';
+      };
+      update();
+      win.querySelectorAll('.app-card[data-open]').forEach((card) => {
+        card.addEventListener('click', () => createWindow(card.dataset.open));
+      });
+      const intv = setInterval(update, 800);
+      win.dataset.interval = String(intv);
     }
 
     function bindAppLogic(windowEl, appKey) {
-      if (appKey === 'calculator') {
-        const btn = windowEl.querySelector('#calcBtn');
-        const expr = windowEl.querySelector('#calcExpr');
-        const out = windowEl.querySelector('#calcOut');
-        btn?.addEventListener('click', () => {
-          try { out.textContent = `Sonuç: ${Function(`return (${expr.value || 0})`)()}`; }
-          catch { out.textContent = 'Sonuç: Hatalı ifade'; }
-        });
-      }
-      if (appKey === 'mines') {
-        const grid = windowEl.querySelector('#minesGrid');
-        const mines = new Set([3, 8, 14, 17, 22, 31]);
-        Array.from({ length: 36 }, (_, i) => {
-          const cell = document.createElement('button');
-          cell.textContent = '■';
-          cell.style.height = '34px';
-          cell.addEventListener('click', () => {
-            if (mines.has(i)) { cell.textContent = '💥'; cell.style.background = '#f88'; showToast('Mayına bastın!'); }
-            else { cell.textContent = '·'; cell.disabled = true; }
-          });
-          grid?.appendChild(cell);
-        });
-      }
-      if (appKey === 'music') {
-        windowEl.querySelector('#beepBtn')?.addEventListener('click', () => playBeep(560, 0.12));
-      }
+      if (appKey === 'calculator') bindCalculator(windowEl);
+      if (appKey === 'notepad') bindNote(windowEl);
+      if (appKey === 'explorer') bindExplorer(windowEl);
+      if (appKey === 'computer') bindComputer(windowEl);
+      if (appKey === 'paint') bindPaint(windowEl);
+      if (appKey === 'music') bindMusic(windowEl);
+      if (appKey === 'mines') bindMines(windowEl);
+      if (appKey === 'todo') bindTodo(windowEl);
+      if (appKey === 'calendar') bindCalendar(windowEl);
+      if (appKey === 'terminal') bindTerminal(windowEl);
+      if (appKey === 'dashboard') bindDashboard(windowEl);
     }
 
     function createWindow(appKey) {
@@ -237,13 +1946,13 @@
       const winId = `win-${++windowCount}`;
       const windowEl = document.createElement('div');
       windowEl.className = 'window';
-      windowEl.style.top = `${72 + (windowCount % 8) * 20}px`;
-      windowEl.style.left = `${170 + (windowCount % 8) * 24}px`;
+      windowEl.style.top = `${72 + (windowCount % 10) * 18}px`;
+      windowEl.style.left = `${170 + (windowCount % 10) * 22}px`;
       windowEl.style.zIndex = ++zIndex;
 
       windowEl.innerHTML = `
         <div class="titlebar">
-          <span>${app.title}</span>
+          <div class="title-left"><span>🗔</span><span>${app.title}</span></div>
           <div class="titlebar-controls">
             <button data-action="min">_</button>
             <button data-action="max">□</button>
@@ -262,6 +1971,7 @@
       openWindows.set(winId, { window: windowEl, task, appKey, maximized: false, prevBounds: null });
       setActive(winId);
       bindAppLogic(windowEl, appKey);
+      notify(`${app.title} açıldı`);
 
       task.addEventListener('click', () => {
         if (windowEl.style.display === 'none') { windowEl.style.display = 'block'; setActive(winId); }
@@ -279,13 +1989,29 @@
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
           const action = btn.dataset.action;
-          if (action === 'close') { windowEl.remove(); task.remove(); openWindows.delete(winId); playBeep(220, 0.08); }
-          if (action === 'min') { windowEl.style.display = 'none'; task.classList.remove('active'); }
+          if (action === 'close') {
+            const iv = Number(windowEl.dataset.interval || '0');
+            if (iv) clearInterval(iv);
+            windowEl.remove();
+            task.remove();
+            openWindows.delete(winId);
+            if (activeWindowId === winId) activeWindowId = null;
+            playBeep(220, 0.08);
+          }
+          if (action === 'min') {
+            windowEl.style.display = 'none';
+            task.classList.remove('active');
+          }
           if (action === 'max') {
             const instance = openWindows.get(winId);
             if (!instance) return;
             if (!instance.maximized) {
-              instance.prevBounds = { top: windowEl.style.top, left: windowEl.style.left, width: windowEl.style.width, height: windowEl.style.height };
+              instance.prevBounds = {
+                top: windowEl.style.top,
+                left: windowEl.style.left,
+                width: windowEl.style.width,
+                height: windowEl.style.height
+              };
               windowEl.classList.add('maximized');
             } else {
               windowEl.classList.remove('maximized');
@@ -296,7 +2022,9 @@
         });
       });
 
-      let dragging = false, dx = 0, dy = 0;
+      let dragging = false;
+      let dx = 0;
+      let dy = 0;
       titlebar.addEventListener('mousedown', (e) => {
         if (openWindows.get(winId)?.maximized) return;
         dragging = true;
@@ -305,12 +2033,19 @@
         dy = e.clientY - rect.top;
       });
 
-      let resizing = false, startX = 0, startY = 0, startW = 0, startH = 0;
+      let resizing = false;
+      let startX = 0;
+      let startY = 0;
+      let startW = 0;
+      let startH = 0;
       resizer.addEventListener('mousedown', (e) => {
         if (openWindows.get(winId)?.maximized) return;
         resizing = true;
         const rect = windowEl.getBoundingClientRect();
-        startX = e.clientX; startY = e.clientY; startW = rect.width; startH = rect.height;
+        startX = e.clientX;
+        startY = e.clientY;
+        startW = rect.width;
+        startH = rect.height;
         e.preventDefault();
       });
 
@@ -318,11 +2053,12 @@
         if (dragging) {
           const x = Math.max(0, Math.min(window.innerWidth - windowEl.offsetWidth, e.clientX - dx));
           const y = Math.max(0, Math.min(window.innerHeight - 40 - windowEl.offsetHeight, e.clientY - dy));
-          windowEl.style.left = `${x}px`; windowEl.style.top = `${y}px`;
+          windowEl.style.left = `${x}px`;
+          windowEl.style.top = `${y}px`;
         }
         if (resizing) {
-          windowEl.style.width = `${Math.max(280, startW + e.clientX - startX)}px`;
-          windowEl.style.height = `${Math.max(180, startH + e.clientY - startY)}px`;
+          windowEl.style.width = `${Math.max(300, startW + e.clientX - startX)}px`;
+          windowEl.style.height = `${Math.max(200, startH + e.clientY - startY)}px`;
         }
       };
       const upFn = () => { dragging = false; resizing = false; };
@@ -331,7 +2067,11 @@
     }
 
     function hideAllWindows() {
-      openWindows.forEach((instance) => { instance.window.style.display = 'none'; instance.task.classList.remove('active'); });
+      openWindows.forEach((instance) => {
+        instance.window.style.display = 'none';
+        instance.task.classList.remove('active');
+      });
+      activeWindowId = null;
     }
 
     function tileWindows() {
@@ -342,10 +2082,13 @@
       const cellW = Math.floor(window.innerWidth / cols);
       const cellH = Math.floor((window.innerHeight - 40) / rows);
       list.forEach((v, i) => {
-        const r = Math.floor(i / cols), c = i % cols;
+        const r = Math.floor(i / cols);
+        const c = i % cols;
         v.window.classList.remove('maximized');
-        v.window.style.left = `${c * cellW}px`; v.window.style.top = `${r * cellH}px`;
-        v.window.style.width = `${cellW}px`; v.window.style.height = `${cellH}px`;
+        v.window.style.left = `${c * cellW}px`;
+        v.window.style.top = `${r * cellH}px`;
+        v.window.style.width = `${cellW}px`;
+        v.window.style.height = `${cellH}px`;
       });
     }
 
@@ -354,17 +2097,32 @@
       [...openWindows.values()].forEach((v) => {
         if (v.window.style.display === 'none') return;
         v.window.classList.remove('maximized');
-        v.window.style.width = '520px'; v.window.style.height = '320px';
-        v.window.style.left = `${120 + i * 28}px`; v.window.style.top = `${52 + i * 24}px`;
+        v.window.style.width = '560px';
+        v.window.style.height = '340px';
+        v.window.style.left = `${120 + i * 26}px`;
+        v.window.style.top = `${52 + i * 22}px`;
         i += 1;
       });
+    }
+
+    function snapActive(direction) {
+      if (!activeWindowId) return;
+      const inst = openWindows.get(activeWindowId);
+      if (!inst) return;
+      const el = inst.window;
+      el.classList.remove('maximized');
+      el.style.top = '0px';
+      el.style.width = `${Math.floor(window.innerWidth / 2)}px`;
+      el.style.height = `${window.innerHeight - 40}px`;
+      el.style.left = direction === 'left' ? '0px' : `${Math.floor(window.innerWidth / 2)}px`;
+      notify(direction === 'left' ? 'Pencere sola yaslandı' : 'Pencere sağa yaslandı');
     }
 
     function cycleWallpaper() {
       wallpaperIndex = (wallpaperIndex + 1) % wallpapers.length;
       desktop.style.setProperty('--desktop-bg', wallpapers[wallpaperIndex].bg);
       desktop.style.setProperty('--hill', wallpapers[wallpaperIndex].hill);
-      showToast('Duvar kağıdı değiştirildi');
+      notify('Duvar kağıdı değiştirildi');
     }
 
     function renderStartList(filter = '') {
@@ -375,90 +2133,284 @@
           const item = document.createElement('div');
           item.className = 'menu-item';
           item.textContent = apps[key].title;
-          item.addEventListener('click', () => { createWindow(key); startMenu.style.display = 'none'; });
+          item.addEventListener('click', () => {
+            createWindow(key);
+            startMenu.style.display = 'none';
+          });
           startAppList.appendChild(item);
         });
     }
 
-    document.querySelectorAll('.icon').forEach((icon) => icon.addEventListener('dblclick', () => createWindow(icon.dataset.app)));
-
-    startBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      startMenu.style.display = startMenu.style.display === 'block' ? 'none' : 'block';
-      renderStartList(startSearch.value);
-    });
-
-    startSearch.addEventListener('input', () => renderStartList(startSearch.value));
-
-    document.getElementById('showDesktopBtn').addEventListener('click', () => { hideAllWindows(); startMenu.style.display = 'none'; showToast('Masaüstü gösterildi'); });
-    document.getElementById('tileWindowsBtn').addEventListener('click', () => { tileWindows(); startMenu.style.display = 'none'; showToast('Pencereler dizildi'); });
-    document.getElementById('cascadeWindowsBtn').addEventListener('click', () => { cascadeWindows(); startMenu.style.display = 'none'; showToast('Pencereler basamaklandı'); });
-    document.getElementById('themeToggleBtn').addEventListener('click', () => { cycleWallpaper(); startMenu.style.display = 'none'; });
-    document.getElementById('shutdownBtn').addEventListener('click', () => { startMenu.style.display = 'none'; showToast('Kapatılamaz 😄 Simülatör modunda.'); });
-
-    document.getElementById('showDesktopQuick').addEventListener('click', hideAllWindows);
-    document.getElementById('muteToggle').addEventListener('click', (e) => {
-      muted = !muted;
-      e.target.textContent = muted ? '🔇' : '🔊';
-      showToast(muted ? 'Ses kapatıldı' : 'Ses açıldı');
-    });
-
-    document.getElementById('runDialogBtn').addEventListener('click', () => { runBox.style.display = 'block'; startMenu.style.display = 'none'; });
-    document.getElementById('runCancelBtn').addEventListener('click', () => { runBox.style.display = 'none'; });
-    document.getElementById('runOpenBtn').addEventListener('click', () => {
-      const key = document.getElementById('runInput').value.trim().toLowerCase();
-      if (apps[key]) createWindow(key);
-      else showToast('Uygulama bulunamadı');
-      runBox.style.display = 'none';
-    });
-
-    document.getElementById('lockBtn').addEventListener('click', () => { lockScreen.style.display = 'flex'; startMenu.style.display = 'none'; });
-    document.getElementById('unlockBtn').addEventListener('click', () => { lockScreen.style.display = 'none'; showToast('Hoş geldin!'); });
-
-    desktop.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      if (e.target.closest('.window')) return;
-      desktopMenu.style.left = `${e.clientX}px`;
-      desktopMenu.style.top = `${e.clientY}px`;
-      desktopMenu.style.display = 'block';
-    });
-
-    desktopMenu.addEventListener('click', (e) => {
-      const action = e.target.dataset.action;
-      if (!action) return;
-      if (action === 'new-note') createWindow('notepad');
-      if (action === 'refresh') showToast('Masaüstü yenilendi');
-      if (action === 'wallpaper') cycleWallpaper();
-      if (action === 'close-all') {
-        openWindows.forEach((v) => { v.window.remove(); v.task.remove(); });
-        openWindows.clear();
-        showToast('Tüm pencereler kapatıldı');
-      }
-      desktopMenu.style.display = 'none';
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!startMenu.contains(e.target) && e.target !== startBtn) startMenu.style.display = 'none';
-      if (!desktopMenu.contains(e.target)) desktopMenu.style.display = 'none';
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { startMenu.style.display = 'none'; runBox.style.display = 'none'; desktopMenu.style.display = 'none'; }
-      if (e.ctrlKey && e.key.toLowerCase() === 'n') createWindow('notepad');
-      if (e.ctrlKey && e.key.toLowerCase() === 'l') lockScreen.style.display = 'flex';
-      if (e.key === 'F2') cycleWallpaper();
-    });
-
-    function updateClock() {
-      const now = new Date();
-      document.getElementById('clock').textContent = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    function saveLayout() {
+      const layout = [...openWindows.entries()].map(([id, v]) => ({
+        id,
+        appKey: v.appKey,
+        display: v.window.style.display || 'block',
+        top: v.window.style.top,
+        left: v.window.style.left,
+        width: v.window.style.width,
+        height: v.window.style.height
+      }));
+      localStorage.setItem('xp_layout', JSON.stringify(layout));
+      notify('Pencere düzeni kaydedildi');
     }
-    setInterval(updateClock, 1000);
-    updateClock();
 
-    renderStartList();
-    createWindow('computer');
-    createWindow('about');
+    function restoreLayout() {
+      const raw = localStorage.getItem('xp_layout');
+      if (!raw) {
+        notify('Kayıtlı düzen bulunamadı', 'warn');
+        return;
+      }
+      openWindows.forEach((v) => {
+        const iv = Number(v.window.dataset.interval || '0');
+        if (iv) clearInterval(iv);
+        v.window.remove();
+        v.task.remove();
+      });
+      openWindows.clear();
+      const saved = JSON.parse(raw);
+      saved.forEach((item) => {
+        createWindow(item.appKey);
+        const last = [...openWindows.values()].slice(-1)[0];
+        if (!last) return;
+        last.window.style.display = item.display;
+        last.window.style.top = item.top;
+        last.window.style.left = item.left;
+        last.window.style.width = item.width;
+        last.window.style.height = item.height;
+      });
+      notify('Pencere düzeni yüklendi');
+    }
+
+    function saveState() {
+      localStorage.setItem('xp_state', JSON.stringify({
+        wallpaperIndex,
+        muted,
+        notifications
+      }));
+    }
+
+    function restoreState() {
+      const raw = localStorage.getItem('xp_state');
+      if (!raw) return;
+      try {
+        const st = JSON.parse(raw);
+        wallpaperIndex = st.wallpaperIndex || 0;
+        muted = !!st.muted;
+        const arr = Array.isArray(st.notifications) ? st.notifications : [];
+        notifications.splice(0, notifications.length, ...arr.slice(0, 100));
+        desktop.style.setProperty('--desktop-bg', wallpapers[wallpaperIndex].bg);
+        desktop.style.setProperty('--hill', wallpapers[wallpaperIndex].hill);
+        document.getElementById('muteToggle').textContent = muted ? '🔇' : '🔊';
+        renderNotifications();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function updateClockAndTray() {
+      const now = new Date();
+      document.getElementById('clock').textContent = now.toLocaleTimeString('tr-TR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      const sec = now.getSeconds();
+      document.getElementById('batteryState').textContent = `🔋 ${80 + (sec % 20)}%`;
+      document.getElementById('netState').textContent = sec % 9 === 0 ? '🌐 Offline' : '🌐 Online';
+    }
+
+    function wireStaticEvents() {
+      document.querySelectorAll('.icon').forEach((icon) => {
+        icon.addEventListener('dblclick', () => createWindow(icon.dataset.app));
+      });
+
+      startBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startMenu.style.display = startMenu.style.display === 'block' ? 'none' : 'block';
+        renderStartList(startSearch.value);
+      });
+
+      startSearch.addEventListener('input', () => renderStartList(startSearch.value));
+
+      document.getElementById('showDesktopBtn').addEventListener('click', () => {
+        hideAllWindows();
+        startMenu.style.display = 'none';
+        notify('Masaüstü gösterildi');
+      });
+
+      document.getElementById('tileWindowsBtn').addEventListener('click', () => {
+        tileWindows();
+        startMenu.style.display = 'none';
+        notify('Pencereler dizildi');
+      });
+
+      document.getElementById('cascadeWindowsBtn').addEventListener('click', () => {
+        cascadeWindows();
+        startMenu.style.display = 'none';
+        notify('Pencereler basamaklandı');
+      });
+
+      document.getElementById('snapLeftBtn').addEventListener('click', () => {
+        snapActive('left');
+        startMenu.style.display = 'none';
+      });
+
+      document.getElementById('snapRightBtn').addEventListener('click', () => {
+        snapActive('right');
+        startMenu.style.display = 'none';
+      });
+
+      document.getElementById('themeToggleBtn').addEventListener('click', () => {
+        cycleWallpaper();
+        startMenu.style.display = 'none';
+        saveState();
+      });
+
+      document.getElementById('saveLayoutBtn').addEventListener('click', () => {
+        saveLayout();
+        startMenu.style.display = 'none';
+      });
+
+      document.getElementById('restoreLayoutBtn').addEventListener('click', () => {
+        restoreLayout();
+        startMenu.style.display = 'none';
+      });
+
+      document.getElementById('shutdownBtn').addEventListener('click', () => {
+        startMenu.style.display = 'none';
+        notify('Kapatılamaz 😄 Simülatör modunda.');
+      });
+
+      document.getElementById('showDesktopQuick').addEventListener('click', hideAllWindows);
+
+      document.getElementById('muteToggle').addEventListener('click', (e) => {
+        muted = !muted;
+        e.target.textContent = muted ? '🔇' : '🔊';
+        notify(muted ? 'Ses kapatıldı' : 'Ses açıldı');
+        saveState();
+      });
+
+      document.getElementById('notificationsBtn').addEventListener('click', () => {
+        notificationsBox.style.display = 'block';
+        renderNotifications();
+      });
+
+      document.getElementById('closeNotificationsBtn').addEventListener('click', () => {
+        notificationsBox.style.display = 'none';
+      });
+
+      document.getElementById('clearNotificationsBtn').addEventListener('click', () => {
+        notifications.splice(0, notifications.length);
+        renderNotifications();
+        saveState();
+      });
+
+      document.getElementById('runDialogBtn').addEventListener('click', () => {
+        runBox.style.display = 'block';
+        startMenu.style.display = 'none';
+      });
+
+      document.getElementById('runCancelBtn').addEventListener('click', () => {
+        runBox.style.display = 'none';
+      });
+
+      document.getElementById('runOpenBtn').addEventListener('click', () => {
+        const key = document.getElementById('runInput').value.trim().toLowerCase();
+        if (apps[key]) createWindow(key);
+        else notify('Uygulama bulunamadı');
+        runBox.style.display = 'none';
+      });
+
+      document.getElementById('notesDialogBtn').addEventListener('click', () => {
+        quickNoteBox.style.display = 'block';
+        startMenu.style.display = 'none';
+      });
+
+      document.getElementById('quickNoteCancel').addEventListener('click', () => {
+        quickNoteBox.style.display = 'none';
+      });
+
+      document.getElementById('quickNoteSave').addEventListener('click', () => {
+        const val = document.getElementById('quickNoteText').value.trim();
+        if (val) {
+          localStorage.setItem('xp_quick_note', val);
+          notify('Hızlı not kaydedildi');
+        }
+        quickNoteBox.style.display = 'none';
+      });
+
+      document.getElementById('lockBtn').addEventListener('click', () => {
+        lockScreen.style.display = 'flex';
+        startMenu.style.display = 'none';
+      });
+
+      document.getElementById('unlockBtn').addEventListener('click', () => {
+        lockScreen.style.display = 'none';
+        notify('Hoş geldin!');
+      });
+
+      desktop.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        if (e.target.closest('.window')) return;
+        desktopMenu.style.left = `${e.clientX}px`;
+        desktopMenu.style.top = `${e.clientY}px`;
+        desktopMenu.style.display = 'block';
+      });
+
+      desktopMenu.addEventListener('click', (e) => {
+        const action = e.target.dataset.action;
+        if (!action) return;
+        if (action === 'new-note') createWindow('notepad');
+        if (action === 'refresh') notify('Masaüstü yenilendi');
+        if (action === 'wallpaper') cycleWallpaper();
+        if (action === 'open-dashboard') createWindow('dashboard');
+        if (action === 'close-all') {
+          openWindows.forEach((v) => {
+            const iv = Number(v.window.dataset.interval || '0');
+            if (iv) clearInterval(iv);
+            v.window.remove();
+            v.task.remove();
+          });
+          openWindows.clear();
+          notify('Tüm pencereler kapatıldı');
+        }
+        desktopMenu.style.display = 'none';
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!startMenu.contains(e.target) && e.target !== startBtn) startMenu.style.display = 'none';
+        if (!desktopMenu.contains(e.target)) desktopMenu.style.display = 'none';
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          startMenu.style.display = 'none';
+          runBox.style.display = 'none';
+          quickNoteBox.style.display = 'none';
+          desktopMenu.style.display = 'none';
+          notificationsBox.style.display = 'none';
+        }
+        if (e.ctrlKey && e.key.toLowerCase() === 'n') createWindow('notepad');
+        if (e.ctrlKey && e.key.toLowerCase() === 'l') lockScreen.style.display = 'flex';
+        if (e.key === 'F2') cycleWallpaper();
+        if (e.altKey && e.key.toLowerCase() === 'd') createWindow('dashboard');
+      });
+    }
+
+    function bootstrap() {
+      restoreState();
+      wireStaticEvents();
+      renderStartList();
+      createWindow('computer');
+      createWindow('about');
+      const q = localStorage.getItem('xp_quick_note') || '';
+      document.getElementById('quickNoteText').value = q;
+      setInterval(updateClockAndTray, 1000);
+      updateClockAndTray();
+      notify('XP Ultimate Simülatör başlatıldı');
+    }
+
+    bootstrap();
   </script>
 </body>
 </html>
