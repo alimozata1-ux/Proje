@@ -9,6 +9,8 @@
       --taskbar: #2f68d2;
       --taskbar-dark: #1c4da5;
       --window-border: #0a2e8a;
+      --titlebar-start: #2b75ff;
+      --titlebar-end: #0b49c4;
       --desktop-bg: radial-gradient(circle at 20% 20%, #82c7ff 0%, #4d8ef0 35%, #2a63ce 100%);
       --hill: radial-gradient(130% 120% at 50% 100%, #7ed62b 20%, #4ea318 80%);
       --text: #1e1e1e;
@@ -57,13 +59,13 @@
       position: absolute;
       left: 10px;
       top: 10px;
-      display: grid;
-      grid-template-columns: repeat(3, 90px);
-      gap: 12px 8px;
+      width: 320px;
+      height: calc(100% - 60px);
       z-index: 4;
     }
 
     .icon {
+      position: absolute;
       width: 88px;
       text-align: center;
       color: #fff;
@@ -116,7 +118,7 @@
 
     .titlebar {
       height: 30px;
-      background: linear-gradient(to bottom, #2b75ff, #0b49c4);
+      background: linear-gradient(to bottom, var(--titlebar-start), var(--titlebar-end));
       color: #fff;
       display: flex;
       align-items: center;
@@ -337,6 +339,22 @@
       color: #fff;
     }
 
+    .color-control {
+      margin-top: 8px;
+      padding: 8px;
+      border: 1px solid #8eb1ff;
+      border-radius: 4px;
+      background: #edf4ff;
+      font-size: 12px;
+    }
+
+    .color-control .row {
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .toast {
       position: absolute;
       right: 14px;
@@ -504,6 +522,20 @@
           <div class="menu-item" id="runDialogBtn">Çalıştır...</div>
           <div class="menu-item" id="notesDialogBtn">Hızlı Not</div>
           <div class="menu-item" id="themeToggleBtn">Tema Değiştir</div>
+          <div class="color-control">
+            <b>Çubuk Renkleri</b>
+            <div class="row">
+              <label>Görev:</label>
+              <input type="color" id="taskbarColorPicker" value="#2f68d2" />
+            </div>
+            <div class="row">
+              <label>Pencere:</label>
+              <input type="color" id="titlebarColorPicker" value="#2b75ff" />
+            </div>
+            <div class="row">
+              <button id="resetColorsBtn">Sıfırla</button>
+            </div>
+          </div>
           <div class="menu-item" id="saveLayoutBtn">Düzeni Kaydet</div>
           <div class="menu-item" id="restoreLayoutBtn">Düzeni Yükle</div>
           <div class="menu-item" id="lockBtn">Kilitle</div>
@@ -1701,6 +1733,87 @@
       return `${h}:${m}:${s}`;
     }
 
+    function applyBarColors(taskbarColor, titlebarColor) {
+      if (taskbarColor) {
+        desktop.style.setProperty('--taskbar', taskbarColor);
+        desktop.style.setProperty('--taskbar-dark', taskbarColor);
+      }
+      if (titlebarColor) {
+        desktop.style.setProperty('--titlebar-start', titlebarColor);
+        desktop.style.setProperty('--titlebar-end', titlebarColor);
+      }
+      const taskPicker = document.getElementById('taskbarColorPicker');
+      const titlePicker = document.getElementById('titlebarColorPicker');
+      if (taskPicker && taskbarColor) taskPicker.value = taskbarColor;
+      if (titlePicker && titlebarColor) titlePicker.value = titlebarColor;
+    }
+
+    function setupDesktopIconDrag() {
+      const icons = [...document.querySelectorAll('.icon')];
+      const cols = 3;
+      const colW = 96;
+      const rowH = 92;
+      icons.forEach((icon, i) => {
+        if (!icon.style.left) {
+          icon.style.left = `${(i % cols) * colW}px`;
+          icon.style.top = `${Math.floor(i / cols) * rowH}px`;
+        }
+
+        let dragging = false;
+        let moved = false;
+        let startX = 0;
+        let startY = 0;
+        let originX = 0;
+        let originY = 0;
+
+        icon.addEventListener('mousedown', (e) => {
+          if (e.button !== 0) return;
+          dragging = true;
+          moved = false;
+          startX = e.clientX;
+          startY = e.clientY;
+          originX = parseInt(icon.style.left || '0', 10);
+          originY = parseInt(icon.style.top || '0', 10);
+          icon.classList.add('selected');
+          e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+          if (!dragging) return;
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true;
+          icon.style.left = `${Math.max(0, originX + dx)}px`;
+          icon.style.top = `${Math.max(0, Math.min(window.innerHeight - 140, originY + dy))}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+          if (!dragging) return;
+          dragging = false;
+          if (!moved) icon.classList.remove('selected');
+          saveState();
+        });
+      });
+    }
+
+    function getIconPositions() {
+      return [...document.querySelectorAll('.icon')].map((icon) => ({
+        app: icon.dataset.app,
+        left: icon.style.left,
+        top: icon.style.top
+      }));
+    }
+
+    function restoreIconPositions(saved) {
+      if (!Array.isArray(saved)) return;
+      saved.forEach((item) => {
+        const icon = document.querySelector(`.icon[data-app="${item.app}"]`);
+        if (!icon) return;
+        if (item.left) icon.style.left = item.left;
+        if (item.top) icon.style.top = item.top;
+      });
+    }
+
     function renderFileRows(query = '') {
       const tableBody = document.querySelector('#fileTable tbody');
       if (!tableBody) return;
@@ -2186,7 +2299,10 @@
       localStorage.setItem('xp_state', JSON.stringify({
         wallpaperIndex,
         muted,
-        notifications
+        notifications,
+        iconPositions: getIconPositions(),
+        taskbarColor: getComputedStyle(desktop).getPropertyValue('--taskbar').trim(),
+        titlebarColor: getComputedStyle(desktop).getPropertyValue('--titlebar-start').trim()
       }));
     }
 
@@ -2201,6 +2317,8 @@
         notifications.splice(0, notifications.length, ...arr.slice(0, 100));
         desktop.style.setProperty('--desktop-bg', wallpapers[wallpaperIndex].bg);
         desktop.style.setProperty('--hill', wallpapers[wallpaperIndex].hill);
+        applyBarColors(st.taskbarColor, st.titlebarColor);
+        restoreIconPositions(st.iconPositions);
         document.getElementById('muteToggle').textContent = muted ? '🔇' : '🔊';
         renderNotifications();
       } catch (e) {
@@ -2231,6 +2349,21 @@
       });
 
       startSearch.addEventListener('input', () => renderStartList(startSearch.value));
+
+      document.getElementById('taskbarColorPicker').addEventListener('input', (e) => {
+        applyBarColors(e.target.value, null);
+        saveState();
+      });
+
+      document.getElementById('titlebarColorPicker').addEventListener('input', (e) => {
+        applyBarColors(null, e.target.value);
+        saveState();
+      });
+
+      document.getElementById('resetColorsBtn').addEventListener('click', () => {
+        applyBarColors('#2f68d2', '#2b75ff');
+        notify('Çubuk renkleri sıfırlandı');
+      });
 
       document.getElementById('showDesktopBtn').addEventListener('click', () => {
         hideAllWindows();
@@ -2398,8 +2531,9 @@
     }
 
     function bootstrap() {
-      restoreState();
       wireStaticEvents();
+      setupDesktopIconDrag();
+      restoreState();
       renderStartList();
       createWindow('computer');
       createWindow('about');
