@@ -6,10 +6,8 @@
   <title>Windows XP Simülatör</title>
   <style>
     :root {
-      --xp-blue: #245edc;
-      --xp-green: #3a9a00;
-      --taskbar: #245edc;
-      --taskbar-dark: #1648b8;
+      --taskbar: #2f68d2;
+      --taskbar-dark: #1c4da5;
       --window-border: #0a2e8a;
     }
 
@@ -28,7 +26,7 @@
       position: relative;
       height: 100%;
       width: 100%;
-      background: radial-gradient(circle at 20% 20%, #6cb7ff 0%, #3a79e8 35%, #2258c9 100%);
+      background: radial-gradient(circle at 20% 20%, #82c7ff 0%, #4d8ef0 35%, #2a63ce 100%);
     }
 
     .wallpaper-hill {
@@ -36,20 +34,21 @@
       bottom: 40px;
       left: 0;
       right: 0;
-      height: 38%;
-      background: radial-gradient(120% 100% at 50% 100%, #7bd425 20%, #4ea318 80%);
+      height: 40%;
+      background: radial-gradient(130% 120% at 50% 100%, #7ed62b 20%, #4ea318 80%);
       border-top-left-radius: 50% 70%;
       border-top-right-radius: 50% 70%;
+      z-index: 1;
     }
 
     .desktop-icons {
       position: absolute;
-      left: 12px;
-      top: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      z-index: 2;
+      left: 10px;
+      top: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, 86px);
+      gap: 16px 8px;
+      z-index: 3;
     }
 
     .icon {
@@ -58,39 +57,45 @@
       color: #fff;
       font-size: 12px;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-      cursor: pointer;
+      cursor: default;
       padding: 4px;
       border: 1px solid transparent;
+      border-radius: 2px;
     }
 
-    .icon:active,
+    .icon:hover,
     .icon.selected {
-      background: rgba(33, 118, 255, 0.45);
-      border-color: rgba(255,255,255,0.65);
+      background: rgba(33, 118, 255, 0.4);
+      border-color: rgba(255,255,255,0.6);
     }
 
     .icon-graphic {
-      font-size: 30px;
       display: block;
+      font-size: 28px;
       margin-bottom: 4px;
     }
 
     .window {
       position: absolute;
       width: 520px;
-      height: 320px;
-      top: 90px;
-      left: 180px;
+      height: 340px;
       border: 1px solid var(--window-border);
       border-radius: 7px 7px 0 0;
       background: #ece9d8;
       box-shadow: 0 10px 25px rgba(0,0,0,0.45);
-      display: none;
-      z-index: 5;
       overflow: hidden;
+      z-index: 5;
+      min-width: 280px;
+      min-height: 180px;
     }
 
-    .window.active { z-index: 7; }
+    .window.maximized {
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: calc(100vh - 40px) !important;
+      border-radius: 0;
+    }
 
     .titlebar {
       height: 30px;
@@ -123,9 +128,7 @@
       padding: 0;
     }
 
-    .titlebar button.close {
-      background: linear-gradient(to bottom, #ff7a62, #d93717);
-    }
+    .titlebar button.close { background: linear-gradient(to bottom, #ff7a62, #d93717); }
 
     .window-body {
       padding: 14px;
@@ -134,6 +137,16 @@
       font-size: 14px;
       color: #222;
       background: #fff;
+    }
+
+    .resizer {
+      width: 12px;
+      height: 12px;
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      cursor: nwse-resize;
+      background: linear-gradient(135deg, transparent 40%, rgba(60,60,60,0.4) 41%);
     }
 
     .taskbar {
@@ -145,13 +158,13 @@
       background: linear-gradient(to bottom, var(--taskbar), var(--taskbar-dark));
       display: flex;
       align-items: center;
-      padding: 0 8px 0 0;
-      z-index: 10;
+      padding-right: 8px;
+      z-index: 20;
     }
 
     .start-btn {
       height: 36px;
-      min-width: 96px;
+      min-width: 100px;
       border-radius: 0 14px 14px 0;
       border: 1px solid #0f5e00;
       border-left: 0;
@@ -172,12 +185,15 @@
       gap: 6px;
       flex: 1;
       align-items: center;
+      overflow-x: auto;
+      scrollbar-width: none;
     }
 
+    .task-items::-webkit-scrollbar { display: none; }
+
     .task-item {
-      display: none;
-      min-width: 170px;
-      max-width: 230px;
+      min-width: 160px;
+      max-width: 220px;
       height: 30px;
       padding: 0 10px;
       border: 1px solid rgba(255,255,255,0.5);
@@ -185,6 +201,7 @@
       background: linear-gradient(to bottom, #4d8dfd, #2a69d8);
       color: #fff;
       font-size: 13px;
+      display: flex;
       align-items: center;
       cursor: pointer;
       white-space: nowrap;
@@ -192,8 +209,13 @@
       text-overflow: ellipsis;
     }
 
+    .task-item.active {
+      background: linear-gradient(to bottom, #6fa7ff, #3a79ec);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+    }
+
     .clock {
-      width: 68px;
+      width: 74px;
       text-align: center;
       color: #fff;
       font-size: 13px;
@@ -206,14 +228,14 @@
       position: absolute;
       bottom: 40px;
       left: 0;
-      width: 310px;
-      height: 420px;
+      width: 320px;
+      height: 430px;
       display: none;
       border: 1px solid #0d3899;
       border-radius: 8px 8px 0 0;
       overflow: hidden;
       box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-      z-index: 12;
+      z-index: 30;
       background: #fff;
     }
 
@@ -234,16 +256,8 @@
       height: calc(100% - 66px);
     }
 
-    .start-left {
-      background: #fff;
-      padding: 10px;
-      border-right: 1px solid #c2d7ff;
-    }
-
-    .start-right {
-      background: #d7e7ff;
-      padding: 10px;
-    }
+    .start-left { background: #fff; padding: 10px; border-right: 1px solid #c2d7ff; }
+    .start-right { background: #d7e7ff; padding: 10px; }
 
     .menu-item {
       font-size: 14px;
@@ -256,28 +270,36 @@
       background: #2f72f0;
       color: #fff;
     }
+
+    .toast {
+      position: absolute;
+      right: 14px;
+      bottom: 52px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: rgba(27, 67, 157, 0.92);
+      color: #fff;
+      font-size: 13px;
+      display: none;
+      z-index: 40;
+      border: 1px solid rgba(255,255,255,0.35);
+    }
   </style>
 </head>
 <body>
   <div class="desktop" id="desktop">
     <div class="wallpaper-hill"></div>
 
-    <div class="desktop-icons">
-      <div class="icon" id="myComputerIcon"><span class="icon-graphic">🖥️</span>Bilgisayarım</div>
-      <div class="icon" id="notepadIcon"><span class="icon-graphic">📝</span>Not Defteri</div>
-      <div class="icon" id="recycleIcon"><span class="icon-graphic">🗑️</span>Geri Dönüşüm</div>
+    <div class="desktop-icons" id="desktopIcons">
+      <div class="icon" data-app="computer"><span class="icon-graphic">🖥️</span>Bilgisayarım</div>
+      <div class="icon" data-app="notepad"><span class="icon-graphic">📝</span>Not Defteri</div>
+      <div class="icon" data-app="paint"><span class="icon-graphic">🎨</span>Paint</div>
+      <div class="icon" data-app="calculator"><span class="icon-graphic">🧮</span>Hesap Makinesi</div>
+      <div class="icon" data-app="about"><span class="icon-graphic">📘</span>Hakkında</div>
+      <div class="icon" data-app="internet"><span class="icon-graphic">🌐</span>Internet</div>
     </div>
 
-    <div class="window" id="mainWindow">
-      <div class="titlebar" id="windowDragHandle">
-        <span id="windowTitle">Bilgisayarım</span>
-        <div class="titlebar-controls">
-          <button id="minBtn">_</button>
-          <button class="close" id="closeBtn">✕</button>
-        </div>
-      </div>
-      <div class="window-body" id="windowBody"></div>
-    </div>
+    <div id="windowLayer"></div>
 
     <div class="start-menu" id="startMenu">
       <div class="start-head">Kullanıcı</div>
@@ -285,93 +307,266 @@
         <div class="start-left">
           <div class="menu-item" data-app="computer">Bilgisayarım</div>
           <div class="menu-item" data-app="notepad">Not Defteri</div>
+          <div class="menu-item" data-app="paint">Paint</div>
+          <div class="menu-item" data-app="calculator">Hesap Makinesi</div>
+          <div class="menu-item" data-app="internet">Internet Explorer</div>
           <div class="menu-item" data-app="about">Hakkında</div>
         </div>
         <div class="start-right">
-          <div class="menu-item">Belgelerim</div>
+          <div class="menu-item" id="showDesktopBtn">Masaüstünü Göster</div>
+          <div class="menu-item" id="tileWindowsBtn">Pencereleri Diz</div>
           <div class="menu-item">Denetim Masası</div>
-          <div class="menu-item">Program Ekle/Kaldır</div>
-          <div class="menu-item">Kapat</div>
+          <div class="menu-item" id="shutdownBtn">Kapat</div>
         </div>
       </div>
     </div>
 
     <div class="taskbar">
       <button class="start-btn" id="startBtn">start</button>
-      <div class="task-items">
-        <div class="task-item" id="taskItem">Bilgisayarım</div>
-      </div>
+      <div class="task-items" id="taskItems"></div>
       <div class="clock" id="clock"></div>
     </div>
+
+    <div class="toast" id="toast"></div>
   </div>
 
   <script>
-    const windowEl = document.getElementById('mainWindow');
-    const windowTitle = document.getElementById('windowTitle');
-    const windowBody = document.getElementById('windowBody');
-    const taskItem = document.getElementById('taskItem');
+    const desktop = document.getElementById('desktop');
+    const windowLayer = document.getElementById('windowLayer');
+    const taskItems = document.getElementById('taskItems');
     const startBtn = document.getElementById('startBtn');
     const startMenu = document.getElementById('startMenu');
+    const toast = document.getElementById('toast');
 
     const apps = {
       computer: {
         title: 'Bilgisayarım',
-        content: '<h3>Yerel Disk (C:)</h3><p>Toplam Alan: 40 GB</p><p>Boş Alan: 18 GB</p><hr><h3>Belgeler</h3><p>Fotoğraflar, Müzikler, Videolar...</p>'
+        content: () => '<h3>Yerel Disk (C:)</h3><p>Toplam Alan: 40 GB</p><p>Boş Alan: 18 GB</p><hr><h3>Belgeler</h3><p>Fotoğraflar, Müzikler, Videolar...</p>'
       },
       notepad: {
         title: 'Not Defteri',
-        content: '<h3>Yeni Metin Belgesi</h3><p>Merhaba 👋 Bu mini Windows XP simülatörünü HTML/CSS/JS ile yaptım.</p><p>İkonlara çift tıkla, pencereyi sürükle, başlat menüsünü aç.</p>'
+        content: () => '<h3>Yeni Metin Belgesi</h3><textarea style="width:100%;height:180px">Merhaba 👋 Bu geliştirilmiş Windows XP simülatöründe birden fazla pencere açabilirsin.</textarea>'
+      },
+      paint: {
+        title: 'Paint',
+        content: () => '<h3>Paint (Demo)</h3><p>Bu bir demo çizim ekranıdır.</p><div style="display:grid;grid-template-columns:repeat(10,1fr);gap:4px;">' + Array.from({length:60}, (_,i)=> `<div style="height:18px;background:hsl(${(i*23)%360} 75% 60%);"></div>`).join('') + '</div>'
+      },
+      calculator: {
+        title: 'Hesap Makinesi',
+        content: () => '<h3>Hızlı Hesap</h3><p>7 × 8 = <b>56</b></p><p>144 ÷ 12 = <b>12</b></p><p>XP temalı mini hesap makinesi demoları.</p>'
+      },
+      internet: {
+        title: 'Internet Explorer',
+        content: () => '<h3>Internet Explorer</h3><p>Sayfa yükleniyor...</p><p><i>Bu bir çevrimdışı arayüz demosudur.</i></p>'
       },
       about: {
         title: 'Hakkında',
-        content: '<h3>Windows XP Simülatör</h3><p>Bu bir nostalji temalı demo arayüzdür.</p><ul><li>Başlat menüsü</li><li>Görev çubuğu</li><li>Saat</li><li>Sürüklenebilir pencere</li></ul>'
+        content: () => '<h3>Windows XP Simülatör</h3><ul><li>Çoklu pencere</li><li>Sürükle + yeniden boyutlandır</li><li>Masaüstünü göster</li><li>Pencereleri diz</li><li>Canlı saat ve bildirim</li></ul>'
       }
     };
 
-    let currentApp = 'computer';
+    let zIndex = 50;
+    let windowCount = 0;
+    const openWindows = new Map();
 
-    function openApp(name) {
-      const app = apps[name];
-      if (!app) return;
-      currentApp = name;
-      windowTitle.textContent = app.title;
-      windowBody.innerHTML = app.content;
-      taskItem.textContent = app.title;
-      taskItem.style.display = 'flex';
-      windowEl.style.display = 'block';
-      windowEl.classList.add('active');
-      startMenu.style.display = 'none';
+    function showToast(message) {
+      toast.textContent = message;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 1700);
     }
 
-    document.getElementById('myComputerIcon').ondblclick = () => openApp('computer');
-    document.getElementById('notepadIcon').ondblclick = () => openApp('notepad');
-    document.getElementById('recycleIcon').ondblclick = () => openApp('about');
+    function setActive(winId) {
+      openWindows.forEach((instance) => {
+        instance.window.classList.remove('active');
+        instance.task.classList.remove('active');
+      });
+      const instance = openWindows.get(winId);
+      if (!instance) return;
+      instance.window.style.zIndex = ++zIndex;
+      instance.window.classList.add('active');
+      instance.task.classList.add('active');
+    }
 
-    document.querySelectorAll('.menu-item[data-app]').forEach(item => {
-      item.addEventListener('click', () => openApp(item.dataset.app));
+    function createWindow(appKey) {
+      const app = apps[appKey];
+      if (!app) return;
+
+      const winId = `win-${++windowCount}`;
+      const windowEl = document.createElement('div');
+      windowEl.className = 'window';
+      windowEl.style.top = `${80 + (windowCount % 6) * 24}px`;
+      windowEl.style.left = `${170 + (windowCount % 6) * 32}px`;
+
+      windowEl.innerHTML = `
+        <div class="titlebar">
+          <span>${app.title}</span>
+          <div class="titlebar-controls">
+            <button data-action="min">_</button>
+            <button data-action="max">□</button>
+            <button class="close" data-action="close">✕</button>
+          </div>
+        </div>
+        <div class="window-body">${app.content()}</div>
+        <div class="resizer"></div>
+      `;
+
+      const task = document.createElement('div');
+      task.className = 'task-item';
+      task.textContent = app.title;
+      taskItems.appendChild(task);
+
+      windowLayer.appendChild(windowEl);
+      openWindows.set(winId, { window: windowEl, task, appKey, maximized: false, prevBounds: null });
+      setActive(winId);
+
+      task.addEventListener('click', () => {
+        if (windowEl.style.display === 'none') {
+          windowEl.style.display = 'block';
+          setActive(winId);
+        } else if (windowEl.classList.contains('active')) {
+          windowEl.style.display = 'none';
+          task.classList.remove('active');
+        } else {
+          setActive(winId);
+        }
+      });
+
+      windowEl.addEventListener('mousedown', () => setActive(winId));
+
+      const titlebar = windowEl.querySelector('.titlebar');
+      const buttons = windowEl.querySelectorAll('button[data-action]');
+      const resizer = windowEl.querySelector('.resizer');
+
+      buttons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const action = btn.dataset.action;
+          if (action === 'close') {
+            windowEl.remove();
+            task.remove();
+            openWindows.delete(winId);
+          }
+          if (action === 'min') {
+            windowEl.style.display = 'none';
+            task.classList.remove('active');
+          }
+          if (action === 'max') {
+            const instance = openWindows.get(winId);
+            if (!instance) return;
+            if (!instance.maximized) {
+              instance.prevBounds = {
+                top: windowEl.style.top,
+                left: windowEl.style.left,
+                width: windowEl.style.width,
+                height: windowEl.style.height
+              };
+              windowEl.classList.add('maximized');
+            } else {
+              windowEl.classList.remove('maximized');
+              Object.assign(windowEl.style, instance.prevBounds);
+            }
+            instance.maximized = !instance.maximized;
+          }
+        });
+      });
+
+      let dragging = false;
+      let dx = 0;
+      let dy = 0;
+      titlebar.addEventListener('mousedown', (e) => {
+        if (openWindows.get(winId).maximized) return;
+        dragging = true;
+        const rect = windowEl.getBoundingClientRect();
+        dx = e.clientX - rect.left;
+        dy = e.clientY - rect.top;
+      });
+
+      let resizing = false;
+      let startX = 0;
+      let startY = 0;
+      let startW = 0;
+      let startH = 0;
+      resizer.addEventListener('mousedown', (e) => {
+        if (openWindows.get(winId).maximized) return;
+        resizing = true;
+        const rect = windowEl.getBoundingClientRect();
+        startX = e.clientX;
+        startY = e.clientY;
+        startW = rect.width;
+        startH = rect.height;
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (dragging) {
+          const x = Math.max(0, Math.min(window.innerWidth - windowEl.offsetWidth, e.clientX - dx));
+          const y = Math.max(0, Math.min(window.innerHeight - 40 - windowEl.offsetHeight, e.clientY - dy));
+          windowEl.style.left = `${x}px`;
+          windowEl.style.top = `${y}px`;
+        }
+        if (resizing) {
+          windowEl.style.width = `${Math.max(280, startW + (e.clientX - startX))}px`;
+          windowEl.style.height = `${Math.max(180, startH + (e.clientY - startY))}px`;
+        }
+      });
+
+      document.addEventListener('mouseup', () => {
+        dragging = false;
+        resizing = false;
+      });
+    }
+
+    document.querySelectorAll('.icon').forEach(icon => {
+      icon.addEventListener('dblclick', () => createWindow(icon.dataset.app));
     });
 
-    document.getElementById('closeBtn').onclick = () => {
-      windowEl.style.display = 'none';
-      taskItem.style.display = 'none';
-    };
+    document.querySelectorAll('.menu-item[data-app]').forEach(item => {
+      item.addEventListener('click', () => {
+        createWindow(item.dataset.app);
+        startMenu.style.display = 'none';
+      });
+    });
 
-    document.getElementById('minBtn').onclick = () => {
-      windowEl.style.display = 'none';
-    };
-
-    taskItem.onclick = () => {
-      if (windowEl.style.display === 'none') {
-        windowEl.style.display = 'block';
-      } else {
-        windowEl.style.display = 'none';
-      }
-    };
-
-    startBtn.onclick = (e) => {
+    startBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       startMenu.style.display = startMenu.style.display === 'block' ? 'none' : 'block';
-    };
+    });
+
+    document.getElementById('showDesktopBtn').addEventListener('click', () => {
+      openWindows.forEach((instance) => {
+        instance.window.style.display = 'none';
+        instance.task.classList.remove('active');
+      });
+      startMenu.style.display = 'none';
+      showToast('Tüm pencereler gizlendi');
+    });
+
+    document.getElementById('tileWindowsBtn').addEventListener('click', () => {
+      const list = [...openWindows.values()].filter(v => v.window.style.display !== 'none');
+      if (!list.length) return;
+      const cols = Math.ceil(Math.sqrt(list.length));
+      const rows = Math.ceil(list.length / cols);
+      const totalW = window.innerWidth;
+      const totalH = window.innerHeight - 40;
+      const cellW = Math.floor(totalW / cols);
+      const cellH = Math.floor(totalH / rows);
+      list.forEach((v, i) => {
+        const r = Math.floor(i / cols);
+        const c = i % cols;
+        v.window.classList.remove('maximized');
+        v.window.style.left = `${c * cellW}px`;
+        v.window.style.top = `${r * cellH}px`;
+        v.window.style.width = `${cellW}px`;
+        v.window.style.height = `${cellH}px`;
+      });
+      startMenu.style.display = 'none';
+      showToast('Pencereler dizildi');
+    });
+
+    document.getElementById('shutdownBtn').addEventListener('click', () => {
+      startMenu.style.display = 'none';
+      showToast('Kapatılamaz 😄 Bu sadece bir simülatör.');
+    });
 
     document.addEventListener('click', (e) => {
       if (!startMenu.contains(e.target) && e.target !== startBtn) {
@@ -389,30 +584,8 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Pencere sürükleme
-    const dragHandle = document.getElementById('windowDragHandle');
-    let drag = false, offsetX = 0, offsetY = 0;
-
-    dragHandle.addEventListener('mousedown', (e) => {
-      drag = true;
-      const rect = windowEl.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
-      windowEl.classList.add('active');
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!drag) return;
-      const x = Math.max(0, Math.min(window.innerWidth - windowEl.offsetWidth, e.clientX - offsetX));
-      const y = Math.max(0, Math.min(window.innerHeight - 80, e.clientY - offsetY));
-      windowEl.style.left = `${x}px`;
-      windowEl.style.top = `${y}px`;
-    });
-
-    document.addEventListener('mouseup', () => { drag = false; });
-
-    // İlk açılışta örnek pencere
-    openApp('computer');
+    createWindow('computer');
+    createWindow('about');
   </script>
 </body>
 </html>
