@@ -1,0 +1,14 @@
+{
+  "wallpaperIndex": 1,
+  "muted": false,
+  "notifications": [
+    { "message": "Örnek bildirim", "level": "info", "time": "12:00:00" }
+  ],
+  "iconPositions": [
+    { "app": "computer", "left": "0px", "top": "0px" },
+    { "app": "notepad", "left": "96px", "top": "0px" }
+  ],
+  "taskbarColor": "#2f68d2",
+  "titlebarColor": "#2b75ff",
+  "quickNote": "Bu bir örnek state dosyasıdır."
+}
