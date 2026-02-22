@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Windows XP Simülatör</title>
+  <style>
+    :root {
+      --xp-blue: #245edc;
+      --xp-green: #3a9a00;
+      --taskbar: #245edc;
+      --taskbar-dark: #1648b8;
+      --window-border: #0a2e8a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Tahoma, Arial, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+      background: #000;
+    }
+
+    .desktop {
+      position: relative;
+      height: 100%;
+      width: 100%;
+      background: radial-gradient(circle at 20% 20%, #6cb7ff 0%, #3a79e8 35%, #2258c9 100%);
+    }
+
+    .wallpaper-hill {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      right: 0;
+      height: 38%;
+      background: radial-gradient(120% 100% at 50% 100%, #7bd425 20%, #4ea318 80%);
+      border-top-left-radius: 50% 70%;
+      border-top-right-radius: 50% 70%;
+    }
+
+    .desktop-icons {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 2;
+    }
+
+    .icon {
+      width: 84px;
+      text-align: center;
+      color: #fff;
+      font-size: 12px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+      cursor: pointer;
+      padding: 4px;
+      border: 1px solid transparent;
+    }
+
+    .icon:active,
+    .icon.selected {
+      background: rgba(33, 118, 255, 0.45);
+      border-color: rgba(255,255,255,0.65);
+    }
+
+    .icon-graphic {
+      font-size: 30px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .window {
+      position: absolute;
+      width: 520px;
+      height: 320px;
+      top: 90px;
+      left: 180px;
+      border: 1px solid var(--window-border);
+      border-radius: 7px 7px 0 0;
+      background: #ece9d8;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+      display: none;
+      z-index: 5;
+      overflow: hidden;
+    }
+
+    .window.active { z-index: 7; }
+
+    .titlebar {
+      height: 30px;
+      background: linear-gradient(to bottom, #2b75ff, #0b49c4);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5px 0 10px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: move;
+    }
+
+    .titlebar-controls {
+      display: flex;
+      gap: 4px;
+    }
+
+    .titlebar button {
+      width: 22px;
+      height: 22px;
+      border: 1px solid #fff;
+      border-radius: 3px;
+      background: linear-gradient(to bottom, #7db6ff, #2f76f3);
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .titlebar button.close {
+      background: linear-gradient(to bottom, #ff7a62, #d93717);
+    }
+
+    .window-body {
+      padding: 14px;
+      height: calc(100% - 30px);
+      overflow: auto;
+      font-size: 14px;
+      color: #222;
+      background: #fff;
+    }
+
+    .taskbar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--taskbar), var(--taskbar-dark));
+      display: flex;
+      align-items: center;
+      padding: 0 8px 0 0;
+      z-index: 10;
+    }
+
+    .start-btn {
+      height: 36px;
+      min-width: 96px;
+      border-radius: 0 14px 14px 0;
+      border: 1px solid #0f5e00;
+      border-left: 0;
+      background: linear-gradient(to bottom, #4fcf05, #2b8f00);
+      color: #fff;
+      font-size: 21px;
+      font-style: italic;
+      font-weight: bold;
+      font-family: "Trebuchet MS", Tahoma, sans-serif;
+      text-align: left;
+      padding-left: 18px;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+
+    .task-items {
+      display: flex;
+      gap: 6px;
+      flex: 1;
+      align-items: center;
+    }
+
+    .task-item {
+      display: none;
+      min-width: 170px;
+      max-width: 230px;
+      height: 30px;
+      padding: 0 10px;
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 3px;
+      background: linear-gradient(to bottom, #4d8dfd, #2a69d8);
+      color: #fff;
+      font-size: 13px;
+      align-items: center;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .clock {
+      width: 68px;
+      text-align: center;
+      color: #fff;
+      font-size: 13px;
+      border-left: 1px solid rgba(255,255,255,0.35);
+      padding-left: 8px;
+      margin-left: 6px;
+    }
+
+    .start-menu {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      width: 310px;
+      height: 420px;
+      display: none;
+      border: 1px solid #0d3899;
+      border-radius: 8px 8px 0 0;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+      z-index: 12;
+      background: #fff;
+    }
+
+    .start-head {
+      height: 66px;
+      background: linear-gradient(to right, #1f58d1, #3d8af7);
+      color: #fff;
+      font-size: 20px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+    }
+
+    .start-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: calc(100% - 66px);
+    }
+
+    .start-left {
+      background: #fff;
+      padding: 10px;
+      border-right: 1px solid #c2d7ff;
+    }
+
+    .start-right {
+      background: #d7e7ff;
+      padding: 10px;
+    }
+
+    .menu-item {
+      font-size: 14px;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .menu-item:hover {
+      background: #2f72f0;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="desktop" id="desktop">
+    <div class="wallpaper-hill"></div>
+
+    <div class="desktop-icons">
+      <div class="icon" id="myComputerIcon"><span class="icon-graphic">🖥️</span>Bilgisayarım</div>
+      <div class="icon" id="notepadIcon"><span class="icon-graphic">📝</span>Not Defteri</div>
+      <div class="icon" id="recycleIcon"><span class="icon-graphic">🗑️</span>Geri Dönüşüm</div>
+    </div>
+
+    <div class="window" id="mainWindow">
+      <div class="titlebar" id="windowDragHandle">
+        <span id="windowTitle">Bilgisayarım</span>
+        <div class="titlebar-controls">
+          <button id="minBtn">_</button>
+          <button class="close" id="closeBtn">✕</button>
+        </div>
+      </div>
+      <div class="window-body" id="windowBody"></div>
+    </div>
+
+    <div class="start-menu" id="startMenu">
+      <div class="start-head">Kullanıcı</div>
+      <div class="start-content">
+        <div class="start-left">
+          <div class="menu-item" data-app="computer">Bilgisayarım</div>
+          <div class="menu-item" data-app="notepad">Not Defteri</div>
+          <div class="menu-item" data-app="about">Hakkında</div>
+        </div>
+        <div class="start-right">
+          <div class="menu-item">Belgelerim</div>
+          <div class="menu-item">Denetim Masası</div>
+          <div class="menu-item">Program Ekle/Kaldır</div>
+          <div class="menu-item">Kapat</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="taskbar">
+      <button class="start-btn" id="startBtn">start</button>
+      <div class="task-items">
+        <div class="task-item" id="taskItem">Bilgisayarım</div>
+      </div>
+      <div class="clock" id="clock"></div>
+    </div>
+  </div>
+
+  <script>
+    const windowEl = document.getElementById('mainWindow');
+    const windowTitle = document.getElementById('windowTitle');
+    const windowBody = document.getElementById('windowBody');
+    const taskItem = document.getElementById('taskItem');
+    const startBtn = document.getElementById('startBtn');
+    const startMenu = document.getElementById('startMenu');
+
+    const apps = {
+      computer: {
+        title: 'Bilgisayarım',
+        content: '<h3>Yerel Disk (C:)</h3><p>Toplam Alan: 40 GB</p><p>Boş Alan: 18 GB</p><hr><h3>Belgeler</h3><p>Fotoğraflar, Müzikler, Videolar...</p>'
+      },
+      notepad: {
+        title: 'Not Defteri',
+        content: '<h3>Yeni Metin Belgesi</h3><p>Merhaba 👋 Bu mini Windows XP simülatörünü HTML/CSS/JS ile yaptım.</p><p>İkonlara çift tıkla, pencereyi sürükle, başlat menüsünü aç.</p>'
+      },
+      about: {
+        title: 'Hakkında',
+        content: '<h3>Windows XP Simülatör</h3><p>Bu bir nostalji temalı demo arayüzdür.</p><ul><li>Başlat menüsü</li><li>Görev çubuğu</li><li>Saat</li><li>Sürüklenebilir pencere</li></ul>'
+      }
+    };
+
+    let currentApp = 'computer';
+
+    function openApp(name) {
+      const app = apps[name];
+      if (!app) return;
+      currentApp = name;
+      windowTitle.textContent = app.title;
+      windowBody.innerHTML = app.content;
+      taskItem.textContent = app.title;
+      taskItem.style.display = 'flex';
+      windowEl.style.display = 'block';
+      windowEl.classList.add('active');
+      startMenu.style.display = 'none';
+    }
+
+    document.getElementById('myComputerIcon').ondblclick = () => openApp('computer');
+    document.getElementById('notepadIcon').ondblclick = () => openApp('notepad');
+    document.getElementById('recycleIcon').ondblclick = () => openApp('about');
+
+    document.querySelectorAll('.menu-item[data-app]').forEach(item => {
+      item.addEventListener('click', () => openApp(item.dataset.app));
+    });
+
+    document.getElementById('closeBtn').onclick = () => {
+      windowEl.style.display = 'none';
+      taskItem.style.display = 'none';
+    };
+
+    document.getElementById('minBtn').onclick = () => {
+      windowEl.style.display = 'none';
+    };
+
+    taskItem.onclick = () => {
+      if (windowEl.style.display === 'none') {
+        windowEl.style.display = 'block';
+      } else {
+        windowEl.style.display = 'none';
+      }
+    };
+
+    startBtn.onclick = (e) => {
+      e.stopPropagation();
+      startMenu.style.display = startMenu.style.display === 'block' ? 'none' : 'block';
+    };
+
+    document.addEventListener('click', (e) => {
+      if (!startMenu.contains(e.target) && e.target !== startBtn) {
+        startMenu.style.display = 'none';
+      }
+    });
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent = now.toLocaleTimeString('tr-TR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Pencere sürükleme
+    const dragHandle = document.getElementById('windowDragHandle');
+    let drag = false, offsetX = 0, offsetY = 0;
+
+    dragHandle.addEventListener('mousedown', (e) => {
+      drag = true;
+      const rect = windowEl.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+      windowEl.classList.add('active');
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!drag) return;
+      const x = Math.max(0, Math.min(window.innerWidth - windowEl.offsetWidth, e.clientX - offsetX));
+      const y = Math.max(0, Math.min(window.innerHeight - 80, e.clientY - offsetY));
+      windowEl.style.left = `${x}px`;
+      windowEl.style.top = `${y}px`;
+    });
+
+    document.addEventListener('mouseup', () => { drag = false; });
+
+    // İlk açılışta örnek pencere
+    openApp('computer');
+  </script>
+</body>
+</html>
