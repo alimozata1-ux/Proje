@@ -9,313 +9,90 @@
       --taskbar: #2f68d2;
       --taskbar-dark: #1c4da5;
       --window-border: #0a2e8a;
+      --desktop-bg: radial-gradient(circle at 20% 20%, #82c7ff 0%, #4d8ef0 35%, #2a63ce 100%);
+      --hill: radial-gradient(130% 120% at 50% 100%, #7ed62b 20%, #4ea318 80%);
     }
 
     * { box-sizing: border-box; }
+    body { margin: 0; font-family: Tahoma, Arial, sans-serif; height: 100vh; overflow: hidden; user-select: none; background: #000; }
+    .desktop { position: relative; height: 100%; width: 100%; background: var(--desktop-bg); }
+    .wallpaper-hill { position: absolute; bottom: 40px; left: 0; right: 0; height: 40%; background: var(--hill); border-top-left-radius: 50% 70%; border-top-right-radius: 50% 70%; z-index: 1; }
 
-    body {
-      margin: 0;
-      font-family: Tahoma, Arial, sans-serif;
-      height: 100vh;
-      overflow: hidden;
-      user-select: none;
-      background: #000;
-    }
+    .desktop-icons { position: absolute; left: 10px; top: 10px; display: grid; grid-template-columns: repeat(2, 86px); gap: 14px 8px; z-index: 3; }
+    .icon { width: 84px; text-align: center; color: #fff; font-size: 12px; text-shadow: 1px 1px 2px rgba(0,0,0,.8); cursor: default; padding: 4px; border: 1px solid transparent; border-radius: 2px; }
+    .icon:hover,.icon.selected { background: rgba(33, 118, 255, .4); border-color: rgba(255,255,255,.6); }
+    .icon-graphic { display:block; font-size:28px; margin-bottom:4px; }
 
-    .desktop {
-      position: relative;
-      height: 100%;
-      width: 100%;
-      background: radial-gradient(circle at 20% 20%, #82c7ff 0%, #4d8ef0 35%, #2a63ce 100%);
-    }
+    .window { position: absolute; width: 520px; height: 340px; border:1px solid var(--window-border); border-radius:7px 7px 0 0; background:#ece9d8; box-shadow:0 10px 25px rgba(0,0,0,.45); overflow:hidden; min-width:280px; min-height:180px; }
+    .window.maximized { top:0 !important; left:0 !important; width:100vw !important; height:calc(100vh - 40px) !important; border-radius:0; }
+    .titlebar { height:30px; background:linear-gradient(to bottom, #2b75ff, #0b49c4); color:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 5px 0 10px; font-weight:700; font-size:13px; cursor:move; }
+    .titlebar-controls { display:flex; gap:4px; }
+    .titlebar button { width:22px; height:22px; border:1px solid #fff; border-radius:3px; background:linear-gradient(to bottom, #7db6ff, #2f76f3); color:#fff; font-weight:bold; cursor:pointer; line-height:1; padding:0; }
+    .titlebar button.close { background:linear-gradient(to bottom, #ff7a62, #d93717); }
+    .window-body { padding:14px; height:calc(100% - 30px); overflow:auto; font-size:14px; color:#222; background:#fff; }
+    .resizer { width:12px; height:12px; position:absolute; right:0; bottom:0; cursor:nwse-resize; background:linear-gradient(135deg, transparent 40%, rgba(60,60,60,.4) 41%); }
 
-    .wallpaper-hill {
-      position: absolute;
-      bottom: 40px;
-      left: 0;
-      right: 0;
-      height: 40%;
-      background: radial-gradient(130% 120% at 50% 100%, #7ed62b 20%, #4ea318 80%);
-      border-top-left-radius: 50% 70%;
-      border-top-right-radius: 50% 70%;
-      z-index: 1;
-    }
+    .taskbar { position:absolute; bottom:0; left:0; right:0; height:40px; background:linear-gradient(to bottom, var(--taskbar), var(--taskbar-dark)); display:flex; align-items:center; padding-right:8px; z-index:20; }
+    .start-btn { height:36px; min-width:100px; border-radius:0 14px 14px 0; border:1px solid #0f5e00; border-left:0; background:linear-gradient(to bottom, #4fcf05, #2b8f00); color:#fff; font-size:21px; font-style:italic; font-weight:bold; font-family:"Trebuchet MS", Tahoma, sans-serif; text-align:left; padding-left:18px; cursor:pointer; margin-right:8px; }
+    .quick-actions { display:flex; gap:4px; margin-right:8px; }
+    .quick-btn { width:24px; height:24px; border:1px solid rgba(255,255,255,.5); color:#fff; background:rgba(255,255,255,.15); border-radius:4px; cursor:pointer; font-size:14px; }
 
-    .desktop-icons {
-      position: absolute;
-      left: 10px;
-      top: 10px;
-      display: grid;
-      grid-template-columns: repeat(2, 86px);
-      gap: 16px 8px;
-      z-index: 3;
-    }
+    .task-items { display:flex; gap:6px; flex:1; align-items:center; overflow-x:auto; scrollbar-width:none; }
+    .task-items::-webkit-scrollbar { display:none; }
+    .task-item { min-width:160px; max-width:220px; height:30px; padding:0 10px; border:1px solid rgba(255,255,255,.5); border-radius:3px; background:linear-gradient(to bottom, #4d8dfd, #2a69d8); color:#fff; font-size:13px; display:flex; align-items:center; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .task-item.active { background:linear-gradient(to bottom, #6fa7ff, #3a79ec); box-shadow: inset 0 0 0 1px rgba(255,255,255,.4); }
+    .clock { width:76px; text-align:center; color:#fff; font-size:13px; border-left:1px solid rgba(255,255,255,.35); padding-left:8px; margin-left:6px; }
 
-    .icon {
-      width: 84px;
-      text-align: center;
-      color: #fff;
-      font-size: 12px;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-      cursor: default;
-      padding: 4px;
-      border: 1px solid transparent;
-      border-radius: 2px;
-    }
+    .start-menu { position:absolute; bottom:40px; left:0; width:340px; height:450px; display:none; border:1px solid #0d3899; border-radius:8px 8px 0 0; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.45); z-index:30; background:#fff; }
+    .start-head { height:66px; background:linear-gradient(to right, #1f58d1, #3d8af7); color:#fff; font-size:20px; font-weight:bold; display:flex; align-items:center; justify-content:space-between; padding:0 14px; }
+    .start-search { width:120px; font-size:12px; }
+    .start-content { display:grid; grid-template-columns:1fr 1fr; height:calc(100% - 66px); }
+    .start-left { background:#fff; padding:10px; border-right:1px solid #c2d7ff; overflow:auto; }
+    .start-right { background:#d7e7ff; padding:10px; }
+    .menu-item { font-size:14px; padding:8px; border-radius:4px; cursor:pointer; }
+    .menu-item:hover { background:#2f72f0; color:#fff; }
 
-    .icon:hover,
-    .icon.selected {
-      background: rgba(33, 118, 255, 0.4);
-      border-color: rgba(255,255,255,0.6);
-    }
+    .toast { position:absolute; right:14px; bottom:52px; padding:10px 14px; border-radius:6px; background:rgba(27,67,157,.92); color:#fff; font-size:13px; display:none; z-index:40; border:1px solid rgba(255,255,255,.35); }
 
-    .icon-graphic {
-      display: block;
-      font-size: 28px;
-      margin-bottom: 4px;
-    }
+    .context-menu { position:absolute; display:none; min-width:170px; background:#fff; border:1px solid #1f58d1; box-shadow:0 8px 22px rgba(0,0,0,.3); z-index:60; font-size:13px; }
+    .context-item { padding:8px 10px; cursor:pointer; }
+    .context-item:hover { background:#2f72f0; color:#fff; }
 
-    .window {
-      position: absolute;
-      width: 520px;
-      height: 340px;
-      border: 1px solid var(--window-border);
-      border-radius: 7px 7px 0 0;
-      background: #ece9d8;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.45);
-      overflow: hidden;
-      z-index: 5;
-      min-width: 280px;
-      min-height: 180px;
-    }
+    .run-box { position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); background:#ece9d8; border:2px solid #2f68d2; padding:14px; width:330px; display:none; z-index:70; }
+    .run-row { display:flex; gap:8px; margin-top:10px; }
+    .run-box input { flex:1; }
 
-    .window.maximized {
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: calc(100vh - 40px) !important;
-      border-radius: 0;
-    }
-
-    .titlebar {
-      height: 30px;
-      background: linear-gradient(to bottom, #2b75ff, #0b49c4);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 5px 0 10px;
-      font-weight: 700;
-      font-size: 13px;
-      cursor: move;
-    }
-
-    .titlebar-controls {
-      display: flex;
-      gap: 4px;
-    }
-
-    .titlebar button {
-      width: 22px;
-      height: 22px;
-      border: 1px solid #fff;
-      border-radius: 3px;
-      background: linear-gradient(to bottom, #7db6ff, #2f76f3);
-      color: #fff;
-      font-weight: bold;
-      cursor: pointer;
-      line-height: 1;
-      padding: 0;
-    }
-
-    .titlebar button.close { background: linear-gradient(to bottom, #ff7a62, #d93717); }
-
-    .window-body {
-      padding: 14px;
-      height: calc(100% - 30px);
-      overflow: auto;
-      font-size: 14px;
-      color: #222;
-      background: #fff;
-    }
-
-    .resizer {
-      width: 12px;
-      height: 12px;
-      position: absolute;
-      right: 0;
-      bottom: 0;
-      cursor: nwse-resize;
-      background: linear-gradient(135deg, transparent 40%, rgba(60,60,60,0.4) 41%);
-    }
-
-    .taskbar {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 40px;
-      background: linear-gradient(to bottom, var(--taskbar), var(--taskbar-dark));
-      display: flex;
-      align-items: center;
-      padding-right: 8px;
-      z-index: 20;
-    }
-
-    .start-btn {
-      height: 36px;
-      min-width: 100px;
-      border-radius: 0 14px 14px 0;
-      border: 1px solid #0f5e00;
-      border-left: 0;
-      background: linear-gradient(to bottom, #4fcf05, #2b8f00);
-      color: #fff;
-      font-size: 21px;
-      font-style: italic;
-      font-weight: bold;
-      font-family: "Trebuchet MS", Tahoma, sans-serif;
-      text-align: left;
-      padding-left: 18px;
-      cursor: pointer;
-      margin-right: 8px;
-    }
-
-    .task-items {
-      display: flex;
-      gap: 6px;
-      flex: 1;
-      align-items: center;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-
-    .task-items::-webkit-scrollbar { display: none; }
-
-    .task-item {
-      min-width: 160px;
-      max-width: 220px;
-      height: 30px;
-      padding: 0 10px;
-      border: 1px solid rgba(255,255,255,0.5);
-      border-radius: 3px;
-      background: linear-gradient(to bottom, #4d8dfd, #2a69d8);
-      color: #fff;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .task-item.active {
-      background: linear-gradient(to bottom, #6fa7ff, #3a79ec);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
-    }
-
-    .clock {
-      width: 74px;
-      text-align: center;
-      color: #fff;
-      font-size: 13px;
-      border-left: 1px solid rgba(255,255,255,0.35);
-      padding-left: 8px;
-      margin-left: 6px;
-    }
-
-    .start-menu {
-      position: absolute;
-      bottom: 40px;
-      left: 0;
-      width: 320px;
-      height: 430px;
-      display: none;
-      border: 1px solid #0d3899;
-      border-radius: 8px 8px 0 0;
-      overflow: hidden;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-      z-index: 30;
-      background: #fff;
-    }
-
-    .start-head {
-      height: 66px;
-      background: linear-gradient(to right, #1f58d1, #3d8af7);
-      color: #fff;
-      font-size: 20px;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      padding: 0 14px;
-    }
-
-    .start-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      height: calc(100% - 66px);
-    }
-
-    .start-left { background: #fff; padding: 10px; border-right: 1px solid #c2d7ff; }
-    .start-right { background: #d7e7ff; padding: 10px; }
-
-    .menu-item {
-      font-size: 14px;
-      padding: 8px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .menu-item:hover {
-      background: #2f72f0;
-      color: #fff;
-    }
-
-    .toast {
-      position: absolute;
-      right: 14px;
-      bottom: 52px;
-      padding: 10px 14px;
-      border-radius: 6px;
-      background: rgba(27, 67, 157, 0.92);
-      color: #fff;
-      font-size: 13px;
-      display: none;
-      z-index: 40;
-      border: 1px solid rgba(255,255,255,0.35);
-    }
+    .lock-screen { position:absolute; inset:0; background:rgba(11,34,90,.95); color:#fff; display:none; align-items:center; justify-content:center; flex-direction:column; gap:12px; z-index:80; }
   </style>
 </head>
 <body>
   <div class="desktop" id="desktop">
-    <div class="wallpaper-hill"></div>
+    <div class="wallpaper-hill" id="wallpaperHill"></div>
 
     <div class="desktop-icons" id="desktopIcons">
       <div class="icon" data-app="computer"><span class="icon-graphic">🖥️</span>Bilgisayarım</div>
       <div class="icon" data-app="notepad"><span class="icon-graphic">📝</span>Not Defteri</div>
       <div class="icon" data-app="paint"><span class="icon-graphic">🎨</span>Paint</div>
       <div class="icon" data-app="calculator"><span class="icon-graphic">🧮</span>Hesap Makinesi</div>
+      <div class="icon" data-app="weather"><span class="icon-graphic">🌤️</span>Hava Durumu</div>
+      <div class="icon" data-app="mines"><span class="icon-graphic">💣</span>Mines</div>
+      <div class="icon" data-app="music"><span class="icon-graphic">🎵</span>Müzik</div>
       <div class="icon" data-app="about"><span class="icon-graphic">📘</span>Hakkında</div>
-      <div class="icon" data-app="internet"><span class="icon-graphic">🌐</span>Internet</div>
     </div>
 
     <div id="windowLayer"></div>
 
     <div class="start-menu" id="startMenu">
-      <div class="start-head">Kullanıcı</div>
+      <div class="start-head">Kullanıcı <input id="startSearch" class="start-search" placeholder="Uygulama ara" /></div>
       <div class="start-content">
-        <div class="start-left">
-          <div class="menu-item" data-app="computer">Bilgisayarım</div>
-          <div class="menu-item" data-app="notepad">Not Defteri</div>
-          <div class="menu-item" data-app="paint">Paint</div>
-          <div class="menu-item" data-app="calculator">Hesap Makinesi</div>
-          <div class="menu-item" data-app="internet">Internet Explorer</div>
-          <div class="menu-item" data-app="about">Hakkında</div>
-        </div>
+        <div class="start-left" id="startAppList"></div>
         <div class="start-right">
           <div class="menu-item" id="showDesktopBtn">Masaüstünü Göster</div>
           <div class="menu-item" id="tileWindowsBtn">Pencereleri Diz</div>
-          <div class="menu-item">Denetim Masası</div>
+          <div class="menu-item" id="cascadeWindowsBtn">Pencereleri Basamakla</div>
+          <div class="menu-item" id="runDialogBtn">Çalıştır...</div>
+          <div class="menu-item" id="themeToggleBtn">Tema Değiştir</div>
+          <div class="menu-item" id="lockBtn">Kilitle</div>
           <div class="menu-item" id="shutdownBtn">Kapat</div>
         </div>
       </div>
@@ -323,56 +100,93 @@
 
     <div class="taskbar">
       <button class="start-btn" id="startBtn">start</button>
+      <div class="quick-actions">
+        <button class="quick-btn" id="showDesktopQuick" title="Masaüstü">🪟</button>
+        <button class="quick-btn" id="muteToggle" title="Ses">🔊</button>
+      </div>
       <div class="task-items" id="taskItems"></div>
       <div class="clock" id="clock"></div>
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <div class="context-menu" id="desktopMenu">
+      <div class="context-item" data-action="new-note">Yeni Not</div>
+      <div class="context-item" data-action="refresh">Yenile</div>
+      <div class="context-item" data-action="wallpaper">Duvar Kağıdı Değiştir</div>
+      <div class="context-item" data-action="close-all">Tüm Pencereleri Kapat</div>
+    </div>
+
+    <div class="run-box" id="runBox">
+      <div><b>Çalıştır</b></div>
+      <div style="font-size:12px;margin-top:6px">Aç: (örnek: notepad, paint, weather, mines)</div>
+      <div class="run-row">
+        <input id="runInput" />
+        <button id="runOpenBtn">Aç</button>
+        <button id="runCancelBtn">İptal</button>
+      </div>
+    </div>
+
+    <div class="lock-screen" id="lockScreen">
+      <h2>Bilgisayar Kilitlendi</h2>
+      <button id="unlockBtn">Kilidi Aç</button>
+    </div>
   </div>
 
   <script>
     const desktop = document.getElementById('desktop');
+    const wallpaperHill = document.getElementById('wallpaperHill');
     const windowLayer = document.getElementById('windowLayer');
     const taskItems = document.getElementById('taskItems');
     const startBtn = document.getElementById('startBtn');
     const startMenu = document.getElementById('startMenu');
     const toast = document.getElementById('toast');
+    const desktopMenu = document.getElementById('desktopMenu');
+    const runBox = document.getElementById('runBox');
+    const lockScreen = document.getElementById('lockScreen');
+    const startAppList = document.getElementById('startAppList');
+    const startSearch = document.getElementById('startSearch');
+
+    const wallpapers = [
+      { bg: 'radial-gradient(circle at 20% 20%, #82c7ff 0%, #4d8ef0 35%, #2a63ce 100%)', hill: 'radial-gradient(130% 120% at 50% 100%, #7ed62b 20%, #4ea318 80%)' },
+      { bg: 'linear-gradient(120deg, #2d1a4d, #2e57a8, #4f7acb)', hill: 'radial-gradient(130% 120% at 50% 100%, #4cc5ff 20%, #2268d4 80%)' },
+      { bg: 'linear-gradient(150deg, #1f3f3b, #2f7d6f, #5db89f)', hill: 'radial-gradient(130% 120% at 50% 100%, #f0d04d 20%, #b4931d 80%)' }
+    ];
 
     const apps = {
-      computer: {
-        title: 'Bilgisayarım',
-        content: () => '<h3>Yerel Disk (C:)</h3><p>Toplam Alan: 40 GB</p><p>Boş Alan: 18 GB</p><hr><h3>Belgeler</h3><p>Fotoğraflar, Müzikler, Videolar...</p>'
-      },
-      notepad: {
-        title: 'Not Defteri',
-        content: () => '<h3>Yeni Metin Belgesi</h3><textarea style="width:100%;height:180px">Merhaba 👋 Bu geliştirilmiş Windows XP simülatöründe birden fazla pencere açabilirsin.</textarea>'
-      },
-      paint: {
-        title: 'Paint',
-        content: () => '<h3>Paint (Demo)</h3><p>Bu bir demo çizim ekranıdır.</p><div style="display:grid;grid-template-columns:repeat(10,1fr);gap:4px;">' + Array.from({length:60}, (_,i)=> `<div style="height:18px;background:hsl(${(i*23)%360} 75% 60%);"></div>`).join('') + '</div>'
-      },
-      calculator: {
-        title: 'Hesap Makinesi',
-        content: () => '<h3>Hızlı Hesap</h3><p>7 × 8 = <b>56</b></p><p>144 ÷ 12 = <b>12</b></p><p>XP temalı mini hesap makinesi demoları.</p>'
-      },
-      internet: {
-        title: 'Internet Explorer',
-        content: () => '<h3>Internet Explorer</h3><p>Sayfa yükleniyor...</p><p><i>Bu bir çevrimdışı arayüz demosudur.</i></p>'
-      },
-      about: {
-        title: 'Hakkında',
-        content: () => '<h3>Windows XP Simülatör</h3><ul><li>Çoklu pencere</li><li>Sürükle + yeniden boyutlandır</li><li>Masaüstünü göster</li><li>Pencereleri diz</li><li>Canlı saat ve bildirim</li></ul>'
-      }
+      computer: { title: 'Bilgisayarım', content: () => '<h3>Yerel Disk (C:)</h3><p>Toplam: 40 GB</p><p>Boş: 18 GB</p>' },
+      notepad: { title: 'Not Defteri', content: () => '<h3>Not</h3><textarea style="width:100%;height:190px">Kısa notunu buraya yaz.</textarea>' },
+      paint: { title: 'Paint', content: () => '<h3>Paint</h3><p>Renk paleti:</p><div style="display:grid;grid-template-columns:repeat(10,1fr);gap:3px;">'+Array.from({length:70},(_,i)=>`<div style="height:18px;background:hsl(${i*17%360} 80% 60%)"></div>`).join('')+'</div>' },
+      calculator: { title: 'Hesap Makinesi', content: () => '<h3>Hesap Makinesi</h3><input id="calcExpr" style="width:100%" placeholder="Örn: 12*8+5"/><button id="calcBtn" style="margin-top:8px">Hesapla</button><p id="calcOut">Sonuç: -</p>' },
+      weather: { title: 'Hava Durumu', content: () => '<h3>Bugün</h3><p>İstanbul: 24°C ☀️</p><p>Ankara: 21°C ⛅</p><p>İzmir: 27°C 🌤️</p>' },
+      mines: { title: 'Mines', content: () => '<h3>Mines (Mini)</h3><p>Kutulara tıkla, mayına basma!</p><div id="minesGrid" style="display:grid;grid-template-columns:repeat(6,34px);gap:4px"></div>' },
+      music: { title: 'Müzik Çalar', content: () => '<h3>XP Müzik</h3><button id="beepBtn">Test Sesi Çal</button><p style="font-size:12px">(WebAudio ile kısa beep)</p>' },
+      about: { title: 'Hakkında', content: () => '<h3>XP Simülatör v3</h3><ul><li>Çoklu pencere</li><li>Çalıştır penceresi</li><li>Sağ tık menüsü</li><li>Tema/duvar kağıdı değişimi</li><li>Kilit ekranı</li><li>Mini uygulamalar</li></ul>' }
     };
 
     let zIndex = 50;
     let windowCount = 0;
+    let wallpaperIndex = 0;
+    let muted = false;
     const openWindows = new Map();
 
     function showToast(message) {
       toast.textContent = message;
       toast.style.display = 'block';
-      setTimeout(() => { toast.style.display = 'none'; }, 1700);
+      setTimeout(() => (toast.style.display = 'none'), 1600);
+    }
+
+    function playBeep(freq = 440, dur = 0.1) {
+      if (muted) return;
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = freq;
+      gain.gain.value = 0.05;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      setTimeout(() => { osc.stop(); ctx.close(); }, dur * 1000);
     }
 
     function setActive(winId) {
@@ -387,6 +201,35 @@
       instance.task.classList.add('active');
     }
 
+    function bindAppLogic(windowEl, appKey) {
+      if (appKey === 'calculator') {
+        const btn = windowEl.querySelector('#calcBtn');
+        const expr = windowEl.querySelector('#calcExpr');
+        const out = windowEl.querySelector('#calcOut');
+        btn?.addEventListener('click', () => {
+          try { out.textContent = `Sonuç: ${Function(`return (${expr.value || 0})`)()}`; }
+          catch { out.textContent = 'Sonuç: Hatalı ifade'; }
+        });
+      }
+      if (appKey === 'mines') {
+        const grid = windowEl.querySelector('#minesGrid');
+        const mines = new Set([3, 8, 14, 17, 22, 31]);
+        Array.from({ length: 36 }, (_, i) => {
+          const cell = document.createElement('button');
+          cell.textContent = '■';
+          cell.style.height = '34px';
+          cell.addEventListener('click', () => {
+            if (mines.has(i)) { cell.textContent = '💥'; cell.style.background = '#f88'; showToast('Mayına bastın!'); }
+            else { cell.textContent = '·'; cell.disabled = true; }
+          });
+          grid?.appendChild(cell);
+        });
+      }
+      if (appKey === 'music') {
+        windowEl.querySelector('#beepBtn')?.addEventListener('click', () => playBeep(560, 0.12));
+      }
+    }
+
     function createWindow(appKey) {
       const app = apps[appKey];
       if (!app) return;
@@ -394,8 +237,9 @@
       const winId = `win-${++windowCount}`;
       const windowEl = document.createElement('div');
       windowEl.className = 'window';
-      windowEl.style.top = `${80 + (windowCount % 6) * 24}px`;
-      windowEl.style.left = `${170 + (windowCount % 6) * 32}px`;
+      windowEl.style.top = `${72 + (windowCount % 8) * 20}px`;
+      windowEl.style.left = `${170 + (windowCount % 8) * 24}px`;
+      windowEl.style.zIndex = ++zIndex;
 
       windowEl.innerHTML = `
         <div class="titlebar">
@@ -414,21 +258,15 @@
       task.className = 'task-item';
       task.textContent = app.title;
       taskItems.appendChild(task);
-
       windowLayer.appendChild(windowEl);
       openWindows.set(winId, { window: windowEl, task, appKey, maximized: false, prevBounds: null });
       setActive(winId);
+      bindAppLogic(windowEl, appKey);
 
       task.addEventListener('click', () => {
-        if (windowEl.style.display === 'none') {
-          windowEl.style.display = 'block';
-          setActive(winId);
-        } else if (windowEl.classList.contains('active')) {
-          windowEl.style.display = 'none';
-          task.classList.remove('active');
-        } else {
-          setActive(winId);
-        }
+        if (windowEl.style.display === 'none') { windowEl.style.display = 'block'; setActive(winId); }
+        else if (windowEl.classList.contains('active')) { windowEl.style.display = 'none'; task.classList.remove('active'); }
+        else setActive(winId);
       });
 
       windowEl.addEventListener('mousedown', () => setActive(winId));
@@ -437,153 +275,188 @@
       const buttons = windowEl.querySelectorAll('button[data-action]');
       const resizer = windowEl.querySelector('.resizer');
 
-      buttons.forEach(btn => {
+      buttons.forEach((btn) => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
           const action = btn.dataset.action;
-          if (action === 'close') {
-            windowEl.remove();
-            task.remove();
-            openWindows.delete(winId);
-          }
-          if (action === 'min') {
-            windowEl.style.display = 'none';
-            task.classList.remove('active');
-          }
+          if (action === 'close') { windowEl.remove(); task.remove(); openWindows.delete(winId); playBeep(220, 0.08); }
+          if (action === 'min') { windowEl.style.display = 'none'; task.classList.remove('active'); }
           if (action === 'max') {
             const instance = openWindows.get(winId);
             if (!instance) return;
             if (!instance.maximized) {
-              instance.prevBounds = {
-                top: windowEl.style.top,
-                left: windowEl.style.left,
-                width: windowEl.style.width,
-                height: windowEl.style.height
-              };
+              instance.prevBounds = { top: windowEl.style.top, left: windowEl.style.left, width: windowEl.style.width, height: windowEl.style.height };
               windowEl.classList.add('maximized');
             } else {
               windowEl.classList.remove('maximized');
-              Object.assign(windowEl.style, instance.prevBounds);
+              Object.assign(windowEl.style, instance.prevBounds || {});
             }
             instance.maximized = !instance.maximized;
           }
         });
       });
 
-      let dragging = false;
-      let dx = 0;
-      let dy = 0;
+      let dragging = false, dx = 0, dy = 0;
       titlebar.addEventListener('mousedown', (e) => {
-        if (openWindows.get(winId).maximized) return;
+        if (openWindows.get(winId)?.maximized) return;
         dragging = true;
         const rect = windowEl.getBoundingClientRect();
         dx = e.clientX - rect.left;
         dy = e.clientY - rect.top;
       });
 
-      let resizing = false;
-      let startX = 0;
-      let startY = 0;
-      let startW = 0;
-      let startH = 0;
+      let resizing = false, startX = 0, startY = 0, startW = 0, startH = 0;
       resizer.addEventListener('mousedown', (e) => {
-        if (openWindows.get(winId).maximized) return;
+        if (openWindows.get(winId)?.maximized) return;
         resizing = true;
         const rect = windowEl.getBoundingClientRect();
-        startX = e.clientX;
-        startY = e.clientY;
-        startW = rect.width;
-        startH = rect.height;
+        startX = e.clientX; startY = e.clientY; startW = rect.width; startH = rect.height;
         e.preventDefault();
       });
 
-      document.addEventListener('mousemove', (e) => {
+      const moveFn = (e) => {
         if (dragging) {
           const x = Math.max(0, Math.min(window.innerWidth - windowEl.offsetWidth, e.clientX - dx));
           const y = Math.max(0, Math.min(window.innerHeight - 40 - windowEl.offsetHeight, e.clientY - dy));
-          windowEl.style.left = `${x}px`;
-          windowEl.style.top = `${y}px`;
+          windowEl.style.left = `${x}px`; windowEl.style.top = `${y}px`;
         }
         if (resizing) {
-          windowEl.style.width = `${Math.max(280, startW + (e.clientX - startX))}px`;
-          windowEl.style.height = `${Math.max(180, startH + (e.clientY - startY))}px`;
+          windowEl.style.width = `${Math.max(280, startW + e.clientX - startX)}px`;
+          windowEl.style.height = `${Math.max(180, startH + e.clientY - startY)}px`;
         }
-      });
+      };
+      const upFn = () => { dragging = false; resizing = false; };
+      document.addEventListener('mousemove', moveFn);
+      document.addEventListener('mouseup', upFn);
+    }
 
-      document.addEventListener('mouseup', () => {
-        dragging = false;
-        resizing = false;
+    function hideAllWindows() {
+      openWindows.forEach((instance) => { instance.window.style.display = 'none'; instance.task.classList.remove('active'); });
+    }
+
+    function tileWindows() {
+      const list = [...openWindows.values()].filter((v) => v.window.style.display !== 'none');
+      if (!list.length) return;
+      const cols = Math.ceil(Math.sqrt(list.length));
+      const rows = Math.ceil(list.length / cols);
+      const cellW = Math.floor(window.innerWidth / cols);
+      const cellH = Math.floor((window.innerHeight - 40) / rows);
+      list.forEach((v, i) => {
+        const r = Math.floor(i / cols), c = i % cols;
+        v.window.classList.remove('maximized');
+        v.window.style.left = `${c * cellW}px`; v.window.style.top = `${r * cellH}px`;
+        v.window.style.width = `${cellW}px`; v.window.style.height = `${cellH}px`;
       });
     }
 
-    document.querySelectorAll('.icon').forEach(icon => {
-      icon.addEventListener('dblclick', () => createWindow(icon.dataset.app));
-    });
-
-    document.querySelectorAll('.menu-item[data-app]').forEach(item => {
-      item.addEventListener('click', () => {
-        createWindow(item.dataset.app);
-        startMenu.style.display = 'none';
+    function cascadeWindows() {
+      let i = 0;
+      [...openWindows.values()].forEach((v) => {
+        if (v.window.style.display === 'none') return;
+        v.window.classList.remove('maximized');
+        v.window.style.width = '520px'; v.window.style.height = '320px';
+        v.window.style.left = `${120 + i * 28}px`; v.window.style.top = `${52 + i * 24}px`;
+        i += 1;
       });
-    });
+    }
+
+    function cycleWallpaper() {
+      wallpaperIndex = (wallpaperIndex + 1) % wallpapers.length;
+      desktop.style.setProperty('--desktop-bg', wallpapers[wallpaperIndex].bg);
+      desktop.style.setProperty('--hill', wallpapers[wallpaperIndex].hill);
+      showToast('Duvar kağıdı değiştirildi');
+    }
+
+    function renderStartList(filter = '') {
+      startAppList.innerHTML = '';
+      Object.keys(apps)
+        .filter((k) => apps[k].title.toLowerCase().includes(filter.toLowerCase()))
+        .forEach((key) => {
+          const item = document.createElement('div');
+          item.className = 'menu-item';
+          item.textContent = apps[key].title;
+          item.addEventListener('click', () => { createWindow(key); startMenu.style.display = 'none'; });
+          startAppList.appendChild(item);
+        });
+    }
+
+    document.querySelectorAll('.icon').forEach((icon) => icon.addEventListener('dblclick', () => createWindow(icon.dataset.app)));
 
     startBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       startMenu.style.display = startMenu.style.display === 'block' ? 'none' : 'block';
+      renderStartList(startSearch.value);
     });
 
-    document.getElementById('showDesktopBtn').addEventListener('click', () => {
-      openWindows.forEach((instance) => {
-        instance.window.style.display = 'none';
-        instance.task.classList.remove('active');
-      });
-      startMenu.style.display = 'none';
-      showToast('Tüm pencereler gizlendi');
+    startSearch.addEventListener('input', () => renderStartList(startSearch.value));
+
+    document.getElementById('showDesktopBtn').addEventListener('click', () => { hideAllWindows(); startMenu.style.display = 'none'; showToast('Masaüstü gösterildi'); });
+    document.getElementById('tileWindowsBtn').addEventListener('click', () => { tileWindows(); startMenu.style.display = 'none'; showToast('Pencereler dizildi'); });
+    document.getElementById('cascadeWindowsBtn').addEventListener('click', () => { cascadeWindows(); startMenu.style.display = 'none'; showToast('Pencereler basamaklandı'); });
+    document.getElementById('themeToggleBtn').addEventListener('click', () => { cycleWallpaper(); startMenu.style.display = 'none'; });
+    document.getElementById('shutdownBtn').addEventListener('click', () => { startMenu.style.display = 'none'; showToast('Kapatılamaz 😄 Simülatör modunda.'); });
+
+    document.getElementById('showDesktopQuick').addEventListener('click', hideAllWindows);
+    document.getElementById('muteToggle').addEventListener('click', (e) => {
+      muted = !muted;
+      e.target.textContent = muted ? '🔇' : '🔊';
+      showToast(muted ? 'Ses kapatıldı' : 'Ses açıldı');
     });
 
-    document.getElementById('tileWindowsBtn').addEventListener('click', () => {
-      const list = [...openWindows.values()].filter(v => v.window.style.display !== 'none');
-      if (!list.length) return;
-      const cols = Math.ceil(Math.sqrt(list.length));
-      const rows = Math.ceil(list.length / cols);
-      const totalW = window.innerWidth;
-      const totalH = window.innerHeight - 40;
-      const cellW = Math.floor(totalW / cols);
-      const cellH = Math.floor(totalH / rows);
-      list.forEach((v, i) => {
-        const r = Math.floor(i / cols);
-        const c = i % cols;
-        v.window.classList.remove('maximized');
-        v.window.style.left = `${c * cellW}px`;
-        v.window.style.top = `${r * cellH}px`;
-        v.window.style.width = `${cellW}px`;
-        v.window.style.height = `${cellH}px`;
-      });
-      startMenu.style.display = 'none';
-      showToast('Pencereler dizildi');
+    document.getElementById('runDialogBtn').addEventListener('click', () => { runBox.style.display = 'block'; startMenu.style.display = 'none'; });
+    document.getElementById('runCancelBtn').addEventListener('click', () => { runBox.style.display = 'none'; });
+    document.getElementById('runOpenBtn').addEventListener('click', () => {
+      const key = document.getElementById('runInput').value.trim().toLowerCase();
+      if (apps[key]) createWindow(key);
+      else showToast('Uygulama bulunamadı');
+      runBox.style.display = 'none';
     });
 
-    document.getElementById('shutdownBtn').addEventListener('click', () => {
-      startMenu.style.display = 'none';
-      showToast('Kapatılamaz 😄 Bu sadece bir simülatör.');
+    document.getElementById('lockBtn').addEventListener('click', () => { lockScreen.style.display = 'flex'; startMenu.style.display = 'none'; });
+    document.getElementById('unlockBtn').addEventListener('click', () => { lockScreen.style.display = 'none'; showToast('Hoş geldin!'); });
+
+    desktop.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      if (e.target.closest('.window')) return;
+      desktopMenu.style.left = `${e.clientX}px`;
+      desktopMenu.style.top = `${e.clientY}px`;
+      desktopMenu.style.display = 'block';
+    });
+
+    desktopMenu.addEventListener('click', (e) => {
+      const action = e.target.dataset.action;
+      if (!action) return;
+      if (action === 'new-note') createWindow('notepad');
+      if (action === 'refresh') showToast('Masaüstü yenilendi');
+      if (action === 'wallpaper') cycleWallpaper();
+      if (action === 'close-all') {
+        openWindows.forEach((v) => { v.window.remove(); v.task.remove(); });
+        openWindows.clear();
+        showToast('Tüm pencereler kapatıldı');
+      }
+      desktopMenu.style.display = 'none';
     });
 
     document.addEventListener('click', (e) => {
-      if (!startMenu.contains(e.target) && e.target !== startBtn) {
-        startMenu.style.display = 'none';
-      }
+      if (!startMenu.contains(e.target) && e.target !== startBtn) startMenu.style.display = 'none';
+      if (!desktopMenu.contains(e.target)) desktopMenu.style.display = 'none';
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { startMenu.style.display = 'none'; runBox.style.display = 'none'; desktopMenu.style.display = 'none'; }
+      if (e.ctrlKey && e.key.toLowerCase() === 'n') createWindow('notepad');
+      if (e.ctrlKey && e.key.toLowerCase() === 'l') lockScreen.style.display = 'flex';
+      if (e.key === 'F2') cycleWallpaper();
     });
 
     function updateClock() {
       const now = new Date();
-      document.getElementById('clock').textContent = now.toLocaleTimeString('tr-TR', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      document.getElementById('clock').textContent = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
     }
     setInterval(updateClock, 1000);
     updateClock();
 
+    renderStartList();
     createWindow('computer');
     createWindow('about');
   </script>
