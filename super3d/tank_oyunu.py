@@ -39,6 +39,25 @@ class Mermi:
             self.alive = False
 
 
+@dataclass
+class CanPoint:
+    shape: Cylinder
+    amount: int = 40
+    cooldown: float = 10.0
+    active: bool = True
+    timer: float = 0.0
+
+    def update(self, dt: float) -> None:
+        if not self.active:
+            self.timer -= dt
+            if self.timer <= 0:
+                self.active = True
+
+    def consume(self) -> None:
+        self.active = False
+        self.timer = self.cooldown
+
+
 class Tank:
     """M4 Sherman esintili basit tank modeli."""
 
@@ -47,7 +66,11 @@ class Tank:
         self.position = list(position)
         self.yaw = 0.0
         self.turret_yaw = 0.0
-        self.health = 160 if name == "player" else 95
+        self.max_health = 180 if name == "player" else 110
+        self.health = self.max_health
+
+        self.reload_time = 0.55 if name == "player" else 1.8
+        self.reload_timer = 0.0
 
         self.hull_bottom = Cube(size=2.15, color=color)
         self.hull_top = Cube(size=1.65, color=tuple(min(255, c + 25) for c in color))
@@ -120,7 +143,13 @@ class Tank:
         self.turret_yaw = world_yaw - self.yaw
         self.sync_parts()
 
-    def shoot(self) -> Mermi:
+    def update(self, dt: float) -> None:
+        self.reload_timer = max(0.0, self.reload_timer - dt)
+
+    def shoot(self) -> Mermi | None:
+        if self.reload_timer > 0:
+            return None
+
         world_yaw = self.yaw + self.turret_yaw
         direction = (math.sin(world_yaw), 0.0, math.cos(world_yaw))
         spawn = (
@@ -133,6 +162,8 @@ class Tank:
             speed, weapon_range = 17.0, 42.0
         else:
             speed, weapon_range = 9.0, 28.0
+
+        self.reload_timer = self.reload_time
         return Mermi(
             sekil=bullet,
             velocity=(direction[0] * speed, 0.0, direction[2] * speed),
@@ -184,51 +215,80 @@ def mouse_to_world_yaw(kamera: Kamera, mouse_pos: tuple[int, int], screen_size: 
     return math.atan2(hit_x, hit_z)
 
 
-def create_big_map(sahne: Sahne) -> list[Cube]:
-    """Büyük harita: çok daha geniş alan + daha fazla engel."""
-    obstacles: list[Cube] = []
+def create_forest_map(sahne: Sahne) -> tuple[list[Cube], list[Cylinder], list[CanPoint]]:
+    """Gerçek orman hissi için kaya + ağaç + can doldurma noktaları."""
+    rocks: list[Cube] = []
+    trees: list[Cylinder] = []
+    heal_points: list[CanPoint] = []
+
     random.seed(22)
 
-    for z in range(12, 95, 6):
-        for x in range(-30, 31, 6):
-            if random.random() < 0.38:
-                b = Cube(size=random.uniform(1.4, 2.2), position=(x, -1.05, z), color=(120, 100, 75))
-                b.scale = (1.0, random.uniform(0.55, 1.0), 1.0)
-                obstacles.append(b)
+    # Kayalar
+    for z in range(10, 110, 5):
+        for x in range(-34, 35, 5):
+            if random.random() < 0.26:
+                b = Cube(size=random.uniform(1.2, 2.4), position=(x, -1.05, z), color=(105, 96, 85))
+                b.scale = (1.0, random.uniform(0.45, 1.0), 1.0)
+                rocks.append(b)
 
-    # kolaylık: oyuncu spawn çevresinde alanı temizle
-    obstacles = [o for o in obstacles if distance_xz(o.position, (0.0, -1.2, 8.0)) > 8.0]
+    # Ağaçlar (gövde silindiri)
+    for z in range(8, 112, 4):
+        for x in range(-36, 37, 4):
+            if random.random() < 0.18:
+                trunk = Cylinder(radius=0.22, height=random.uniform(1.4, 2.0), segments=10, position=(x, -0.4, z), color=(92, 62, 38))
+                trunk.set_rotation(math.pi / 2, 0.0, 0.0)
+                trees.append(trunk)
 
-    for o in obstacles:
-        sahne.ekle(o)
-    return obstacles
+    # spawn çevresini aç
+    rocks = [r for r in rocks if distance_xz(r.position, (0.0, -1.2, 8.0)) > 8.0]
+    trees = [t for t in trees if distance_xz(t.position, (0.0, -1.2, 8.0)) > 8.0]
+
+    # can doldurma point
+    for pos in [(-12.0, -1.1, 28.0), (14.0, -1.1, 52.0), (-6.0, -1.1, 84.0)]:
+        p = Cylinder(radius=0.6, height=0.3, segments=16, position=pos, color=(70, 220, 120))
+        p.set_rotation(math.pi / 2, 0.0, 0.0)
+        heal_points.append(CanPoint(shape=p, amount=45, cooldown=12.0))
+
+    for r in rocks:
+        sahne.ekle(r)
+    for t in trees:
+        sahne.ekle(t)
+    for h in heal_points:
+        sahne.ekle(h.shape)
+
+    return rocks, trees, heal_points
+
+
+def draw_health_bar(screen, x: int, y: int, w: int, h: int, health: int, max_health: int, color: tuple[int, int, int]) -> None:
+    pygame.draw.rect(screen, (45, 45, 45), (x, y, w, h))
+    ratio = 0.0 if max_health <= 0 else max(0.0, min(1.0, health / max_health))
+    pygame.draw.rect(screen, color, (x, y, int(w * ratio), h))
+    pygame.draw.rect(screen, (210, 210, 210), (x, y, w, h), 1)
 
 
 def run_game() -> None:
     renderer = Renderer(
         size=(1366, 768),
-        caption="Super3D Tank Oyunu - Buyuk Map",
-        draw_grid=True,
+        caption="Super3D Tank Oyunu - Orman Map",
+        draw_grid=False,
         draw_axes=False,
         draw_edges=False,
     )
-    kamera = Kamera(position=(0, 11.5, -10), fov=640, pitch=0.64)
+    kamera = Kamera(position=(0, 12.5, -10), fov=640, pitch=0.64)
     sahne = Sahne(kamera=kamera)
 
-    map_limit = (-34.0, 34.0, 2.0, 100.0)
+    map_limit = (-38.0, 38.0, 2.0, 114.0)
 
     player = Tank("player", position=(0.0, -1.2, 8.0), color=(105, 145, 95))
-    enemy = Tank("enemy", position=(0.0, -1.2, 78.0), color=(130, 130, 120))
+    enemy = Tank("enemy", position=(0.0, -1.2, 92.0), color=(130, 130, 120))
     enemy.yaw = math.pi
     enemy.sync_parts()
 
-    obstacles = create_big_map(sahne)
+    rocks, trees, heal_points = create_forest_map(sahne)
     for p in player.parts + enemy.parts:
         sahne.ekle(p)
 
     mermiler: list[Mermi] = []
-    fire_cooldown = 0.0
-    enemy_fire_cooldown = 1.8
 
     running = True
     while running:
@@ -241,6 +301,9 @@ def run_game() -> None:
 
         if not player.alive or not enemy.alive:
             running = False
+
+        player.update(dt)
+        enemy.update(dt)
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a]:
@@ -255,12 +318,11 @@ def run_game() -> None:
         world_yaw = mouse_to_world_yaw(sahne.kamera, pygame.mouse.get_pos(), renderer.size, player.position[1])
         player.set_turret_world_yaw(world_yaw)
 
-        fire_cooldown -= dt
-        if keys[pygame.K_SPACE] and fire_cooldown <= 0:
+        if keys[pygame.K_SPACE]:
             bullet = player.shoot()
-            mermiler.append(bullet)
-            sahne.ekle(bullet.sekil)
-            fire_cooldown = 0.20
+            if bullet:
+                mermiler.append(bullet)
+                sahne.ekle(bullet.sekil)
 
         # kolay AI
         to_player = distance_xz(tuple(player.position), tuple(enemy.position))
@@ -270,12 +332,25 @@ def run_game() -> None:
             enemy.move(2.2 * dt, map_limit)
 
         enemy.set_turret_world_yaw(desired + random.uniform(-0.09, 0.09))
-        enemy_fire_cooldown -= dt
-        if enemy_fire_cooldown <= 0 and random.random() > 0.4 and to_player < 55:
+        if random.random() > 0.4 and to_player < 55:
             bullet = enemy.shoot()
-            mermiler.append(bullet)
-            sahne.ekle(bullet.sekil)
-            enemy_fire_cooldown = random.uniform(1.3, 2.4)
+            if bullet:
+                mermiler.append(bullet)
+                sahne.ekle(bullet.sekil)
+
+        # heal point kontrolü
+        for hp in heal_points:
+            hp.update(dt)
+            if hp.active:
+                hp.shape.color = (70, 220, 120)
+                if distance_xz(tuple(player.position), hp.shape.position) < 1.8:
+                    player.health = min(player.max_health, player.health + hp.amount)
+                    hp.consume()
+                elif distance_xz(tuple(enemy.position), hp.shape.position) < 1.8:
+                    enemy.health = min(enemy.max_health, enemy.health + hp.amount // 2)
+                    hp.consume()
+            else:
+                hp.shape.color = (50, 70, 55)
 
         cam_target = (player.position[0], player.position[2] - 7.0)
         kamera.position = (
@@ -293,8 +368,15 @@ def run_game() -> None:
                 m.alive = False
                 continue
 
-            for obs in obstacles:
+            for obs in rocks:
                 if distance_xz(m.sekil.position, obs.position) < 1.15:
+                    m.alive = False
+                    break
+            if not m.alive:
+                continue
+
+            for tree in trees:
+                if distance_xz(m.sekil.position, tree.position) < 0.7:
                     m.alive = False
                     break
             if not m.alive:
@@ -312,18 +394,21 @@ def run_game() -> None:
                 sahne.sekiller.remove(m.sekil)
         mermiler = [x for x in mermiler if x.alive]
 
-        renderer.screen.fill(renderer.bg_color)
-        renderer.draw_reference(sahne.kamera)
+        renderer.screen.fill((28, 46, 30))
         for shape in renderer._sorted_shapes(sahne.sekiller, sahne.kamera):
             renderer.draw_shape(shape, sahne.kamera)
 
-        font = pygame.font.SysFont("consolas", 24)
+        # HUD + can barı
+        font = pygame.font.SysFont("consolas", 22)
         hud = font.render(
-            f"HP: {player.health}  Dusman: {enemy.health}  Menzil: Oyuncu 42 / Dusman 28  SPACE: ATES",
+            f"Reload: {player.reload_timer:0.2f}s  Menzil: Oyuncu 42 / Dusman 28  Heal Point: yes",
             True,
             (240, 240, 240),
         )
         renderer.screen.blit(hud, (14, 14))
+
+        draw_health_bar(renderer.screen, 14, 46, 300, 18, player.health, player.max_health, (78, 220, 98))
+        draw_health_bar(renderer.screen, 14, 70, 300, 18, enemy.health, enemy.max_health, (220, 90, 90))
 
         mx, my = pygame.mouse.get_pos()
         pygame.draw.circle(renderer.screen, (255, 90, 90), (mx, my), 7, 1)

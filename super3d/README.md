@@ -95,3 +95,10 @@ Kontroller:
 - `R`: sahneyi sıfırla
 - `W/A/S/D`, `Q/E`, `←/→`: kamera hareketi
 - `ESC`: çıkış
+
+
+### Tank Oyunu Yeni Özellikler
+- Gerçek orman hissi veren map (ağaç + kaya yerleşimi).
+- Silahlarda reload süresi (ateş aralığı bekleme).
+- HUD üzerinde oyuncu/düşman can barı.
+- Harita içinde can doldurma pointleri (cooldown ile tekrar aktif olur).
