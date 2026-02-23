@@ -5,6 +5,7 @@ Kontroller:
 - A/D: gövdeyi döndür
 - Fare: nişan al (kule fareyi takip eder)
 - SPACE: ateş
+- P: duraklat/devam
 - ESC: çıkış
 """
 
@@ -58,6 +59,25 @@ class CanPoint:
         self.timer = self.cooldown
 
 
+@dataclass
+class HizBuff:
+    shape: Cube
+    duration: float = 8.0
+    cooldown: float = 16.0
+    active: bool = True
+    timer: float = 0.0
+
+    def update(self, dt: float) -> None:
+        if not self.active:
+            self.timer -= dt
+            if self.timer <= 0:
+                self.active = True
+
+    def consume(self) -> None:
+        self.active = False
+        self.timer = self.cooldown
+
+
 class Tank:
     """M4 Sherman esintili basit tank modeli."""
 
@@ -71,6 +91,9 @@ class Tank:
 
         self.reload_time = 0.55 if name == "player" else 1.8
         self.reload_timer = 0.0
+
+        self.speed_multiplier = 1.0
+        self.speed_buff_timer = 0.0
 
         self.hull_bottom = Cube(size=2.15, color=color)
         self.hull_top = Cube(size=1.65, color=tuple(min(255, c + 25) for c in color))
@@ -128,6 +151,7 @@ class Tank:
         self.cannon.set_rotation(math.pi / 2, turret_world_yaw, 0.0)
 
     def move(self, amount: float, map_limit: tuple[float, float, float, float]) -> None:
+        amount *= self.speed_multiplier
         self.position[0] += math.sin(self.yaw) * amount
         self.position[2] += math.cos(self.yaw) * amount
         min_x, max_x, min_z, max_z = map_limit
@@ -143,8 +167,16 @@ class Tank:
         self.turret_yaw = world_yaw - self.yaw
         self.sync_parts()
 
+    def activate_speed_buff(self, duration: float) -> None:
+        self.speed_multiplier = 1.45
+        self.speed_buff_timer = max(self.speed_buff_timer, duration)
+
     def update(self, dt: float) -> None:
         self.reload_timer = max(0.0, self.reload_timer - dt)
+        if self.speed_buff_timer > 0:
+            self.speed_buff_timer -= dt
+            if self.speed_buff_timer <= 0:
+                self.speed_multiplier = 1.0
 
     def shoot(self) -> Mermi | None:
         if self.reload_timer > 0:
@@ -215,15 +247,14 @@ def mouse_to_world_yaw(kamera: Kamera, mouse_pos: tuple[int, int], screen_size: 
     return math.atan2(hit_x, hit_z)
 
 
-def create_forest_map(sahne: Sahne) -> tuple[list[Cube], list[Cylinder], list[CanPoint]]:
-    """Gerçek orman hissi için kaya + ağaç + can doldurma noktaları."""
+def create_forest_map(sahne: Sahne) -> tuple[list[Cube], list[Cylinder], list[CanPoint], list[HizBuff]]:
     rocks: list[Cube] = []
     trees: list[Cylinder] = []
     heal_points: list[CanPoint] = []
+    speed_points: list[HizBuff] = []
 
     random.seed(22)
 
-    # Kayalar
     for z in range(10, 110, 5):
         for x in range(-34, 35, 5):
             if random.random() < 0.26:
@@ -231,7 +262,6 @@ def create_forest_map(sahne: Sahne) -> tuple[list[Cube], list[Cylinder], list[Ca
                 b.scale = (1.0, random.uniform(0.45, 1.0), 1.0)
                 rocks.append(b)
 
-    # Ağaçlar (gövde silindiri)
     for z in range(8, 112, 4):
         for x in range(-36, 37, 4):
             if random.random() < 0.18:
@@ -239,15 +269,18 @@ def create_forest_map(sahne: Sahne) -> tuple[list[Cube], list[Cylinder], list[Ca
                 trunk.set_rotation(math.pi / 2, 0.0, 0.0)
                 trees.append(trunk)
 
-    # spawn çevresini aç
     rocks = [r for r in rocks if distance_xz(r.position, (0.0, -1.2, 8.0)) > 8.0]
     trees = [t for t in trees if distance_xz(t.position, (0.0, -1.2, 8.0)) > 8.0]
 
-    # can doldurma point
     for pos in [(-12.0, -1.1, 28.0), (14.0, -1.1, 52.0), (-6.0, -1.1, 84.0)]:
         p = Cylinder(radius=0.6, height=0.3, segments=16, position=pos, color=(70, 220, 120))
         p.set_rotation(math.pi / 2, 0.0, 0.0)
         heal_points.append(CanPoint(shape=p, amount=45, cooldown=12.0))
+
+    for pos in [(18.0, -1.1, 36.0), (-18.0, -1.1, 68.0)]:
+        sp = Cube(size=0.9, position=pos, color=(90, 170, 255))
+        sp.scale = (1.0, 0.25, 1.0)
+        speed_points.append(HizBuff(shape=sp, duration=8.0, cooldown=18.0))
 
     for r in rocks:
         sahne.ekle(r)
@@ -255,8 +288,10 @@ def create_forest_map(sahne: Sahne) -> tuple[list[Cube], list[Cylinder], list[Ca
         sahne.ekle(t)
     for h in heal_points:
         sahne.ekle(h.shape)
+    for s in speed_points:
+        sahne.ekle(s.shape)
 
-    return rocks, trees, heal_points
+    return rocks, trees, heal_points, speed_points
 
 
 def draw_health_bar(screen, x: int, y: int, w: int, h: int, health: int, max_health: int, color: tuple[int, int, int]) -> None:
@@ -264,6 +299,28 @@ def draw_health_bar(screen, x: int, y: int, w: int, h: int, health: int, max_hea
     ratio = 0.0 if max_health <= 0 else max(0.0, min(1.0, health / max_health))
     pygame.draw.rect(screen, color, (x, y, int(w * ratio), h))
     pygame.draw.rect(screen, (210, 210, 210), (x, y, w, h), 1)
+
+
+def draw_minimap(screen, map_limit, player_pos, enemy_pos, heal_points, speed_points) -> None:
+    x0, y0, w, h = 1080, 20, 260, 160
+    pygame.draw.rect(screen, (30, 30, 36), (x0, y0, w, h))
+    pygame.draw.rect(screen, (180, 180, 180), (x0, y0, w, h), 1)
+    min_x, max_x, min_z, max_z = map_limit
+
+    def to_map(x, z):
+        mx = x0 + int((x - min_x) / (max_x - min_x) * w)
+        my = y0 + int((z - min_z) / (max_z - min_z) * h)
+        return mx, my
+
+    for hp in heal_points:
+        if hp.active:
+            pygame.draw.circle(screen, (70, 220, 120), to_map(hp.shape.position[0], hp.shape.position[2]), 3)
+    for sp in speed_points:
+        if sp.active:
+            pygame.draw.circle(screen, (90, 170, 255), to_map(sp.shape.position[0], sp.shape.position[2]), 3)
+
+    pygame.draw.circle(screen, (100, 230, 120), to_map(player_pos[0], player_pos[2]), 4)
+    pygame.draw.circle(screen, (230, 100, 100), to_map(enemy_pos[0], enemy_pos[2]), 4)
 
 
 def run_game() -> None:
@@ -284,24 +341,40 @@ def run_game() -> None:
     enemy.yaw = math.pi
     enemy.sync_parts()
 
-    rocks, trees, heal_points = create_forest_map(sahne)
+    rocks, trees, heal_points, speed_points = create_forest_map(sahne)
     for p in player.parts + enemy.parts:
         sahne.ekle(p)
 
     mermiler: list[Mermi] = []
+    pause = False
+    game_time = 0.0
+    score = 0
 
-    running = True
-    while running:
+    while True:
         dt = renderer.clock.tick(renderer.fps) / 1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                running = False
+                pygame.quit()
+                return
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    return
+                if event.key == pygame.K_p:
+                    pause = not pause
+
+        if pause:
+            renderer.screen.fill((12, 18, 14))
+            font = pygame.font.SysFont("consolas", 44)
+            txt = font.render("PAUSED", True, (220, 220, 220))
+            renderer.screen.blit(txt, (renderer.size[0] // 2 - txt.get_width() // 2, renderer.size[1] // 2 - 20))
+            pygame.display.flip()
+            continue
 
         if not player.alive or not enemy.alive:
-            running = False
+            break
 
+        game_time += dt
         player.update(dt)
         enemy.update(dt)
 
@@ -324,7 +397,6 @@ def run_game() -> None:
                 mermiler.append(bullet)
                 sahne.ekle(bullet.sekil)
 
-        # kolay AI
         to_player = distance_xz(tuple(player.position), tuple(enemy.position))
         desired = math.atan2(player.position[0] - enemy.position[0], player.position[2] - enemy.position[2])
         enemy.rotate(clamp_angle(desired - enemy.yaw) * min(1.0, dt * 0.75))
@@ -338,7 +410,6 @@ def run_game() -> None:
                 mermiler.append(bullet)
                 sahne.ekle(bullet.sekil)
 
-        # heal point kontrolü
         for hp in heal_points:
             hp.update(dt)
             if hp.active:
@@ -346,11 +417,26 @@ def run_game() -> None:
                 if distance_xz(tuple(player.position), hp.shape.position) < 1.8:
                     player.health = min(player.max_health, player.health + hp.amount)
                     hp.consume()
+                    score += 20
                 elif distance_xz(tuple(enemy.position), hp.shape.position) < 1.8:
                     enemy.health = min(enemy.max_health, enemy.health + hp.amount // 2)
                     hp.consume()
             else:
                 hp.shape.color = (50, 70, 55)
+
+        for sp in speed_points:
+            sp.update(dt)
+            if sp.active:
+                sp.shape.color = (90, 170, 255)
+                if distance_xz(tuple(player.position), sp.shape.position) < 1.8:
+                    player.activate_speed_buff(sp.duration)
+                    sp.consume()
+                    score += 35
+                elif distance_xz(tuple(enemy.position), sp.shape.position) < 1.8:
+                    enemy.activate_speed_buff(sp.duration * 0.7)
+                    sp.consume()
+            else:
+                sp.shape.color = (40, 70, 90)
 
         cam_target = (player.position[0], player.position[2] - 7.0)
         kamera.position = (
@@ -388,20 +474,23 @@ def run_game() -> None:
             if m.owner != "enemy" and distance_xz(m.sekil.position, tuple(enemy.position)) < 1.45:
                 enemy.health = max(0, enemy.health - 26)
                 m.alive = False
+                score += 10
 
         for m in [x for x in mermiler if not x.alive]:
             if m.sekil in sahne.sekiller:
                 sahne.sekiller.remove(m.sekil)
         mermiler = [x for x in mermiler if x.alive]
 
-        renderer.screen.fill((28, 46, 30))
+        day_t = (math.sin(game_time * 0.15) + 1) * 0.5
+        bg = (int(20 + 18 * day_t), int(36 + 34 * day_t), int(24 + 20 * day_t))
+        renderer.screen.fill(bg)
+
         for shape in renderer._sorted_shapes(sahne.sekiller, sahne.kamera):
             renderer.draw_shape(shape, sahne.kamera)
 
-        # HUD + can barı
         font = pygame.font.SysFont("consolas", 22)
         hud = font.render(
-            f"Reload: {player.reload_timer:0.2f}s  Menzil: Oyuncu 42 / Dusman 28  Heal Point: yes",
+            f"Reload: {player.reload_timer:0.2f}s  Score: {score}  SpeedBuff: {max(0, player.speed_buff_timer):0.1f}s",
             True,
             (240, 240, 240),
         )
@@ -409,6 +498,7 @@ def run_game() -> None:
 
         draw_health_bar(renderer.screen, 14, 46, 300, 18, player.health, player.max_health, (78, 220, 98))
         draw_health_bar(renderer.screen, 14, 70, 300, 18, enemy.health, enemy.max_health, (220, 90, 90))
+        draw_minimap(renderer.screen, map_limit, tuple(player.position), tuple(enemy.position), heal_points, speed_points)
 
         mx, my = pygame.mouse.get_pos()
         pygame.draw.circle(renderer.screen, (255, 90, 90), (mx, my), 7, 1)
@@ -420,14 +510,19 @@ def run_game() -> None:
     font_big = pygame.font.SysFont("consolas", 56)
     if player.health > enemy.health:
         msg, color = "Kazandiniz!", (125, 255, 125)
+        score += 150
     elif player.health < enemy.health:
         msg, color = "Kaybettiniz!", (255, 120, 120)
     else:
         msg, color = "Berabere!", (255, 220, 120)
+
     text = font_big.render(msg, True, color)
     renderer.screen.blit(text, (renderer.size[0] // 2 - text.get_width() // 2, renderer.size[1] // 2 - 35))
+    font2 = pygame.font.SysFont("consolas", 30)
+    stext = font2.render(f"Skor: {score}", True, (240, 240, 240))
+    renderer.screen.blit(stext, (renderer.size[0] // 2 - stext.get_width() // 2, renderer.size[1] // 2 + 35))
     pygame.display.flip()
-    pygame.time.wait(1800)
+    pygame.time.wait(2200)
     pygame.quit()
 
 

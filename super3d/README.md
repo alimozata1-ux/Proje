@@ -76,6 +76,14 @@ sekil = Sekil3D.ozel_sekil(vertices=vertices, faces=faces, color=(180, 120, 255)
 - `SPACE`: ateş
 - `ESC`: çıkış
 
+- `P`: oyunu duraklat/devam
+
+### Ekstra Oynanış Özellikleri
+- Mini-harita (minimap) eklendi.
+- Skor sistemi eklendi.
+- Gece-gündüz benzeri dinamik ortam rengi eklendi.
+- Hız buff point (mavi) eklendi: kısa süreli hareket hız artışı verir.
+
 
 ### Tank Oyunu Güncellemeleri
 - Harita ciddi şekilde büyütüldü (daha geniş savaş alanı + engeller).
@@ -95,7 +103,6 @@ Kontroller:
 - `R`: sahneyi sıfırla
 - `W/A/S/D`, `Q/E`, `←/→`: kamera hareketi
 - `ESC`: çıkış
-
 
 ### Tank Oyunu Yeni Özellikler
 - Gerçek orman hissi veren map (ağaç + kaya yerleşimi).
