@@ -1,10 +1,4 @@
-"""Limanı koruma oyunu: 2 namlulu uçaksavar ile gelen uçakları vur (3D dis kamera).
-
-Kontroller:
-- Mouse: nişan (yaw/pitch)
-- Sol tık: ateş
-- ESC: çıkış
-"""
+"""Limanı koruma oyunu: 2 namlulu uçaksavar ile gelen uçakları vur (3D dış kamera)."""
 
 from __future__ import annotations
 
@@ -57,6 +51,10 @@ def distance(a: tuple[float, float, float], b: tuple[float, float, float]) -> fl
     return math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2)
 
 
+def clamp(v: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, v))
+
+
 class AAGun:
     """2 namlulu uçaksavar: gövde 360° döner, namlu pitch yukarı-aşağı döner."""
 
@@ -87,7 +85,7 @@ class AAGun:
         self.turret.set_rotation(math.pi / 2, self.yaw, 0)
 
         right = (math.cos(self.yaw), 0, -math.sin(self.yaw))
-        pitch = max(-0.22, min(1.05, self.pitch))
+        pitch = clamp(self.pitch, -0.22, 1.05)
 
         left_base = (-right[0] * 0.26, -0.62, right[2] * 0.26)
         right_base = (right[0] * 0.26, -0.62, -right[2] * 0.26)
@@ -105,35 +103,34 @@ class AAGun:
         self.muzzle_left.set_rotation(0, self.yaw, math.pi / 2 - pitch)
         self.muzzle_right.set_rotation(0, self.yaw, math.pi / 2 - pitch)
 
-    def aim_delta(self, dx: float, dy: float) -> None:
-        self.yaw += dx
-        self.pitch += dy
+    def aim_towards(self, target_yaw: float, target_pitch: float, dt: float) -> None:
+        # yumuşak kontrol: ani zıplamayı engeller
+        dyaw = (target_yaw - self.yaw + math.pi) % (2 * math.pi) - math.pi
+        dpitch = target_pitch - self.pitch
+        self.yaw += clamp(dyaw, -3.8 * dt, 3.8 * dt)
+        self.pitch += clamp(dpitch, -2.8 * dt, 2.8 * dt)
+        self.pitch = clamp(self.pitch, -0.22, 1.05)
         self.sync_mesh()
 
     def shoot(self) -> Bullet | None:
         if self.reload > 0:
             return None
-        self.reload = 0.07
+        self.reload = 0.08
         self.fire_side *= -1
         muzzle = self.muzzle_left if self.fire_side < 0 else self.muzzle_right
         start = muzzle.position
-        fwd = normalize(
-            (
-                math.sin(self.yaw) * math.cos(self.pitch),
-                math.sin(self.pitch),
-                math.cos(self.yaw) * math.cos(self.pitch),
-            )
-        )
-        speed = 37.0
+        fwd = normalize((math.sin(self.yaw) * math.cos(self.pitch), math.sin(self.pitch), math.cos(self.yaw) * math.cos(self.pitch)))
+        speed = 36.0
         bullet = Sphere(radius=0.08, stacks=4, slices=6, position=start, color=(255, 220, 110))
         return Bullet(mesh=bullet, vel=(fwd[0] * speed, fwd[1] * speed, fwd[2] * speed))
 
 
-def spawn_enemy() -> EnemyPlane:
-    side = random.choice([-1, 1])
+def spawn_enemy(game_time: float, side_hint: int) -> EnemyPlane:
+    side = side_hint
     x = side * random.uniform(40, 62)
     y = random.uniform(9, 20)
-    z = random.uniform(45, 140)
+    lane_z = random.choice([52, 64, 76, 88, 100, 112, 124, 136])
+    z = lane_z + random.uniform(-2.0, 2.0)
 
     body = Cylinder(radius=0.22, height=2.4, segments=10, position=(x, y, z), color=(180, 165, 135))
     body.set_rotation(math.pi / 2, -math.pi / 2 if side > 0 else math.pi / 2, 0)
@@ -141,12 +138,14 @@ def spawn_enemy() -> EnemyPlane:
     wing.scale = (2.5, 0.1, 0.6)
     wing.set_rotation(0, -math.pi / 2 if side > 0 else math.pi / 2, 0)
 
-    return EnemyPlane(body=body, wing=wing, hp=3, speed=random.uniform(5.8, 8.8))
+    hp = 3 + int(game_time // 75)
+    speed = random.uniform(5.6, 7.6) + min(2.0, game_time * 0.012)
+    return EnemyPlane(body=body, wing=wing, hp=hp, speed=speed)
 
 
 def run_game() -> None:
     renderer = Renderer(size=(1366, 768), caption="Liman Savunma - 3D Dis Kamera", draw_grid=False, draw_axes=False)
-    cam = Kamera(position=(0, -0.20, -0.35), fov=700, pitch=0.15)
+    cam = Kamera(position=(0, 3.0, -8.5), fov=700, pitch=0.20)
     scene = Sahne(kamera=cam)
 
     sea = Cube(size=300, position=(0, -2.4, 84), color=(36, 76, 122))
@@ -154,7 +153,6 @@ def run_game() -> None:
     sea.set_texture("stripe", 0.06)
     port = Cube(size=70, position=(0, -2.35, 10), color=(86, 82, 74))
     port.scale = (1.0, 0.02, 0.30)
-
     scene.ekle(sea)
     scene.ekle(port)
 
@@ -165,18 +163,19 @@ def run_game() -> None:
     bullets: list[Bullet] = []
     enemies: list[EnemyPlane] = []
 
-    spawn_timer = 0.4
+    game_time = 0.0
+    spawn_timer = 0.6
     score = 0
     liman_hp = 100
+    last_side = -1
 
     pygame.mouse.set_visible(True)
     pygame.event.set_grab(False)
 
-    sensitivity = 0.0028
-
     while True:
         dt = renderer.clock.tick(renderer.fps) / 1000.0
         gun.reload = max(0.0, gun.reload - dt)
+        game_time += dt
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -186,19 +185,20 @@ def run_game() -> None:
                 pygame.quit()
                 return
 
-        mdx, mdy = pygame.mouse.get_rel()
-        gun.aim_delta(mdx * sensitivity, -mdy * sensitivity)
+        # Mouse ile kontrollü nişan (ekran konumundan hedef açı)
+        mx, my = pygame.mouse.get_pos()
+        nx = (mx / renderer.size[0]) * 2 - 1
+        ny = (my / renderer.size[1]) * 2 - 1
+        target_yaw = nx * 1.55
+        target_pitch = clamp(0.35 - ny * 0.85, -0.20, 1.00)
+        gun.aim_towards(target_yaw, target_pitch, dt)
 
         # 3D dış kamera: uçaksavarın arkasından gör
         cam_back = 8.5
-        cam_up = 3.2
-        cam.position = (
-            -math.sin(gun.yaw) * cam_back,
-            -0.20 + cam_up,
-            -math.cos(gun.yaw) * cam_back,
-        )
+        cam_up = 3.1
+        cam.position = (-math.sin(gun.yaw) * cam_back, -0.15 + cam_up, -math.cos(gun.yaw) * cam_back)
         cam.yaw = gun.yaw
-        cam.pitch = max(0.12, gun.pitch * 0.55)
+        cam.pitch = clamp(gun.pitch * 0.52, 0.10, 0.55)
 
         if pygame.mouse.get_pressed()[0]:
             b = gun.shoot()
@@ -206,13 +206,19 @@ def run_game() -> None:
                 bullets.append(b)
                 scene.ekle(b.mesh)
 
+        # Kontrollü spawn: zamanla hızlanır, sahnede max uçak sınırı var
+        max_enemies = min(12, 4 + int(game_time // 40))
         spawn_timer -= dt
-        if spawn_timer <= 0:
-            spawn_timer = random.uniform(0.50, 1.1)
-            e = spawn_enemy()
+        if spawn_timer <= 0 and len(enemies) < max_enemies:
+            side = -last_side
+            last_side = side
+            e = spawn_enemy(game_time, side)
             enemies.append(e)
             for p in e.parts():
                 scene.ekle(p)
+
+            base_interval = 1.15 - min(0.6, game_time * 0.006)
+            spawn_timer = random.uniform(max(0.45, base_interval - 0.22), max(0.60, base_interval + 0.18))
 
         for e in enemies:
             if not e.alive:
@@ -222,13 +228,18 @@ def run_game() -> None:
             nxp = x + direction * e.speed * dt
 
             if abs(nxp) < 6 and z < 20:
-                liman_hp = max(0, liman_hp - 8)
+                liman_hp = max(0, liman_hp - 7)
                 e.alive = False
                 continue
 
             bob = math.sin(pygame.time.get_ticks() * 0.002 + z) * 0.012
-            e.body.position = (nxp, y + bob, z - e.speed * 0.40 * dt)
+            nz = z - e.speed * 0.40 * dt
+            e.body.position = (nxp, y + bob, nz)
             e.wing.position = e.body.position
+
+            # çok arkaya giden bug durumlarını temizle
+            if nz < -25:
+                e.alive = False
 
         for b in bullets:
             if not b.alive:

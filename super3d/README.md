@@ -162,6 +162,7 @@ Amaç: Limanı gelen uçaklardan korumak. Biz 2 namlulu bir uçaksavarız.
 - Mouse ile hedefleme
 - Sol tık ile ateş
 - Uçaksavarın dışından 3D kamera (arkadan takip)
+- Kontrollü uçak spawn (max aktif uçak sınırı + zamanla kademeli zorluk)
 
 Kontroller:
 - `Mouse`: hedefleme
