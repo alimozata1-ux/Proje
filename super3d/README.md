@@ -142,3 +142,5 @@ Kontroller:
 - `ESC`: çıkış
 
 - Uçak ve şehir modelleri detaylandırıldı (çok parçalı model + bina taban/gövde/çatı).
+
+- Bombalarda patlama alanı (splash damage) vardır; yakın binalar ve uçaksavarlar hasar alır.

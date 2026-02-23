@@ -133,6 +133,8 @@ class AAGun:
     def __init__(self, pos: tuple[float, float, float]) -> None:
         self.position = pos
         self.reload = random.uniform(0.8, 1.3)
+        self.hp = 110
+        self.alive = True
 
         self.base = Cylinder(radius=0.52, height=0.36, segments=12, position=pos, color=(78, 88, 84))
         self.base.set_rotation(math.pi / 2, 0, 0)
@@ -141,7 +143,22 @@ class AAGun:
         self.radar = Sphere(radius=0.16, stacks=5, slices=8, position=(pos[0], pos[1] + 0.58, pos[2]), color=(80, 130, 90))
         self.parts = [self.base, self.barrel, self.radar]
 
+    def hit(self, damage: int) -> bool:
+        if not self.alive:
+            return False
+        self.hp -= damage
+        if self.hp <= 0:
+            self.alive = False
+            self.base.color = (45, 45, 45)
+            self.barrel.color = (55, 55, 55)
+            self.radar.color = (55, 55, 55)
+            return True
+        return False
+
     def update(self, dt: float, plane_pos: tuple[float, float, float]) -> AAProjectile | None:
+        if not self.alive:
+            return None
+
         self.reload -= dt
         dx = plane_pos[0] - self.position[0]
         dz = plane_pos[2] - self.position[2]
@@ -216,6 +233,9 @@ def run_game() -> None:
     # Kullanıcı isteğine göre kamera uçakta ama sabit offsetli
     camera = Kamera(position=(0, 13.0, -18.0), fov=560, pitch=0.35)
     scene = Sahne(kamera=camera)
+
+    BOMB_SPLASH_RADIUS = 8.5
+    BOMB_SPLASH_DAMAGE = 120
 
     # sabit zemin
     ground = Cube(size=260, position=(0, -2.3, 80), color=(35, 75, 35))
@@ -317,11 +337,32 @@ def run_game() -> None:
                 continue
             bomb.update(dt)
             if bomb.body.position[1] <= -1.3:
+                impact = bomb.body.position
+
+                # Patlama alanı: binalara mesafeye bağlı hasar
                 for block in city:
-                    if (not block.destroyed) and distance(bomb.body.position, block.center) < 3.5:
-                        destroyed = block.hit(95)
-                        if destroyed:
-                            score += 110
+                    if block.destroyed:
+                        continue
+                    d = distance(impact, block.center)
+                    if d <= BOMB_SPLASH_RADIUS:
+                        factor = 1.0 - (d / BOMB_SPLASH_RADIUS)
+                        damage = int(BOMB_SPLASH_DAMAGE * factor)
+                        if damage > 0:
+                            destroyed = block.hit(damage)
+                            if destroyed:
+                                score += 110
+
+                # Patlama alanı: uçaksavarları da vurabilir
+                for gun in aaguns:
+                    if not gun.alive:
+                        continue
+                    d = distance(impact, gun.position)
+                    if d <= BOMB_SPLASH_RADIUS * 0.8:
+                        factor = 1.0 - (d / (BOMB_SPLASH_RADIUS * 0.8))
+                        damage = int((BOMB_SPLASH_DAMAGE - 10) * factor)
+                        if damage > 0 and gun.hit(damage):
+                            score += 140
+
                 bomb.alive = False
 
         for shot in aa_shots:
@@ -353,7 +394,7 @@ def run_game() -> None:
 
         f = pygame.font.SysFont("consolas", 22)
         hud = f.render(
-            f"Can: {plane.health}  Hiz: {plane.speed:0.1f}  Skor: {score}  Kalan Bina: {alive_city}",
+            f"Can: {plane.health}  Hiz: {plane.speed:0.1f}  Skor: {score}  Kalan Bina: {alive_city}  AA: {sum(1 for g in aaguns if g.alive)}",
             True,
             (245, 245, 245),
         )
