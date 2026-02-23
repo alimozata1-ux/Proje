@@ -1,17 +1,18 @@
 # Super3D
 
-Super3D, Python + Pygame ile yazılmış modüler bir **3D wireframe grafik kütüphanesidir**.
+Super3D, Python + Pygame ile yazılmış modüler bir **3D grafik kütüphanesidir**.
 
 ## Özellikler
 
 - Hazır 3D şekiller: `Cube`, `Pyramid`, `Sphere`, `Cylinder`, `Cone`, `Torus`
-- Her şekil için `vertices` ve `edges` verisi
+- Şekillerde `vertices`, `edges`, `faces` yapısı
+- Varsayılan olarak **çizgi yerine içi dolu (solid)** polygon çizimi
+- İstenirse kenar çizgilerini açma: `Renderer(draw_edges=True)`
 - X, Y, Z ekseninde döndürme + otomatik açısal hız (`angular_velocity`)
 - Şekil ölçekleme (`set_scale`) ve taşıma (`translate`)
 - Perspektif projeksiyon + kamera yaw/pitch
-- Pygame tabanlı gerçek zamanlı çizim
-- Grid/eksen çizimi ve uzaklığa göre çizim sıralaması
-- Sahne yönetimi için `Sahne` sınıfı
+- Grid/eksen çizimi ve sahne yönetimi (`Sahne`)
+- Özel şekil tasarlama: `Sekil3D.ozel_sekil(...)`
 
 ## Kurulum
 
@@ -26,11 +27,33 @@ pip install -e .
 from super3d import Kamera, Renderer, Cube
 
 kamera = Kamera(position=(0, 0, -10), fov=600)
-renderer = Renderer(size=(1000, 700))
+renderer = Renderer(size=(1000, 700), draw_edges=False)
 kup = Cube(size=2, position=(0, 0, 8), color=(255, 120, 120))
 kup.angular_velocity = (0.8, 1.1, 0.4)
 
 renderer.run([kup], kamera)
+```
+
+## Özel Şekil Tasarlama
+
+```python
+from super3d import Sekil3D
+
+vertices = [
+    (0, 1, 0),
+    (-1, -1, -1),
+    (1, -1, -1),
+    (1, -1, 1),
+    (-1, -1, 1),
+]
+faces = [
+    (1, 2, 3, 4),
+    (0, 1, 2),
+    (0, 2, 3),
+    (0, 3, 4),
+    (0, 4, 1),
+]
+sekil = Sekil3D.ozel_sekil(vertices=vertices, faces=faces, color=(180, 120, 255))
 ```
 
 ## Kamera Kontrolleri (varsayılan)
@@ -41,21 +64,7 @@ renderer.run([kup], kamera)
 - `←/→`: yaw
 - `↑/↓`: pitch
 
-## Örnek
+## Örnekler
 
-Kök dizindeki `ornek.py` dosyası tüm şekilleri aynı sahnede döndürür ve kamera kontrollerini gösterir.
-
-## Tank Oyunu
-
-Bu kütüphane ile hazırlanmış örnek oyun: `tank_oyunu.py`
-
-```bash
-python tank_oyunu.py
-```
-
-Kontroller:
-- `←/→`: tankı döndür
-- `↑/↓`: ileri/geri
-- `A/D`: kuleyi döndür
-- `SPACE`: ateş et
-- `ESC`: çıkış
+- `ornek.py`: tüm temel şekilleri döndürür.
+- `tank_oyunu.py`: Super3D ile hazırlanmış basit 3D tank oyunu.

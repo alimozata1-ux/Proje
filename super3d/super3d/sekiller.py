@@ -1,4 +1,4 @@
-"""Super3D tel-kafes 3D şekilleri."""
+"""Super3D 3D şekilleri (wireframe + solid mesh)."""
 
 from __future__ import annotations
 
@@ -10,12 +10,14 @@ from .yardimci import center_of_points, rotate_xyz, vec_add, vec_scale, vec_sub
 
 Vector3 = Tuple[float, float, float]
 Edge = Tuple[int, int]
+Face = Tuple[int, ...]
 
 
 @dataclass
 class Sekil3D:
     vertices: List[Vector3]
     edges: List[Edge]
+    faces: List[Face] = field(default_factory=list)
     position: Vector3 = (0.0, 0.0, 0.0)
     rotation: Vector3 = (0.0, 0.0, 0.0)
     scale: Vector3 = (1.0, 1.0, 1.0)
@@ -26,6 +28,24 @@ class Sekil3D:
 
     def __post_init__(self) -> None:
         self._local_center = center_of_points(self.vertices)
+
+    @classmethod
+    def ozel_sekil(
+        cls,
+        vertices: Sequence[Vector3],
+        faces: Sequence[Face],
+        edges: Sequence[Edge] | None = None,
+        **kwargs,
+    ) -> "Sekil3D":
+        """Kullanıcının kendi mesh'ini tasarlayabilmesi için yardımcı kurucu."""
+        if edges is None:
+            edge_set: set[tuple[int, int]] = set()
+            for face in faces:
+                for i in range(len(face)):
+                    a, b = face[i], face[(i + 1) % len(face)]
+                    edge_set.add((min(a, b), max(a, b)))
+            edges = sorted(edge_set)
+        return cls(vertices=list(vertices), edges=list(edges), faces=list(faces), **kwargs)
 
     def rotate(self, dx: float = 0.0, dy: float = 0.0, dz: float = 0.0) -> None:
         self.rotation = (
@@ -77,15 +97,38 @@ class Cube(Sekil3D):
     def __init__(self, size: float = 2.0, **kwargs) -> None:
         s = size / 2
         vertices = [
-            (-s, -s, -s), (s, -s, -s), (s, s, -s), (-s, s, -s),
-            (-s, -s, s), (s, -s, s), (s, s, s), (-s, s, s),
+            (-s, -s, -s),
+            (s, -s, -s),
+            (s, s, -s),
+            (-s, s, -s),
+            (-s, -s, s),
+            (s, -s, s),
+            (s, s, s),
+            (-s, s, s),
         ]
         edges = [
-            (0, 1), (1, 2), (2, 3), (3, 0),
-            (4, 5), (5, 6), (6, 7), (7, 4),
-            (0, 4), (1, 5), (2, 6), (3, 7),
+            (0, 1),
+            (1, 2),
+            (2, 3),
+            (3, 0),
+            (4, 5),
+            (5, 6),
+            (6, 7),
+            (7, 4),
+            (0, 4),
+            (1, 5),
+            (2, 6),
+            (3, 7),
         ]
-        super().__init__(vertices=vertices, edges=edges, **kwargs)
+        faces = [
+            (0, 1, 2, 3),
+            (4, 5, 6, 7),
+            (0, 1, 5, 4),
+            (1, 2, 6, 5),
+            (2, 3, 7, 6),
+            (3, 0, 4, 7),
+        ]
+        super().__init__(vertices=vertices, edges=edges, faces=faces, **kwargs)
 
 
 class Pyramid(Sekil3D):
@@ -93,13 +136,16 @@ class Pyramid(Sekil3D):
         b = base / 2
         vertices = [(-b, 0, -b), (b, 0, -b), (b, 0, b), (-b, 0, b), (0, height, 0)]
         edges = [(0, 1), (1, 2), (2, 3), (3, 0), (0, 4), (1, 4), (2, 4), (3, 4)]
-        super().__init__(vertices=vertices, edges=edges, **kwargs)
+        faces = [(0, 1, 2, 3), (0, 1, 4), (1, 2, 4), (2, 3, 4), (3, 0, 4)]
+        super().__init__(vertices=vertices, edges=edges, faces=faces, **kwargs)
 
 
 class Sphere(Sekil3D):
     def __init__(self, radius: float = 1.2, stacks: int = 8, slices: int = 12, **kwargs) -> None:
         vertices: List[Vector3] = []
         edges: List[Edge] = []
+        faces: List[Face] = []
+
         for i in range(stacks + 1):
             phi = math.pi * i / stacks
             for j in range(slices):
@@ -116,7 +162,15 @@ class Sphere(Sekil3D):
                 if i < stacks:
                     edges.append((idx, (i + 1) * slices + j))
 
-        super().__init__(vertices=vertices, edges=edges, **kwargs)
+        for i in range(stacks):
+            for j in range(slices):
+                a = i * slices + j
+                b = i * slices + (j + 1) % slices
+                c = (i + 1) * slices + (j + 1) % slices
+                d = (i + 1) * slices + j
+                faces.append((a, b, c, d))
+
+        super().__init__(vertices=vertices, edges=edges, faces=faces, **kwargs)
 
 
 class Cylinder(Sekil3D):
@@ -131,10 +185,17 @@ class Cylinder(Sekil3D):
             vertices.append((x, h, z))
 
         edges: List[Edge] = []
+        faces: List[Face] = []
+        alt = list(range(0, segments * 2, 2))
+        ust = list(range(1, segments * 2, 2))
+        faces.append(tuple(alt))
+        faces.append(tuple(reversed(ust)))
+
         for i in range(segments):
             ni = (i + 1) % segments
             edges.extend([(2 * i, 2 * ni), (2 * i + 1, 2 * ni + 1), (2 * i, 2 * i + 1)])
-        super().__init__(vertices=vertices, edges=edges, **kwargs)
+            faces.append((2 * i, 2 * ni, 2 * ni + 1, 2 * i + 1))
+        super().__init__(vertices=vertices, edges=edges, faces=faces, **kwargs)
 
 
 class Cone(Sekil3D):
@@ -148,12 +209,14 @@ class Cone(Sekil3D):
         apex = len(vertices) - 1
 
         edges: List[Edge] = []
+        faces: List[Face] = [tuple(range(segments))]
         for i in range(segments):
             ni = (i + 1) % segments
             edges.append((i, ni))
             edges.append((i, apex))
+            faces.append((i, ni, apex))
 
-        super().__init__(vertices=vertices, edges=edges, **kwargs)
+        super().__init__(vertices=vertices, edges=edges, faces=faces, **kwargs)
 
 
 class Torus(Sekil3D):
@@ -167,6 +230,7 @@ class Torus(Sekil3D):
     ) -> None:
         vertices: List[Vector3] = []
         edges: List[Edge] = []
+        faces: List[Face] = []
 
         for i in range(major_segments):
             u = 2 * math.pi * i / major_segments
@@ -184,10 +248,12 @@ class Torus(Sekil3D):
                 idx = i * minor_segments + j
                 right = i * minor_segments + (j + 1) % minor_segments
                 down = ((i + 1) % major_segments) * minor_segments + j
+                diag = ((i + 1) % major_segments) * minor_segments + (j + 1) % minor_segments
                 edges.append((idx, right))
                 edges.append((idx, down))
+                faces.append((idx, right, diag, down))
 
-        super().__init__(vertices=vertices, edges=edges, **kwargs)
+        super().__init__(vertices=vertices, edges=edges, faces=faces, **kwargs)
 
 
 ShapeType = Sequence[Sekil3D]

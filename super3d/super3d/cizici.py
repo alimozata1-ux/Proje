@@ -8,7 +8,7 @@ import pygame
 
 from .kamera import Kamera
 from .sahne import Sahne
-from .sekiller import Sekil3D
+from .sekiller import Face, Sekil3D
 
 
 class Renderer:
@@ -20,6 +20,7 @@ class Renderer:
         caption: str = "Super3D",
         draw_grid: bool = True,
         draw_axes: bool = True,
+        draw_edges: bool = False,
     ) -> None:
         pygame.init()
         self.screen = pygame.display.set_mode(size)
@@ -30,6 +31,7 @@ class Renderer:
         self.fps = fps
         self.draw_grid = draw_grid
         self.draw_axes = draw_axes
+        self.draw_edges = draw_edges
 
     def _draw_line_3d(self, kamera: Kamera, p1, p2, color, width=1) -> None:
         s1 = kamera.project(p1, self.size)
@@ -49,20 +51,34 @@ class Renderer:
             self._draw_line_3d(kamera, (0, 0, 0), (0, 3, 0), (80, 255, 80), 2)
             self._draw_line_3d(kamera, (0, 0, 0), (0, 0, 3), (80, 120, 255), 2)
 
+    def _face_depth(self, face: Face, verts: list[tuple[float, float, float]], kamera: Kamera) -> float:
+        zs = [kamera.world_to_camera(verts[i])[2] for i in face]
+        return sum(zs) / len(zs)
+
     def draw_shape(self, shape: Sekil3D, kamera: Kamera) -> None:
         points_3d = shape.transformed_vertices()
         points_2d = [kamera.project(p, self.size) for p in points_3d]
 
-        for i1, i2 in shape.edges:
-            p1 = points_2d[i1]
-            p2 = points_2d[i2]
-            if p1 is not None and p2 is not None:
-                pygame.draw.line(self.screen, shape.color, p1, p2, 1)
+        if shape.faces:
+            faces_sorted = sorted(shape.faces, key=lambda f: self._face_depth(f, points_3d, kamera), reverse=True)
+            for face in faces_sorted:
+                poly = [points_2d[idx] for idx in face]
+                if any(p is None for p in poly):
+                    continue
+                pygame.draw.polygon(self.screen, shape.color, poly)
+                if self.draw_edges:
+                    pygame.draw.polygon(self.screen, (25, 25, 25), poly, 1)
+        elif self.draw_edges:
+            for i1, i2 in shape.edges:
+                p1 = points_2d[i1]
+                p2 = points_2d[i2]
+                if p1 is not None and p2 is not None:
+                    pygame.draw.line(self.screen, shape.color, p1, p2, 1)
 
         if shape.show_vertices:
             for p in points_2d:
                 if p is not None:
-                    pygame.draw.circle(self.screen, shape.color, p, 2)
+                    pygame.draw.circle(self.screen, (255, 255, 255), p, 2)
 
     def _sorted_shapes(self, shapes: Iterable[Sekil3D], kamera: Kamera) -> list[Sekil3D]:
         return sorted(
