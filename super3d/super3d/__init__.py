@@ -2,7 +2,7 @@
 
 from .kamera import Kamera
 from .sahne import Sahne
-from .sekiller import Cone, Cube, Cylinder, Pyramid, Sekil3D, Sphere, Torus
+from .sekiller import Capsule, Cone, Cube, Cylinder, Prism, Pyramid, Sekil3D, Sphere, Torus
 
 __all__ = [
     "Kamera",
@@ -15,6 +15,8 @@ __all__ = [
     "Cylinder",
     "Cone",
     "Torus",
+    "Prism",
+    "Capsule",
 ]
 
 

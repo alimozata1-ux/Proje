@@ -81,6 +81,19 @@ class Renderer:
                 if p is not None:
                     pygame.draw.circle(self.screen, (255, 255, 255), p, 2)
 
+
+    def draw_hud_text(
+        self,
+        text: str,
+        pos: tuple[int, int] = (12, 12),
+        color: tuple[int, int, int] = (240, 240, 240),
+        size: int = 22,
+        font_name: str = "consolas",
+    ) -> None:
+        font = pygame.font.SysFont(font_name, size)
+        surf = font.render(text, True, color)
+        self.screen.blit(surf, pos)
+
     def _sorted_shapes(self, shapes: Iterable[Sekil3D], kamera: Kamera) -> list[Sekil3D]:
         return sorted(
             list(shapes),

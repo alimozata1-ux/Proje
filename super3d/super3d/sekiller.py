@@ -292,4 +292,93 @@ class Torus(Sekil3D):
         super().__init__(vertices=vertices, edges=edges, faces=faces, **kwargs)
 
 
+class Prism(Sekil3D):
+    def __init__(self, radius: float = 1.0, height: float = 2.0, sides: int = 6, **kwargs) -> None:
+        sides = max(3, sides)
+        h = height / 2
+
+        vertices: List[Vector3] = []
+        for i in range(sides):
+            a = 2 * math.pi * i / sides
+            x = radius * math.cos(a)
+            z = radius * math.sin(a)
+            vertices.append((x, -h, z))
+            vertices.append((x, h, z))
+
+        edges: List[Edge] = []
+        faces: List[Face] = []
+
+        bottom = list(range(0, sides * 2, 2))
+        top = list(range(1, sides * 2, 2))
+        faces.append(tuple(bottom))
+        faces.append(tuple(reversed(top)))
+
+        for i in range(sides):
+            ni = (i + 1) % sides
+            bi, ti = 2 * i, 2 * i + 1
+            bn, tn = 2 * ni, 2 * ni + 1
+            edges.extend([(bi, bn), (ti, tn), (bi, ti)])
+            faces.append((bi, bn, tn, ti))
+
+        super().__init__(vertices=vertices, edges=edges, faces=faces, **kwargs)
+
+
+class Capsule(Sekil3D):
+    def __init__(
+        self,
+        radius: float = 0.6,
+        height: float = 2.4,
+        rings: int = 8,
+        segments: int = 14,
+        **kwargs,
+    ) -> None:
+        rings = max(2, rings)
+        segments = max(6, segments)
+        height = max(height, 2 * radius + 0.01)
+
+        half_cyl = (height - 2 * radius) / 2
+
+        vertices: List[Vector3] = []
+        edges: List[Edge] = []
+        faces: List[Face] = []
+
+        # Alt yarım küre + üst yarım küre + silindir geçişi tek parametre yüzeyi ile
+        lat_steps = rings * 2 + 2
+        for i in range(lat_steps + 1):
+            t = i / lat_steps
+            phi = -math.pi / 2 + t * math.pi
+            cp, sp = math.cos(phi), math.sin(phi)
+
+            y = sp * radius
+            if y > 0:
+                y += half_cyl
+            else:
+                y -= half_cyl
+
+            rr = radius * cp
+            for j in range(segments):
+                th = 2 * math.pi * j / segments
+                x = rr * math.cos(th)
+                z = rr * math.sin(th)
+                vertices.append((x, y, z))
+
+        rows = lat_steps + 1
+        for i in range(rows):
+            for j in range(segments):
+                idx = i * segments + j
+                edges.append((idx, i * segments + (j + 1) % segments))
+                if i < rows - 1:
+                    edges.append((idx, (i + 1) * segments + j))
+
+        for i in range(rows - 1):
+            for j in range(segments):
+                a = i * segments + j
+                b = i * segments + (j + 1) % segments
+                c = (i + 1) * segments + (j + 1) % segments
+                d = (i + 1) * segments + j
+                faces.append((a, b, c, d))
+
+        super().__init__(vertices=vertices, edges=edges, faces=faces, **kwargs)
+
+
 ShapeType = Sequence[Sekil3D]
