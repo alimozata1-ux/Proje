@@ -72,6 +72,7 @@ sekil = Sekil3D.ozel_sekil(vertices=vertices, faces=faces, color=(180, 120, 255)
 - `tank_oyunu.py`: haritalı, kolaylaştırılmış, M4 Sherman esintili tank modelleri olan oyun.
 - `ucak_oyunu.py`: şehir bombalama temalı uçak oyunu (uçaksavar savunmalı).
 - `liman_savunma.py`: limanı koruma oyunu (2 namlulu 360° uçaksavar, mouse hedefleme, dış 3D kamera).
+- `araba_oyunu.py`: 3D araba oyunu (şerit değiştir, engellerden kaç).
 
 ### Tank Oyunu Kontrolleri
 - `W/S`: ileri/geri
@@ -165,4 +166,17 @@ Amaç: Limanı gelen uçaklardan korumak. Biz 2 namlulu bir uçaksavarız.
 Kontroller:
 - `Mouse`: hedefleme
 - `Sol Tık`: ateş
+- `ESC`: çıkış
+
+
+## Araba Oyunu
+
+```bash
+python araba_oyunu.py
+```
+
+Amaç: Yoldaki engellerden kaçıp mümkün olduğunca skor toplamak.
+
+Kontroller:
+- `A/D` veya `←/→`: şerit değiştir
 - `ESC`: çıkış
