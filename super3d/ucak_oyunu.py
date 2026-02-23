@@ -213,8 +213,8 @@ def distance(a: tuple[float, float, float], b: tuple[float, float, float]) -> fl
 
 def run_game() -> None:
     renderer = Renderer(size=(1366, 768), caption="Super3D Ucak Oyunu - Sehri Bombala", draw_grid=False, draw_axes=False)
-    # Kullanıcı isteğine göre SABİT kamera
-    camera = Kamera(position=(0, 42, -38), fov=560, pitch=0.92)
+    # Kullanıcı isteğine göre kamera uçakta ama sabit offsetli
+    camera = Kamera(position=(0, 13.0, -18.0), fov=560, pitch=0.35)
     scene = Sahne(kamera=camera)
 
     # sabit zemin
@@ -294,6 +294,17 @@ def run_game() -> None:
                 scene.ekle(b.body)
 
         plane.update(dt)
+
+        # Kamera uçağa bağlı ama sabit bir ofsetten izler
+        cam_back = 15.5
+        cam_up = 5.8
+        camera.position = (
+            plane.position[0] - math.sin(plane.yaw) * cam_back,
+            plane.position[1] + cam_up,
+            plane.position[2] - math.cos(plane.yaw) * cam_back,
+        )
+        camera.yaw = plane.yaw
+        camera.pitch = 0.33
 
         for g in aaguns:
             shot = g.update(dt, tuple(plane.position))
