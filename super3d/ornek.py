@@ -11,14 +11,30 @@ from super3d import Kamera, Cone, Cube, Cylinder, Pyramid, Renderer, Sahne, Sphe
 
 def main() -> None:
     kamera = Kamera(position=(0, 0, -12), fov=680)
-    renderer = Renderer(size=(1280, 720), caption="Super3D - Gelismis Ornek", draw_grid=True)
+    renderer = Renderer(size=(1280, 720), caption="Super3D - Aci ve Doku Ornegi", draw_grid=True)
 
-    cube = Cube(size=2.2, position=(-5, 2.0, 14), color=(255, 120, 120), show_vertices=True)
+    cube = Cube(size=2.2, position=(-5, 2.0, 14), color=(255, 120, 120), show_vertices=False)
     pyramid = Pyramid(base=2.4, height=2.8, position=(-2, -2.0, 13), color=(255, 200, 80))
     sphere = Sphere(radius=1.4, stacks=9, slices=14, position=(1.2, 2.0, 14), color=(120, 220, 255))
     cylinder = Cylinder(radius=1.1, height=2.8, segments=18, position=(4.2, -2.0, 14), color=(120, 255, 170))
     cone = Cone(radius=1.2, height=3.0, segments=18, position=(0, -0.2, 17), color=(210, 160, 255))
     torus = Torus(major_radius=1.5, minor_radius=0.45, position=(6.0, 1.5, 16), color=(255, 180, 80))
+
+    # Farklı açı yerleşimleri (derece cinsinden)
+    cube.set_rotation_deg(25, -35, 10)
+    pyramid.set_rotation_deg(0, 30, 0)
+    sphere.set_rotation_deg(0, 0, 0)
+    cylinder.set_rotation_deg(90, 20, 0)
+    cone.set_rotation_deg(-15, -30, 90)
+    torus.set_rotation_deg(35, 0, 20)
+
+    # Basit procedural doku modları
+    cube.set_texture("checker", strength=0.20)
+    pyramid.set_texture("stripe", strength=0.24)
+    sphere.set_texture("noise", strength=0.18)
+    cylinder.set_texture("stripe", strength=0.16)
+    cone.set_texture("checker", strength=0.14)
+    torus.set_texture("noise", strength=0.22)
 
     cube.angular_velocity = (0.9, 1.1, 0.7)
     pyramid.angular_velocity = (0.7, 0.4, 1.2)

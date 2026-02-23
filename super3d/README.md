@@ -10,6 +10,8 @@ Super3D, Python + Pygame ile yazılmış modüler bir **3D grafik kütüphanesid
 - İstenirse kenar çizgilerini açma: `Renderer(draw_edges=True)`
 - X, Y, Z ekseninde döndürme + otomatik açısal hız (`angular_velocity`)
 - Şekil ölçekleme (`set_scale`) ve taşıma (`translate`)
+- Şekilleri farklı açılarla yerleştirme: `set_rotation_deg(...)`
+- Basit doku modları: `flat`, `checker`, `stripe`, `noise` (`set_texture`)
 - Perspektif projeksiyon + kamera yaw/pitch
 - Grid/eksen çizimi ve sahne yönetimi (`Sahne`)
 - Özel şekil tasarlama: `Sekil3D.ozel_sekil(...)`
@@ -109,3 +111,14 @@ Kontroller:
 - Silahlarda reload süresi (ateş aralığı bekleme).
 - HUD üzerinde oyuncu/düşman can barı.
 - Harita içinde can doldurma pointleri (cooldown ile tekrar aktif olur).
+
+
+## Açı ve Doku Kullanımı
+
+```python
+from super3d import Cube
+
+k = Cube(size=2, color=(220, 120, 90))
+k.set_rotation_deg(30, 45, 10)  # derece
+k.set_texture("checker", strength=0.2)
+```

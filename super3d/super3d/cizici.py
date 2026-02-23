@@ -60,12 +60,13 @@ class Renderer:
         points_2d = [kamera.project(p, self.size) for p in points_3d]
 
         if shape.faces:
-            faces_sorted = sorted(shape.faces, key=lambda f: self._face_depth(f, points_3d, kamera), reverse=True)
-            for face in faces_sorted:
+            indexed_faces = list(enumerate(shape.faces))
+            faces_sorted = sorted(indexed_faces, key=lambda item: self._face_depth(item[1], points_3d, kamera), reverse=True)
+            for face_index, face in faces_sorted:
                 poly = [points_2d[idx] for idx in face]
                 if any(p is None for p in poly):
                     continue
-                pygame.draw.polygon(self.screen, shape.color, poly)
+                pygame.draw.polygon(self.screen, shape.face_color(face_index), poly)
                 if self.draw_edges:
                     pygame.draw.polygon(self.screen, (25, 25, 25), poly, 1)
         elif self.draw_edges:

@@ -23,6 +23,9 @@ class Sekil3D:
     scale: Vector3 = (1.0, 1.0, 1.0)
     angular_velocity: Vector3 = (0.0, 0.0, 0.0)
     color: Tuple[int, int, int] = (255, 255, 255)
+    texture_mode: str = "flat"
+    texture_strength: float = 0.2
+    face_colors: List[Tuple[int, int, int]] | None = None
     show_vertices: bool = False
     _local_center: Vector3 = field(init=False, repr=False)
 
@@ -56,6 +59,39 @@ class Sekil3D:
 
     def set_rotation(self, x: float, y: float, z: float) -> None:
         self.rotation = (x, y, z)
+
+    def set_rotation_deg(self, x_deg: float, y_deg: float, z_deg: float) -> None:
+        self.rotation = (math.radians(x_deg), math.radians(y_deg), math.radians(z_deg))
+
+    def set_texture(self, mode: str = "flat", strength: float = 0.2, face_colors: List[Tuple[int, int, int]] | None = None) -> None:
+        self.texture_mode = mode
+        self.texture_strength = max(0.0, min(1.0, strength))
+        self.face_colors = face_colors
+
+    def face_color(self, face_index: int) -> Tuple[int, int, int]:
+        if self.face_colors:
+            return self.face_colors[face_index % len(self.face_colors)]
+
+        r, g, b = self.color
+        if self.texture_mode == "flat":
+            return self.color
+
+        phase = face_index * 1.37
+        strength = self.texture_strength
+        if self.texture_mode == "checker":
+            mod = 1.0 + (strength if face_index % 2 == 0 else -strength)
+        elif self.texture_mode == "stripe":
+            mod = 1.0 + math.sin(phase) * strength
+        elif self.texture_mode == "noise":
+            mod = 1.0 + math.sin(phase * 2.41) * strength
+        else:
+            mod = 1.0
+
+        return (
+            max(0, min(255, int(r * mod))),
+            max(0, min(255, int(g * mod))),
+            max(0, min(255, int(b * mod))),
+        )
 
     def translate(self, dx: float = 0.0, dy: float = 0.0, dz: float = 0.0) -> None:
         self.position = (
