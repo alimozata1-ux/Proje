@@ -1,4 +1,4 @@
-"""Limanı koruma oyunu: 2 namlulu uçaksavar ile gelen uçakları vur (3D FPS).
+"""Limanı koruma oyunu: 2 namlulu uçaksavar ile gelen uçakları vur (3D dis kamera).
 
 Kontroller:
 - Mouse: nişan (yaw/pitch)
@@ -145,7 +145,7 @@ def spawn_enemy() -> EnemyPlane:
 
 
 def run_game() -> None:
-    renderer = Renderer(size=(1366, 768), caption="Liman Savunma - 3D Ucaksavar FPS", draw_grid=False, draw_axes=False)
+    renderer = Renderer(size=(1366, 768), caption="Liman Savunma - 3D Dis Kamera", draw_grid=False, draw_axes=False)
     cam = Kamera(position=(0, -0.20, -0.35), fov=700, pitch=0.15)
     scene = Sahne(kamera=cam)
 
@@ -169,8 +169,8 @@ def run_game() -> None:
     score = 0
     liman_hp = 100
 
-    pygame.mouse.set_visible(False)
-    pygame.event.set_grab(True)
+    pygame.mouse.set_visible(True)
+    pygame.event.set_grab(False)
 
     sensitivity = 0.0028
 
@@ -189,11 +189,16 @@ def run_game() -> None:
         mdx, mdy = pygame.mouse.get_rel()
         gun.aim_delta(mdx * sensitivity, -mdy * sensitivity)
 
-        # FPS kamera: uçaksavarın gözünden
-        eye = (0.0, -0.30, 0.0)
-        cam.position = eye
+        # 3D dış kamera: uçaksavarın arkasından gör
+        cam_back = 8.5
+        cam_up = 3.2
+        cam.position = (
+            -math.sin(gun.yaw) * cam_back,
+            -0.20 + cam_up,
+            -math.cos(gun.yaw) * cam_back,
+        )
         cam.yaw = gun.yaw
-        cam.pitch = gun.pitch * 0.82
+        cam.pitch = max(0.12, gun.pitch * 0.55)
 
         if pygame.mouse.get_pressed()[0]:
             b = gun.shoot()
