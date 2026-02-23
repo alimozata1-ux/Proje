@@ -131,7 +131,7 @@ k.set_texture("checker", strength=0.2)
 python ucak_oyunu.py
 ```
 
-Amaç: Şehirdeki binaları bombalayarak yok etmek. Düşman uçak yok, fakat şehirlerde uçaksavarlar var.
+Amaç: Şehirdeki binaları bombalayarak yok etmek. Düşman uçak yok, fakat şehirlerde uçaksavarlar var. Kamera sabittir (top-down izleme).
 
 Kontroller:
 - `A/D`: sağa-sola dön
@@ -140,3 +140,5 @@ Kontroller:
 - `SPACE`: bomba bırak
 - `P`: duraklat
 - `ESC`: çıkış
+
+- Uçak ve şehir modelleri detaylandırıldı (çok parçalı model + bina taban/gövde/çatı).
