@@ -160,11 +160,19 @@ class Tank:
         self.sync_parts()
 
     def rotate(self, amount: float) -> None:
-        self.yaw += amount
+        self.yaw = clamp_angle(self.yaw + amount)
         self.sync_parts()
 
     def set_turret_world_yaw(self, world_yaw: float) -> None:
-        self.turret_yaw = world_yaw - self.yaw
+        self.turret_yaw = clamp_angle(world_yaw - self.yaw)
+        self.sync_parts()
+
+    def aim_turret_towards(self, world_yaw: float, dt: float, max_speed: float = 4.5) -> None:
+        """Turetin bazen sıkışmasını önlemek için kısa açı yolundan yumuşak döndürür."""
+        current_world = self.yaw + self.turret_yaw
+        diff = clamp_angle(world_yaw - current_world)
+        step = max(-max_speed * dt, min(max_speed * dt, diff))
+        self.turret_yaw = clamp_angle(self.turret_yaw + step)
         self.sync_parts()
 
     def activate_speed_buff(self, duration: float) -> None:
@@ -389,7 +397,7 @@ def run_game() -> None:
             player.move(-5.2 * dt, map_limit)
 
         world_yaw = mouse_to_world_yaw(sahne.kamera, pygame.mouse.get_pos(), renderer.size, player.position[1])
-        player.set_turret_world_yaw(world_yaw)
+        player.aim_turret_towards(world_yaw, dt, max_speed=7.0)
 
         if keys[pygame.K_SPACE]:
             bullet = player.shoot()
@@ -403,7 +411,7 @@ def run_game() -> None:
         if to_player > 16:
             enemy.move(2.2 * dt, map_limit)
 
-        enemy.set_turret_world_yaw(desired + random.uniform(-0.09, 0.09))
+        enemy.aim_turret_towards(desired + random.uniform(-0.09, 0.09), dt, max_speed=3.0)
         if random.random() > 0.4 and to_player < 55:
             bullet = enemy.shoot()
             if bullet:
