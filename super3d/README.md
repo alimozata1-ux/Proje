@@ -67,4 +67,11 @@ sekil = Sekil3D.ozel_sekil(vertices=vertices, faces=faces, color=(180, 120, 255)
 ## Örnekler
 
 - `ornek.py`: tüm temel şekilleri döndürür.
-- `tank_oyunu.py`: Super3D ile hazırlanmış basit 3D tank oyunu.
+- `tank_oyunu.py`: haritalı, kolaylaştırılmış, M4 Sherman esintili tank modelleri olan oyun.
+
+### Tank Oyunu Kontrolleri
+- `W/S`: ileri/geri
+- `A/D`: gövdeyi döndür
+- `Fare`: kuleyi nişana döndür
+- `SPACE`: ateş
+- `ESC`: çıkış
