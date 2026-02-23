@@ -13,7 +13,6 @@ Kontroller:
 from __future__ import annotations
 
 import math
-import random
 from dataclasses import dataclass
 
 import pygame
@@ -30,10 +29,6 @@ def normalize(v: tuple[float, float, float]) -> tuple[float, float, float]:
     if l == 0:
         return (0.0, 0.0, 0.0)
     return (v[0] / l, v[1] / l, v[2] / l)
-
-
-def dot(a: tuple[float, float, float], b: tuple[float, float, float]) -> float:
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 
 
 @dataclass
@@ -67,8 +62,33 @@ class TargetBoard:
             p.color = (45, 45, 45)
 
 
+@dataclass
+class Bullet:
+    position: tuple[float, float, float]
+    velocity: tuple[float, float, float]
+    ttl: float = 2.0
+    active: bool = True
+
+    def __post_init__(self) -> None:
+        self.mesh = Sphere(radius=0.04, stacks=5, slices=6, position=self.position, color=(250, 205, 120))
+
+    def update(self, dt: float) -> None:
+        if not self.active:
+            return
+        self.ttl -= dt
+        if self.ttl <= 0:
+            self.active = False
+            return
+        self.position = (
+            self.position[0] + self.velocity[0] * dt,
+            self.position[1] + self.velocity[1] * dt,
+            self.position[2] + self.velocity[2] * dt,
+        )
+        self.mesh.position = self.position
+
+
 class Shotgun:
-    """Çift namlulu shotgun + periskop/scope modeli."""
+    """Çift namlulu, gerçek görünümlü shotgun modeli."""
 
     def __init__(self) -> None:
         self.ammo = 2
@@ -78,25 +98,22 @@ class Shotgun:
 
         self.stock = Cube(size=0.8, color=(95, 65, 38))
         self.body = Cube(size=0.9, color=(55, 55, 60))
+        self.receiver = Cube(size=0.55, color=(45, 45, 50))
         self.barrel_l = Cylinder(radius=0.05, height=1.55, segments=10, color=(95, 100, 110))
         self.barrel_r = Cylinder(radius=0.05, height=1.55, segments=10, color=(95, 100, 110))
+        self.rib = Cube(size=0.25, color=(70, 75, 82))
         self.muzzle_l = Cone(radius=0.05, height=0.12, segments=8, color=(190, 160, 90))
         self.muzzle_r = Cone(radius=0.05, height=0.12, segments=8, color=(190, 160, 90))
-        # periskop/scope
-        self.scope_tube = Cylinder(radius=0.05, height=0.65, segments=10, color=(45, 50, 60))
-        self.scope_front = Sphere(radius=0.08, stacks=6, slices=8, color=(35, 40, 50))
-        self.scope_back = Sphere(radius=0.08, stacks=6, slices=8, color=(35, 40, 50))
 
         self.parts = [
             self.stock,
             self.body,
+            self.receiver,
             self.barrel_l,
             self.barrel_r,
+            self.rib,
             self.muzzle_l,
             self.muzzle_r,
-            self.scope_tube,
-            self.scope_front,
-            self.scope_back,
         ]
 
     def update(self, dt: float) -> None:
@@ -136,8 +153,12 @@ class Shotgun:
         )
 
         self.body.position = base
-        self.body.scale = (0.55, 0.22, 0.7)
+        self.body.scale = (0.50, 0.20, 0.66)
         self.body.set_rotation(0, yaw, 0)
+
+        self.receiver.position = (base[0] + fwd[0] * 0.21, base[1] + 0.015, base[2] + fwd[2] * 0.21)
+        self.receiver.scale = (0.30, 0.18, 0.24)
+        self.receiver.set_rotation(0, yaw, 0)
 
         self.stock.position = (base[0] - fwd[0] * 0.35, base[1] - 0.05, base[2] - fwd[2] * 0.35)
         self.stock.scale = (0.42, 0.18, 0.55)
@@ -156,29 +177,23 @@ class Shotgun:
         self.muzzle_l.set_rotation(0, yaw, math.pi / 2 - pitch * 0.88)
         self.muzzle_r.set_rotation(0, yaw, math.pi / 2 - pitch * 0.88)
 
-        # scope/periskop
-        scope_base = (base[0], base[1] + 0.11, base[2] - 0.06)
-        self.scope_tube.position = scope_base
-        self.scope_tube.set_rotation(math.pi / 2 - pitch * 0.88, yaw, 0)
-        self.scope_front.position = (
-            scope_base[0] + fwd[0] * 0.32,
-            scope_base[1] + fwd[1] * 0.32,
-            scope_base[2] + fwd[2] * 0.32,
-        )
-        self.scope_back.position = (
-            scope_base[0] - fwd[0] * 0.32,
-            scope_base[1] - fwd[1] * 0.32,
-            scope_base[2] - fwd[2] * 0.32,
-        )
+        rib_base = (base[0], base[1] + 0.07, base[2])
+        self.rib.position = (rib_base[0] + fwd[0] * 0.42, rib_base[1], rib_base[2] + fwd[2] * 0.42)
+        self.rib.scale = (0.06, 0.03, 0.65)
+        self.rib.set_rotation(0, yaw, 0)
 
 
-def make_target() -> TargetBoard:
-    x = random.uniform(-10.5, 10.5)
-    y = random.uniform(1.0, 4.8)
-    z = random.uniform(16.0, 36.0)
-    radius = random.uniform(0.65, 1.15)
-    score = int(80 + (1.2 - radius) * 100)
-    return TargetBoard(center=(x, y, z), radius=radius, score_value=max(50, score))
+def fixed_targets() -> list[TargetBoard]:
+    """Hedefler aynı hizada, sabit konumda durur."""
+    z = 28.0
+    y = 2.3
+    xs = (-10.0, -6.0, -2.0, 2.0, 6.0, 10.0)
+    targets: list[TargetBoard] = []
+    for i, x in enumerate(xs):
+        radius = 0.95 if i % 2 == 0 else 0.80
+        score = 90 if i % 2 == 0 else 120
+        targets.append(TargetBoard(center=(x, y, z), radius=radius, score_value=score))
+    return targets
 
 
 def run_game() -> None:
@@ -199,12 +214,12 @@ def run_game() -> None:
     for p in shotgun.parts:
         scene.ekle(p)
 
-    targets: list[TargetBoard] = []
-    for _ in range(8):
-        t = make_target()
-        targets.append(t)
+    targets: list[TargetBoard] = fixed_targets()
+    for t in targets:
         for p in t.parts:
             scene.ekle(p)
+
+    bullets: list[Bullet] = []
 
     score = 0
     sensitivity = 0.0028
@@ -256,44 +271,48 @@ def run_game() -> None:
         shotgun.sync_to_camera(cam)
 
         if pygame.mouse.get_pressed()[0] and shotgun.fire():
-            # shotgun saçması (pellet cone)
-            aim = (math.sin(cam.yaw) * math.cos(cam.pitch), math.sin(cam.pitch), math.cos(cam.yaw) * math.cos(cam.pitch))
+            # Tek kurşun, gerçek uçuş hissi
+            shoot_dir = normalize((
+                math.sin(cam.yaw) * math.cos(cam.pitch),
+                math.sin(cam.pitch),
+                math.cos(cam.yaw) * math.cos(cam.pitch),
+            ))
+            muzzle_pos = (
+                cam.position[0] + shoot_dir[0] * 1.0,
+                cam.position[1] - 0.03 + shoot_dir[1] * 1.0,
+                cam.position[2] + shoot_dir[2] * 1.0,
+            )
+            bullet_speed = 115.0
+            bullet = Bullet(
+                position=muzzle_pos,
+                velocity=(shoot_dir[0] * bullet_speed, shoot_dir[1] * bullet_speed, shoot_dir[2] * bullet_speed),
+            )
+            bullets.append(bullet)
+            scene.ekle(bullet.mesh)
+
+        for bullet in bullets:
+            if not bullet.active:
+                continue
+            bullet.update(dt)
             for tgt in targets:
                 if not tgt.alive:
                     continue
-                to_t = (tgt.center[0] - cam.position[0], tgt.center[1] - cam.position[1], tgt.center[2] - cam.position[2])
-                dist = math.sqrt(to_t[0] ** 2 + to_t[1] ** 2 + to_t[2] ** 2)
-                if dist > 48:
+                # Hedef tahtası z düzlemine göre gerçek çarpışma kontrolü
+                dz = bullet.position[2] - tgt.center[2]
+                if abs(dz) > 0.22:
                     continue
-                dir_t = normalize(to_t)
-
-                # 12 pellet benzetimi
-                hits = 0
-                for _ in range(12):
-                    spread_yaw = random.uniform(-0.06, 0.06)
-                    spread_pitch = random.uniform(-0.05, 0.05)
-                    ay = cam.yaw + spread_yaw
-                    ap = cam.pitch + spread_pitch
-                    pellet_dir = (math.sin(ay) * math.cos(ap), math.sin(ap), math.cos(ay) * math.cos(ap))
-                    if dot(pellet_dir, dir_t) > 0.9935 - tgt.radius * 0.01:
-                        hits += 1
-
-                if hits >= 2:
+                dx = bullet.position[0] - tgt.center[0]
+                dy = bullet.position[1] - tgt.center[1]
+                if dx * dx + dy * dy <= tgt.radius * tgt.radius:
                     tgt.hide()
-                    score += tgt.score_value + hits * 3
+                    score += tgt.score_value
+                    bullet.active = False
+                    break
 
-        # ölen hedefleri tekrar doğur
-        for t in [x for x in targets if not x.alive]:
-            for p in t.parts:
-                if p in scene.sekiller:
-                    scene.sekiller.remove(p)
-            targets.remove(t)
-
-        while len(targets) < 8:
-            nt = make_target()
-            targets.append(nt)
-            for p in nt.parts:
-                scene.ekle(p)
+        for bullet in [b for b in bullets if not b.active]:
+            if bullet.mesh in scene.sekiller:
+                scene.sekiller.remove(bullet.mesh)
+            bullets.remove(bullet)
 
         renderer.screen.fill((24, 30, 35))
         for shape in renderer._sorted_shapes(scene.sekiller, scene.kamera):
