@@ -71,6 +71,7 @@ sekil = Sekil3D.ozel_sekil(vertices=vertices, faces=faces, color=(180, 120, 255)
 - `ornek.py`: tüm temel şekilleri döndürür.
 - `tank_oyunu.py`: haritalı, kolaylaştırılmış, M4 Sherman esintili tank modelleri olan oyun.
 - `ucak_oyunu.py`: şehir bombalama temalı uçak oyunu (uçaksavar savunmalı).
+- `liman_savunma.py`: limanı koruma oyunu (2 namlulu 360° dönebilen uçaksavar + mouse hedefleme).
 
 ### Tank Oyunu Kontrolleri
 - `W/S`: ileri/geri
@@ -144,3 +145,23 @@ Kontroller:
 - Uçak ve şehir modelleri detaylandırıldı (çok parçalı model + bina taban/gövde/çatı).
 
 - Bombalarda patlama alanı (splash damage) vardır; yakın binalar ve uçaksavarlar hasar alır.
+
+
+## Liman Savunma Oyunu
+
+```bash
+python liman_savunma.py
+```
+
+Amaç: Limanı gelen uçaklardan korumak. Biz 2 namlulu bir uçaksavarız.
+
+Özellikler:
+- Gövde 360 derece döner (`yaw`)
+- Namlular yukarı-aşağı döner (`pitch`)
+- Mouse ile hedefleme
+- Sol tık ile ateş
+
+Kontroller:
+- `Mouse`: hedefleme
+- `Sol Tık`: ateş
+- `ESC`: çıkış
