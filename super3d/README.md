@@ -44,3 +44,18 @@ renderer.run([kup], kamera)
 ## Örnek
 
 Kök dizindeki `ornek.py` dosyası tüm şekilleri aynı sahnede döndürür ve kamera kontrollerini gösterir.
+
+## Tank Oyunu
+
+Bu kütüphane ile hazırlanmış örnek oyun: `tank_oyunu.py`
+
+```bash
+python tank_oyunu.py
+```
+
+Kontroller:
+- `←/→`: tankı döndür
+- `↑/↓`: ileri/geri
+- `A/D`: kuleyi döndür
+- `SPACE`: ateş et
+- `ESC`: çıkış
