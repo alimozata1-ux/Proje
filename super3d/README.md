@@ -75,3 +75,23 @@ sekil = Sekil3D.ozel_sekil(vertices=vertices, faces=faces, color=(180, 120, 255)
 - `Fare`: kuleyi nişana döndür
 - `SPACE`: ateş
 - `ESC`: çıkış
+
+
+### Tank Oyunu Güncellemeleri
+- Harita ciddi şekilde büyütüldü (daha geniş savaş alanı + engeller).
+- Silahlarda menzil sistemi eklendi (mermiler menzil bitince kaybolur).
+- Tank modeli M4 Sherman esintili çok parçalı yapıda geliştirildi.
+
+## GPU Test Uygulaması
+`gpu_test.py` ekran kartı/performans denemesi için eklendi.
+
+```bash
+python gpu_test.py
+```
+
+Kontroller:
+- `+`: yeni şekil dalgası ekle
+- `-`: şekil azalt
+- `R`: sahneyi sıfırla
+- `W/A/S/D`, `Q/E`, `←/→`: kamera hareketi
+- `ESC`: çıkış
