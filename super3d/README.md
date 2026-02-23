@@ -70,6 +70,7 @@ sekil = Sekil3D.ozel_sekil(vertices=vertices, faces=faces, color=(180, 120, 255)
 
 - `ornek.py`: tüm temel şekilleri döndürür.
 - `tank_oyunu.py`: haritalı, kolaylaştırılmış, M4 Sherman esintili tank modelleri olan oyun.
+- `ucak_oyunu.py`: şehir bombalama temalı uçak oyunu (uçaksavar savunmalı).
 
 ### Tank Oyunu Kontrolleri
 - `W/S`: ileri/geri
@@ -122,3 +123,20 @@ k = Cube(size=2, color=(220, 120, 90))
 k.set_rotation_deg(30, 45, 10)  # derece
 k.set_texture("checker", strength=0.2)
 ```
+
+
+## Uçak Oyunu
+
+```bash
+python ucak_oyunu.py
+```
+
+Amaç: Şehirdeki binaları bombalayarak yok etmek. Düşman uçak yok, fakat şehirlerde uçaksavarlar var.
+
+Kontroller:
+- `A/D`: sağa-sola dön
+- `W/S`: hızlan-yavaşla
+- `Q/E`: yüksel-alçal
+- `SPACE`: bomba bırak
+- `P`: duraklat
+- `ESC`: çıkış
