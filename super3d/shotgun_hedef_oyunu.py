@@ -13,6 +13,7 @@ Kontroller:
 from __future__ import annotations
 
 import math
+import random
 from dataclasses import dataclass
 
 import pygame
@@ -24,6 +25,8 @@ from super3d import (
     Kamera,
     PixelShape,
     Rect2D,
+    Slider,
+    Toggle,
     Cone,
     Cube,
     Cylinder,
@@ -170,6 +173,24 @@ class Rocket:
             self.position[2] + self.velocity[2] * dt,
         )
         self.mesh.position = self.position
+
+
+
+@dataclass
+class Spark:
+    mesh: Sphere
+    vel: tuple[float, float, float]
+    life: float = 0.35
+    active: bool = True
+
+    def update(self, dt: float) -> None:
+        if not self.active:
+            return
+        self.life -= dt
+        if self.life <= 0:
+            self.active = False
+            return
+        self.mesh.translate(dx=self.vel[0] * dt, dy=self.vel[1] * dt, dz=self.vel[2] * dt)
 
 
 
@@ -326,22 +347,28 @@ def run_game() -> None:
 
     bullets: list[Bullet] = []
     rockets: list[Rocket] = []
+    sparks: list[Spark] = []
     rocket_ammo = 4
-
-    player_name = InputBox(16, 122, 220, 28, text="Oyuncu")
-    reload_button = Button(245, 122, 95, 28, text="Reload", on_click=shotgun.start_reload)
-    pixel_logo = PixelShape(["01110", "11111", "11011", "11111", "01110"], pixel_size=4, on_color=(255, 180, 80))
-    gui = GuiManager(
-        buttons=[reload_button],
-        inputs=[player_name],
-        shapes=[Rect2D(10, 116, 338, 40, color=(18, 22, 28), filled=True)],
-    )
 
     score = 0
     sensitivity = 0.0028
     move_speed = 6.6
     move_x = 0.0
     move_z = 0.0
+
+    player_name = InputBox(16, 122, 220, 28, text="Oyuncu")
+    reload_button = Button(245, 122, 95, 28, text="Reload", on_click=shotgun.start_reload)
+    pixel_logo = PixelShape(["01110", "11111", "11011", "11111", "01110"], pixel_size=4, on_color=(255, 180, 80))
+    sens_slider = Slider(350, 124, 180, 14, min_value=0.0015, max_value=0.0050, value=sensitivity, label="Mouse")
+    edge_toggle = Toggle(540, 122, 140, 28, text="Wire", value=False)
+
+    gui = GuiManager(
+        buttons=[reload_button],
+        inputs=[player_name],
+        shapes=[Rect2D(10, 116, 680, 40, color=(18, 22, 28), filled=True)],
+        toggles=[edge_toggle],
+        sliders=[sens_slider],
+    )
 
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
@@ -380,6 +407,9 @@ def run_game() -> None:
                     scene.ekle(rocket.mesh)
                     rocket_ammo -= 1
             gui.handle_event(event)
+
+        sensitivity = sens_slider.value
+        renderer.draw_edges = edge_toggle.value
 
         mdx, mdy = pygame.mouse.get_rel()
         cam.yaw += mdx * sensitivity
@@ -443,6 +473,11 @@ def run_game() -> None:
                 if dx * dx + dy * dy <= tgt.radius * tgt.radius:
                     gained = tgt.apply_damage(dx, dy, bullet.damage)
                     score += gained
+                    for _ in range(5):
+                        sm = Sphere(radius=0.025, stacks=4, slices=5, position=bullet.position, color=(255, 220, 120))
+                        sv = (random.uniform(-3.5, 3.5), random.uniform(-2.0, 2.0), random.uniform(-3.5, 3.5))
+                        sparks.append(Spark(mesh=sm, vel=sv, life=0.22 + random.random() * 0.2))
+                        scene.ekle(sm)
                     bullet.active = False
                     if bullet.mesh in scene.sekiller:
                         scene.sekiller.remove(bullet.mesh)
@@ -477,11 +512,24 @@ def run_game() -> None:
                         if ed <= rocket.splash_radius:
                             dmg = rocket.damage * (1.0 - ed / rocket.splash_radius)
                             score += t2.apply_damage(ex, ey, dmg)
+                    for _ in range(12):
+                        sm = Sphere(radius=0.03, stacks=4, slices=5, position=rocket.position, color=(255, 140, 90))
+                        sv = (random.uniform(-6.0, 6.0), random.uniform(-3.0, 3.0), random.uniform(-6.0, 6.0))
+                        sparks.append(Spark(mesh=sm, vel=sv, life=0.25 + random.random() * 0.3))
+                        scene.ekle(sm)
                     rocket.active = False
                     if rocket.mesh in scene.sekiller:
                         scene.sekiller.remove(rocket.mesh)
                     rockets.pop(i)
                     break
+
+        for i in range(len(sparks) - 1, -1, -1):
+            sp = sparks[i]
+            sp.update(dt)
+            if not sp.active:
+                if sp.mesh in scene.sekiller:
+                    scene.sekiller.remove(sp.mesh)
+                sparks.pop(i)
 
         renderer.screen.fill((24, 30, 35))
         for shape in renderer._sorted_shapes(scene.sekiller, scene.kamera):
@@ -504,10 +552,9 @@ def run_game() -> None:
         gui.draw(renderer.screen)
         pixel_logo.draw(renderer.screen, 320, 122)
 
-        cx, cy = renderer.size[0] // 2, renderer.size[1] // 2
-        pygame.draw.circle(renderer.screen, (255, 120, 120), (cx, cy), 10, 1)
-        pygame.draw.line(renderer.screen, (255, 120, 120), (cx - 12, cy), (cx + 12, cy), 1)
-        pygame.draw.line(renderer.screen, (255, 120, 120), (cx, cy - 12), (cx, cy + 12), 1)
+        renderer.draw_progress_bar(shotgun.ammo / 2.0, (16, 196), (260, 14), color=(170, 235, 120))
+        renderer.draw_hud_text("Shotgun Ammo", (16, 176), size=16)
+        renderer.draw_crosshair()
 
         pygame.display.flip()
 

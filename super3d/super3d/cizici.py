@@ -109,6 +109,33 @@ class Renderer:
         surf = font.render(text, True, color)
         self.screen.blit(surf, pos)
 
+
+    def draw_progress_bar(
+        self,
+        value: float,
+        pos: tuple[int, int],
+        size: tuple[int, int],
+        color: tuple[int, int, int] = (90, 200, 255),
+        bg: tuple[int, int, int] = (28, 30, 38),
+    ) -> None:
+        x, y = pos
+        w, h = size
+        value = max(0.0, min(1.0, value))
+        pygame.draw.rect(self.screen, bg, (x, y, w, h), border_radius=5)
+        pygame.draw.rect(self.screen, color, (x + 2, y + 2, int((w - 4) * value), h - 4), border_radius=4)
+        pygame.draw.rect(self.screen, (220, 220, 220), (x, y, w, h), 1, border_radius=5)
+
+    def draw_crosshair(
+        self,
+        center: tuple[int, int] | None = None,
+        color: tuple[int, int, int] = (255, 120, 120),
+        radius: int = 10,
+    ) -> None:
+        cx, cy = center if center is not None else (self.size[0] // 2, self.size[1] // 2)
+        pygame.draw.circle(self.screen, color, (cx, cy), radius, 1)
+        pygame.draw.line(self.screen, color, (cx - radius - 2, cy), (cx + radius + 2, cy), 1)
+        pygame.draw.line(self.screen, color, (cx, cy - radius - 2), (cx, cy + radius + 2), 1)
+
     def _sorted_shapes(self, shapes: Iterable[Sekil3D], kamera: Kamera) -> list[Sekil3D]:
         return sorted(
             list(shapes),
