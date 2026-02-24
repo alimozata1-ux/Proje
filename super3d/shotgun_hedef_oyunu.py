@@ -23,12 +23,14 @@ from super3d import (
     Button,
     GuiManager,
     ImageWidget,
+    KeyHint,
     InputBox,
     Kamera,
     PixelShape,
     Rect2D,
     Slider,
     Toggle,
+    VirtualJoystick,
     Cone,
     Cube,
     Cylinder,
@@ -392,6 +394,12 @@ def run_game() -> None:
         shapes=[Rect2D(6, 104, 980, 72, color=(18, 22, 28), filled=True)],
         toggles=[edge_toggle],
         sliders=[sens_slider],
+        hints=[
+            KeyHint(16, 208, "R", "Reload"),
+            KeyHint(120, 208, "F", "Rocket"),
+            KeyHint(224, 208, "RMB", "ADS"),
+        ],
+        joysticks=[VirtualJoystick(1040, 130, radius=28, knob_radius=10)],
     )
 
     pygame.mouse.set_visible(False)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import math
 from dataclasses import dataclass, field
 from typing import List, Sequence, Tuple
@@ -29,6 +30,9 @@ class Sekil3D:
     show_vertices: bool = False
     alpha: int = 255
     line_thickness: int = 1
+    name: str = ""
+    tag: str = ""
+    visible: bool = True
     _local_center: Vector3 = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -177,6 +181,15 @@ class Sekil3D:
 
     def center_world(self) -> Vector3:
         return vec_add(vec_scale(self._local_center, 1.0), self.position)
+
+    def bounding_radius(self) -> float:
+        return max(math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) for v in self.vertices)
+
+    def clone(self, **overrides) -> "Sekil3D":
+        c = copy.deepcopy(self)
+        for k, v in overrides.items():
+            setattr(c, k, v)
+        return c
 
 
 class Cube(Sekil3D):

@@ -232,12 +232,58 @@ class Slider:
 
 
 @dataclass
+class KeyHint:
+    x: int
+    y: int
+    key: str
+    text: str
+
+    def draw(self, screen: pygame.Surface) -> None:
+        pygame.draw.rect(screen, (44, 48, 58), (self.x, self.y, 34, 24), border_radius=5)
+        pygame.draw.rect(screen, (210, 210, 220), (self.x, self.y, 34, 24), 1, border_radius=5)
+        f = pygame.font.SysFont("consolas", 15)
+        screen.blit(f.render(self.key, True, (245, 245, 245)), (self.x + 9, self.y + 3))
+        screen.blit(f.render(self.text, True, (220, 220, 220)), (self.x + 42, self.y + 3))
+
+
+@dataclass
+class VirtualJoystick:
+    x: int
+    y: int
+    radius: int = 36
+    knob_radius: int = 12
+    value: tuple[float, float] = (0.0, 0.0)
+    active: bool = False
+
+    def draw(self, screen: pygame.Surface) -> None:
+        pygame.draw.circle(screen, (50, 55, 66), (self.x, self.y), self.radius)
+        pygame.draw.circle(screen, (150, 160, 170), (self.x, self.y), self.radius, 1)
+        kx = int(self.x + self.value[0] * (self.radius - self.knob_radius))
+        ky = int(self.y + self.value[1] * (self.radius - self.knob_radius))
+        pygame.draw.circle(screen, (120, 220, 255), (kx, ky), self.knob_radius)
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            self.active = (event.pos[0] - self.x) ** 2 + (event.pos[1] - self.y) ** 2 <= self.radius ** 2
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self.active = False
+            self.value = (0.0, 0.0)
+        elif event.type == pygame.MOUSEMOTION and self.active:
+            dx = (event.pos[0] - self.x) / max(1, self.radius - self.knob_radius)
+            dy = (event.pos[1] - self.y) / max(1, self.radius - self.knob_radius)
+            l = max(1.0, (dx * dx + dy * dy) ** 0.5)
+            self.value = (max(-1.0, min(1.0, dx / l * min(1.0, l))), max(-1.0, min(1.0, dy / l * min(1.0, l))))
+
+
+@dataclass
 class GuiManager:
     buttons: list[Button] = field(default_factory=list)
     inputs: list[InputBox] = field(default_factory=list)
     shapes: list[object] = field(default_factory=list)
     toggles: list[Toggle] = field(default_factory=list)
     sliders: list[Slider] = field(default_factory=list)
+    hints: list[KeyHint] = field(default_factory=list)
+    joysticks: list[VirtualJoystick] = field(default_factory=list)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         for b in self.buttons:
@@ -248,6 +294,8 @@ class GuiManager:
             t.handle_event(event)
         for sl in self.sliders:
             sl.handle_event(event)
+        for js in self.joysticks:
+            js.handle_event(event)
 
     def draw(self, screen: pygame.Surface) -> None:
         for s in self.shapes:
@@ -261,3 +309,7 @@ class GuiManager:
             t.draw(screen)
         for sl in self.sliders:
             sl.draw(screen)
+        for h in self.hints:
+            h.draw(screen)
+        for js in self.joysticks:
+            js.draw(screen)
