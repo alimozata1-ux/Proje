@@ -71,6 +71,9 @@ class Renderer:
         self.screen.blit(surf, (min_x, min_y))
 
     def draw_shape(self, shape: Sekil3D, kamera: Kamera) -> None:
+        if not getattr(shape, "visible", True):
+            return
+
         points_3d = shape.transformed_vertices()
         points_2d = [kamera.project(p, self.size) for p in points_3d]
 
@@ -83,13 +86,13 @@ class Renderer:
                     continue
                 self._draw_polygon_alpha(shape.face_color(face_index), poly, shape.alpha)
                 if self.draw_edges:
-                    pygame.draw.polygon(self.screen, (25, 25, 25), poly, shape.line_thickness)
+                    pygame.draw.polygon(self.screen, (25, 25, 25), poly, max(1, shape.line_thickness))
         elif self.draw_edges:
             for i1, i2 in shape.edges:
                 p1 = points_2d[i1]
                 p2 = points_2d[i2]
                 if p1 is not None and p2 is not None:
-                    pygame.draw.line(self.screen, shape.color, p1, p2, shape.line_thickness)
+                    pygame.draw.line(self.screen, shape.color, p1, p2, max(1, shape.line_thickness))
 
         if shape.show_vertices:
             for p in points_2d:

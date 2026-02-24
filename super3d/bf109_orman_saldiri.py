@@ -252,16 +252,22 @@ def create_forest_and_base(scene: Sahne) -> tuple[list[Cube], list[BasePart], li
     scene.ekle(ground)
 
     random.seed(133)
-    for _ in range(520):
+    for _ in range(480):
         x = random.uniform(-145, 145)
         z = random.uniform(-115, 205)
+        # üs çevresi, başlangıç hattı ve kamera koridorunu temiz bırak
         if 62 < z < 132 and -35 < x < 35:
             continue
-        h = random.uniform(1.2, 2.7)
-        trunk = Cube(size=random.uniform(0.55, 0.9), position=(x, -1.3, z), color=(92, 70, 45))
-        trunk.scale = (0.42, h, 0.42)
-        crown = Cube(size=random.uniform(1.8, 2.8), position=(x, -1.3 + 0.95 + h * 0.55, z), color=(48, random.randint(92, 150), 52))
-        crown.scale = (1.0, random.uniform(0.85, 1.3), 1.0)
+        if -95 < z < -45 and -28 < x < 28:
+            continue
+        if -88 < z < -20 and -42 < x < 42:
+            continue
+
+        h = random.uniform(1.2, 2.5)
+        trunk = Cube(size=random.uniform(0.55, 0.85), position=(x, -1.3, z), color=(92, 70, 45))
+        trunk.scale = (0.40, h, 0.40)
+        crown = Cube(size=random.uniform(1.5, 2.4), position=(x, -1.3 + 0.95 + h * 0.55, z), color=(48, random.randint(88, 130), 52))
+        crown.scale = (1.0, random.uniform(0.82, 1.2), 1.0)
         trees.extend([trunk, crown])
         scene.ekle(trunk)
         scene.ekle(crown)
@@ -454,7 +460,7 @@ def run_game() -> None:
             break
 
         day = (math.sin(pygame.time.get_ticks() * 0.0001) + 1) * 0.5
-        renderer.screen.fill((int(25 + 15 * day), int(45 + 30 * day), int(55 + 40 * day)))
+        renderer.screen.fill((int(22 + 12 * day), int(36 + 20 * day), int(52 + 30 * day)))
         for shape in renderer._sorted_shapes(scene.sekiller, scene.kamera):
             renderer.draw_shape(shape, scene.kamera)
 

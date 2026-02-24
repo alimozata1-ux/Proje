@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, Tuple
 
 from .yardimci import rotate_x, rotate_y, vec_sub
@@ -20,6 +20,7 @@ class Kamera:
     pitch: float = 0.0
     shake_time: float = 0.0
     shake_strength: float = 0.0
+    _frame_shake: Vector3 = field(default=(0.0, 0.0, 0.0), init=False, repr=False)
 
     def move(self, dx: float = 0.0, dy: float = 0.0, dz: float = 0.0) -> None:
         self.position = (
@@ -34,6 +35,8 @@ class Kamera:
 
     def update(self, dt: float) -> None:
         self.shake_time = max(0.0, self.shake_time - dt)
+        self.pitch = max(-1.25, min(1.25, self.pitch))
+        self._frame_shake = self._shake_offset()
 
     def add_shake(self, strength: float = 0.2, duration: float = 0.12) -> None:
         self.shake_strength = max(self.shake_strength, strength)
@@ -50,7 +53,7 @@ class Kamera:
 
     def world_to_camera(self, point: Vector3) -> Vector3:
         rel = vec_sub(point, self.position)
-        sx, sy, sz = self._shake_offset()
+        sx, sy, sz = self._frame_shake
         rel = (rel[0] + sx, rel[1] + sy, rel[2] + sz)
         # Kameranın baktığı yöne göre ters dönüş uygula
         rel = rotate_y(rel, -self.yaw)
