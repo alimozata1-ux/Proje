@@ -151,8 +151,8 @@ def run_game() -> None:
     sea = Cube(size=300, position=(0, -2.4, 84), color=(36, 76, 122))
     sea.scale = (1.0, 0.01, 1.0)
     sea.set_texture("stripe", 0.06)
-    port = Cube(size=70, position=(0, -2.35, 10), color=(86, 82, 74))
-    port.scale = (1.0, 0.02, 0.30)
+    port = Cube(size=140, position=(0, -2.35, 10), color=(86, 82, 74))
+    port.scale = (1.6, 0.02, 0.65)
     scene.ekle(sea)
     scene.ekle(port)
 

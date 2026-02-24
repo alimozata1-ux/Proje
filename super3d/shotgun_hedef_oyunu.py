@@ -356,7 +356,7 @@ def run_game() -> None:
         except Exception:
             external_model = None
 
-    photo_widget = ImageWidget(700, 108, EXTERNAL_PHOTO_PATH, size=(120, 72), alpha=225) if os.path.exists(EXTERNAL_PHOTO_PATH) else None
+    photo_widget = ImageWidget(890, 106, EXTERNAL_PHOTO_PATH, size=(160, 96), alpha=225) if os.path.exists(EXTERNAL_PHOTO_PATH) else None
 
     shotgun = Shotgun()
     for p in shotgun.parts:
@@ -383,13 +383,13 @@ def run_game() -> None:
     player_name = InputBox(16, 122, 220, 28, text="Oyuncu")
     reload_button = Button(245, 122, 95, 28, text="Reload", on_click=shotgun.start_reload)
     pixel_logo = PixelShape(["01110", "11111", "11011", "11111", "01110"], pixel_size=4, on_color=(255, 180, 80))
-    sens_slider = Slider(350, 124, 180, 14, min_value=0.0015, max_value=0.0050, value=sensitivity, label="Mouse")
-    edge_toggle = Toggle(540, 122, 140, 28, text="Wire", value=False)
+    sens_slider = Slider(420, 130, 260, 16, min_value=0.0015, max_value=0.0050, value=sensitivity, label="Mouse")
+    edge_toggle = Toggle(700, 124, 170, 30, text="Wire", value=False)
 
     gui = GuiManager(
         buttons=[reload_button],
         inputs=[player_name],
-        shapes=[Rect2D(10, 116, 680, 40, color=(18, 22, 28), filled=True)],
+        shapes=[Rect2D(6, 104, 980, 72, color=(18, 22, 28), filled=True)],
         toggles=[edge_toggle],
         sliders=[sens_slider],
     )
@@ -577,7 +577,7 @@ def run_game() -> None:
         pixel_logo.draw(renderer.screen, 320, 122)
         if photo_widget is not None:
             photo_widget.draw(renderer.screen)
-            renderer.draw_hud_text("Dis Foto", (700, 88), size=15)
+            renderer.draw_hud_text("Dis Foto", (890, 84), size=15)
 
         renderer.draw_progress_bar(shotgun.ammo / 2.0, (16, 196), (260, 14), color=(170, 235, 120))
         renderer.draw_hud_text("Shotgun Ammo", (16, 176), size=16)
