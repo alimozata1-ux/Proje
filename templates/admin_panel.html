@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Paneli</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="window">
+    <header class="window-header">
+      <div class="logo">◎</div>
+      <h1>Admin Paneli</h1>
+      <a class="admin-link" href="/admin/logout">Çıkış</a>
+    </header>
+    <main class="panel">
+      {{message}}
+      <form method="post" enctype="multipart/form-data" class="form" action="/admin/panel">
+        <label>Proje Adı</label><input name="title" required>
+        <label>Açıklama</label><input name="description" required>
+        <label>Boyut (MB)</label><input name="size_mb" required>
+        <label>Dosya</label><input type="file" name="file" required>
+        <button type="submit">Yükle</button>
+      </form>
+
+      <h2>Yüklü Projeler</h2>
+      <ul class="project-list">{{project_list}}</ul>
+    </main>
+  </div>
+</body>
+</html>

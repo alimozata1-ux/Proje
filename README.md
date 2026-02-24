@@ -1,32 +1,29 @@
-# Proje Paylaşım Sitesi
+# Proje Paylaşım Sitesi (HTML + Python)
 
-Bu uygulama, projeleri vitrin şeklinde gösteren ve admin panelinden dosya yüklemeye izin veren bir Python web sitesidir.
+Bu uygulama, **HTML/CSS tabanlı** bir proje vitrin sitesidir. Backend tarafında Python ile admin giriş, dosya yükleme ve SQLite kayıtları yönetilir.
 
 ## Özellikler
-- Paylaştığın görsele benzer cam (glass) tarzı arayüz.
-- Proje kartları ve indirme butonları.
-- Admin girişi (varsayılan şifre: `İazemy68`).
-- Admin panelinden dosya yükleme ve proje oluşturma.
-- Özel Python veritabanı katmanı: `projectdb`.
-- Harici framework bağımlılığı yok.
+- Vista/glass görünüme benzer arayüz.
+- Ayrı HTML dosyaları (`templates/*.html`).
+- Admin giriş (`/admin`) ve dosya yükleme paneli (`/admin/panel`).
+- Varsayılan admin şifresi: `İazemy68`.
+- Özel veritabanı katmanı: `projectdb`.
 
 ## Çalıştırma
 ```bash
 python app.py
 ```
 
-Sunucu varsayılan olarak `http://localhost:8000` adresinde çalışır.
+Sunucu: `http://localhost:8000`
 
-## Admin
-- Giriş adresi: `/admin`
-- Şifreyi değiştirmek için ortam değişkeni kullanabilirsiniz:
+## Şifre Değiştirme
 ```bash
 export ADMIN_PASSWORD='yeni-sifre'
+python app.py
 ```
 
-## Özel Veritabanı Kütüphanesi
-`projectdb/client.py` içindeki `ProjectDatabase` sınıfı:
-- tablo oluşturur,
-- proje ekler,
-- projeleri listeler,
-- indirme sayısını arttırır.
+## Dizin Yapısı
+- `templates/`: HTML sayfaları
+- `static/style.css`: arayüz stilleri
+- `projectdb/`: özel Python veritabanı kütüphanesi
+- `uploads/`: admin panelinden yüklenen dosyalar
