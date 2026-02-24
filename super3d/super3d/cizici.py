@@ -55,6 +55,35 @@ class Renderer:
         zs = [kamera.world_to_camera(verts[i])[2] for i in face]
         return sum(zs) / len(zs)
 
+
+    def _poly_reasonable(self, poly: list[tuple[int, int]]) -> bool:
+        """Near-plane taşmalarında oluşan dev/bozuk polygonları elemek için koruma."""
+        if not poly:
+            return False
+        xs = [p[0] for p in poly]
+        ys = [p[1] for p in poly]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+
+        # Tamamen ekran dışında çok uzaksa çizme
+        margin = 2500
+        if max_x < -margin or min_x > self.size[0] + margin or max_y < -margin or min_y > self.size[1] + margin:
+            return False
+
+        # Aşırı büyük span'ler yatay/dikey artefakta neden olabiliyor
+        if (max_x - min_x) > self.size[0] * 8 or (max_y - min_y) > self.size[1] * 8:
+            return False
+
+        # Alanı çok küçük/bozuk polygonları da ele
+        area2 = 0
+        for i in range(len(poly)):
+            x1, y1 = poly[i]
+            x2, y2 = poly[(i + 1) % len(poly)]
+            area2 += x1 * y2 - x2 * y1
+        if abs(area2) < 2:
+            return False
+        return True
+
     def _draw_polygon_alpha(self, color: tuple[int, int, int], points: list[tuple[int, int]], alpha: int) -> None:
         if alpha >= 255:
             pygame.draw.polygon(self.screen, color, points)
@@ -83,6 +112,8 @@ class Renderer:
             for face_index, face in faces_sorted:
                 poly = [points_2d[idx] for idx in face]
                 if any(p is None for p in poly):
+                    continue
+                if not self._poly_reasonable(poly):
                     continue
                 self._draw_polygon_alpha(shape.face_color(face_index), poly, shape.alpha)
                 if self.draw_edges:
