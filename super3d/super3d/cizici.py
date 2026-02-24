@@ -55,6 +55,21 @@ class Renderer:
         zs = [kamera.world_to_camera(verts[i])[2] for i in face]
         return sum(zs) / len(zs)
 
+    def _draw_polygon_alpha(self, color: tuple[int, int, int], points: list[tuple[int, int]], alpha: int) -> None:
+        if alpha >= 255:
+            pygame.draw.polygon(self.screen, color, points)
+            return
+        min_x = min(p[0] for p in points)
+        max_x = max(p[0] for p in points)
+        min_y = min(p[1] for p in points)
+        max_y = max(p[1] for p in points)
+        w = max(1, max_x - min_x + 1)
+        h = max(1, max_y - min_y + 1)
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        shifted = [(p[0] - min_x, p[1] - min_y) for p in points]
+        pygame.draw.polygon(surf, (color[0], color[1], color[2], alpha), shifted)
+        self.screen.blit(surf, (min_x, min_y))
+
     def draw_shape(self, shape: Sekil3D, kamera: Kamera) -> None:
         points_3d = shape.transformed_vertices()
         points_2d = [kamera.project(p, self.size) for p in points_3d]
@@ -66,15 +81,15 @@ class Renderer:
                 poly = [points_2d[idx] for idx in face]
                 if any(p is None for p in poly):
                     continue
-                pygame.draw.polygon(self.screen, shape.face_color(face_index), poly)
+                self._draw_polygon_alpha(shape.face_color(face_index), poly, shape.alpha)
                 if self.draw_edges:
-                    pygame.draw.polygon(self.screen, (25, 25, 25), poly, 1)
+                    pygame.draw.polygon(self.screen, (25, 25, 25), poly, shape.line_thickness)
         elif self.draw_edges:
             for i1, i2 in shape.edges:
                 p1 = points_2d[i1]
                 p2 = points_2d[i2]
                 if p1 is not None and p2 is not None:
-                    pygame.draw.line(self.screen, shape.color, p1, p2, 1)
+                    pygame.draw.line(self.screen, shape.color, p1, p2, shape.line_thickness)
 
         if shape.show_vertices:
             for p in points_2d:

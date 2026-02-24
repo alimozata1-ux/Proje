@@ -27,6 +27,8 @@ class Sekil3D:
     texture_strength: float = 0.2
     face_colors: List[Tuple[int, int, int]] | None = None
     show_vertices: bool = False
+    alpha: int = 255
+    line_thickness: int = 1
     _local_center: Vector3 = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -104,6 +106,20 @@ class Sekil3D:
         sy = sx if sy is None else sy
         sz = sx if sz is None else sz
         self.scale = (sx, sy, sz)
+
+    def set_dimensions(self, width: float = 1.0, height: float = 1.0, length: float = 1.0) -> None:
+        self.scale = (max(0.001, width), max(0.001, height), max(0.001, length))
+
+    def set_thickness(self, thickness: int = 1) -> None:
+        self.line_thickness = max(1, int(thickness))
+
+    def set_alpha(self, alpha: int) -> None:
+        self.alpha = max(0, min(255, int(alpha)))
+
+    def set_transparency_percent(self, percent: int) -> None:
+        # 25, 50, 75 gibi değerler için: yüzde opaklık değil, yüzde şeffaflık
+        clamped = max(0, min(100, int(percent)))
+        self.alpha = int(255 * (1.0 - clamped / 100.0))
 
     def update(self, dt: float) -> None:
         self.rotate(
@@ -379,6 +395,21 @@ class Capsule(Sekil3D):
                 faces.append((a, b, c, d))
 
         super().__init__(vertices=vertices, edges=edges, faces=faces, **kwargs)
+
+
+def alpha25(shape: Sekil3D) -> Sekil3D:
+    shape.set_transparency_percent(25)
+    return shape
+
+
+def alpha50(shape: Sekil3D) -> Sekil3D:
+    shape.set_transparency_percent(50)
+    return shape
+
+
+def alpha75(shape: Sekil3D) -> Sekil3D:
+    shape.set_transparency_percent(75)
+    return shape
 
 
 ShapeType = Sequence[Sekil3D]

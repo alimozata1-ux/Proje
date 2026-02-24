@@ -17,7 +17,23 @@ from dataclasses import dataclass
 
 import pygame
 
-from super3d import Kamera, Cone, Cube, Cylinder, Renderer, Sahne, Sphere
+from super3d import (
+    Button,
+    GuiManager,
+    InputBox,
+    Kamera,
+    PixelShape,
+    Rect2D,
+    Cone,
+    Cube,
+    Cylinder,
+    Renderer,
+    Sahne,
+    Sphere,
+    alpha25,
+    alpha50,
+    alpha75,
+)
 
 
 MAX_ACTIVE_BULLETS = 36
@@ -127,6 +143,34 @@ class Bullet:
             self.position[2] + self.velocity[2] * dt,
         )
         self.mesh.position = self.position
+
+
+@dataclass
+class Rocket:
+    position: tuple[float, float, float]
+    velocity: tuple[float, float, float]
+    ttl: float = 3.0
+    damage: float = 130.0
+    splash_radius: float = 2.8
+    active: bool = True
+
+    def __post_init__(self) -> None:
+        self.mesh = Cone(radius=0.08, height=0.45, segments=8, position=self.position, color=(255, 145, 95))
+
+    def update(self, dt: float) -> None:
+        if not self.active:
+            return
+        self.ttl -= dt
+        if self.ttl <= 0:
+            self.active = False
+            return
+        self.position = (
+            self.position[0] + self.velocity[0] * dt,
+            self.position[1] + self.velocity[1] * dt,
+            self.position[2] + self.velocity[2] * dt,
+        )
+        self.mesh.position = self.position
+
 
 
 class Shotgun:
@@ -261,6 +305,16 @@ def run_game() -> None:
     scene.ekle(ground)
     scene.ekle(wall)
 
+    glass25 = alpha25(Cube(size=1.6, position=(-7.0, 1.2, 12), color=(120, 220, 255)))
+    glass25.set_dimensions(width=1.0, height=2.0, length=0.35)
+    glass50 = alpha50(Cube(size=1.6, position=(-4.5, 1.2, 12), color=(120, 220, 255)))
+    glass50.set_dimensions(width=1.0, height=2.0, length=0.35)
+    glass75 = alpha75(Cube(size=1.6, position=(-2.0, 1.2, 12), color=(120, 220, 255)))
+    glass75.set_dimensions(width=1.0, height=2.0, length=0.35)
+    for g in (glass25, glass50, glass75):
+        g.set_thickness(2)
+        scene.ekle(g)
+
     shotgun = Shotgun()
     for p in shotgun.parts:
         scene.ekle(p)
@@ -271,6 +325,17 @@ def run_game() -> None:
             scene.ekle(p)
 
     bullets: list[Bullet] = []
+    rockets: list[Rocket] = []
+    rocket_ammo = 4
+
+    player_name = InputBox(16, 122, 220, 28, text="Oyuncu")
+    reload_button = Button(245, 122, 95, 28, text="Reload", on_click=shotgun.start_reload)
+    pixel_logo = PixelShape(["01110", "11111", "11011", "11111", "01110"], pixel_size=4, on_color=(255, 180, 80))
+    gui = GuiManager(
+        buttons=[reload_button],
+        inputs=[player_name],
+        shapes=[Rect2D(10, 116, 338, 40, color=(18, 22, 28), filled=True)],
+    )
 
     score = 0
     sensitivity = 0.0028
@@ -300,6 +365,21 @@ def run_game() -> None:
                     return
                 if event.key == pygame.K_r:
                     shotgun.start_reload()
+                if event.key == pygame.K_f and rocket_ammo > 0:
+                    shoot_dir = normalize((
+                        math.sin(cam.yaw) * math.cos(cam.pitch),
+                        math.sin(cam.pitch),
+                        math.cos(cam.yaw) * math.cos(cam.pitch),
+                    ))
+                    rocket = Rocket(
+                        position=(cam.position[0] + shoot_dir[0] * 1.0, cam.position[1], cam.position[2] + shoot_dir[2] * 1.0),
+                        velocity=(shoot_dir[0] * 65.0, shoot_dir[1] * 65.0, shoot_dir[2] * 65.0),
+                    )
+                    rocket.mesh.set_rotation(0, cam.yaw, math.pi / 2 - cam.pitch * 0.88)
+                    rockets.append(rocket)
+                    scene.ekle(rocket.mesh)
+                    rocket_ammo -= 1
+            gui.handle_event(event)
 
         mdx, mdy = pygame.mouse.get_rel()
         cam.yaw += mdx * sensitivity
@@ -369,13 +449,47 @@ def run_game() -> None:
                     bullets.pop(i)
                     break
 
+
+        for i in range(len(rockets) - 1, -1, -1):
+            rocket = rockets[i]
+            rocket.update(dt)
+            if not rocket.active:
+                if rocket.mesh in scene.sekiller:
+                    scene.sekiller.remove(rocket.mesh)
+                rockets.pop(i)
+                continue
+
+            for tgt in targets:
+                if not tgt.alive:
+                    continue
+                dx = rocket.position[0] - tgt.center[0]
+                dy = rocket.position[1] - tgt.center[1]
+                dz = rocket.position[2] - tgt.center[2]
+                dist = math.sqrt(dx * dx + dy * dy + dz * dz)
+                if dist <= rocket.splash_radius:
+                    for t2 in targets:
+                        if not t2.alive:
+                            continue
+                        ex = rocket.position[0] - t2.center[0]
+                        ey = rocket.position[1] - t2.center[1]
+                        ez = rocket.position[2] - t2.center[2]
+                        ed = math.sqrt(ex * ex + ey * ey + ez * ez)
+                        if ed <= rocket.splash_radius:
+                            dmg = rocket.damage * (1.0 - ed / rocket.splash_radius)
+                            score += t2.apply_damage(ex, ey, dmg)
+                    rocket.active = False
+                    if rocket.mesh in scene.sekiller:
+                        scene.sekiller.remove(rocket.mesh)
+                    rockets.pop(i)
+                    break
+
         renderer.screen.fill((24, 30, 35))
         for shape in renderer._sorted_shapes(scene.sekiller, scene.kamera):
             renderer.draw_shape(shape, scene.kamera)
 
         hud_font = pygame.font.SysFont("consolas", 24)
         hud = hud_font.render(
-            f"Skor: {score}   Mermi: {shotgun.ammo}/2   Yedek: {shotgun.reserve}   Reload: {'Evet' if shotgun.reloading > 0 else 'Hayir'}",
+            f"Skor: {score}   Mermi: {shotgun.ammo}/2   Roket: {rocket_ammo}   Yedek: {shotgun.reserve}   Reload: {'Evet' if shotgun.reloading > 0 else 'Hayir'}",
             True,
             (240, 240, 240),
         )
@@ -385,6 +499,10 @@ def run_game() -> None:
         draw_bar(renderer.screen, 16, 60, 260, 16, speed_ratio, (85, 205, 255), "Hiz (Analog)")
         alive_targets = sum(1 for t in targets if t.alive)
         draw_bar(renderer.screen, 16, 94, 260, 16, alive_targets / len(targets), (255, 165, 85), "Hedef Durumu")
+        draw_bar(renderer.screen, 16, 162, 260, 16, rocket_ammo / 4.0, (255, 110, 90), "Roket")
+
+        gui.draw(renderer.screen)
+        pixel_logo.draw(renderer.screen, 320, 122)
 
         cx, cy = renderer.size[0] // 2, renderer.size[1] // 2
         pygame.draw.circle(renderer.screen, (255, 120, 120), (cx, cy), 10, 1)
