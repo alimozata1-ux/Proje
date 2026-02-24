@@ -20,6 +20,9 @@ import pygame
 from super3d import Kamera, Cone, Cube, Cylinder, Renderer, Sahne, Sphere
 
 
+MAX_ACTIVE_BULLETS = 36
+
+
 def clamp(v: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, v))
 
@@ -31,19 +34,27 @@ def normalize(v: tuple[float, float, float]) -> tuple[float, float, float]:
     return (v[0] / l, v[1] / l, v[2] / l)
 
 
+def approach(current: float, target: float, speed: float, dt: float) -> float:
+    if current < target:
+        return min(target, current + speed * dt)
+    return max(target, current - speed * dt)
+
+
 @dataclass
 class TargetBoard:
     center: tuple[float, float, float]
     radius: float
     score_value: int
+    max_health: float = 100.0
     alive: bool = True
 
     def __post_init__(self) -> None:
         x, y, z = self.center
+        self.health = self.max_health
+
         self.stand = Cylinder(radius=0.12, height=2.0, segments=10, position=(x, y - 0.9, z), color=(110, 80, 55))
         self.stand.set_rotation(math.pi / 2, 0, 0)
 
-        # Tahta halkaları (gerçeğe benzer hedef tahtası)
         self.outer = Cylinder(radius=self.radius, height=0.12, segments=20, position=self.center, color=(235, 230, 215))
         self.outer.set_rotation(math.pi / 2, 0, 0)
         self.ring1 = Cylinder(radius=self.radius * 0.75, height=0.13, segments=20, position=(x, y + 0.01, z), color=(220, 80, 80))
@@ -53,6 +64,36 @@ class TargetBoard:
         self.bullseye = Sphere(radius=self.radius * 0.18, stacks=7, slices=10, position=(x, y + 0.05, z), color=(210, 40, 40))
 
         self.parts = [self.stand, self.outer, self.ring1, self.ring2, self.bullseye]
+
+    def apply_damage(self, hit_dx: float, hit_dy: float, damage: float) -> int:
+        if not self.alive:
+            return 0
+
+        dist = math.sqrt(hit_dx * hit_dx + hit_dy * hit_dy)
+        normalized = dist / max(0.001, self.radius)
+
+        ring_multiplier = 1.0
+        bonus = 0
+        if normalized <= 0.2:
+            ring_multiplier = 2.0
+            bonus = 40
+        elif normalized <= 0.5:
+            ring_multiplier = 1.35
+            bonus = 20
+        elif normalized <= 0.8:
+            ring_multiplier = 1.0
+            bonus = 10
+        else:
+            ring_multiplier = 0.8
+
+        self.health -= damage * ring_multiplier
+        if self.health <= 0:
+            self.hide()
+            return self.score_value + bonus
+
+        ratio = clamp(self.health / self.max_health, 0.0, 1.0)
+        self.outer.color = (int(110 + 125 * ratio), int(80 + 150 * ratio), int(70 + 145 * ratio))
+        return bonus // 2
 
     def hide(self) -> None:
         if not self.alive:
@@ -66,7 +107,8 @@ class TargetBoard:
 class Bullet:
     position: tuple[float, float, float]
     velocity: tuple[float, float, float]
-    ttl: float = 2.0
+    damage: float = 55.0
+    ttl: float = 2.2
     active: bool = True
 
     def __post_init__(self) -> None:
@@ -121,7 +163,6 @@ class Shotgun:
         if self.reloading > 0:
             self.reloading -= dt
             if self.reloading <= 0 and self.ammo < 2 and self.reserve > 0:
-                # break-open shotgun: bir reload çevriminde 2 fişek
                 need = min(2 - self.ammo, self.reserve)
                 self.ammo += need
                 self.reserve -= need
@@ -141,7 +182,6 @@ class Shotgun:
         return True
 
     def sync_to_camera(self, cam: Kamera) -> None:
-        # Silahı oyuncunun önünde tut
         yaw, pitch = cam.yaw, cam.pitch
         fwd = (math.sin(yaw) * math.cos(pitch), math.sin(pitch), math.cos(yaw) * math.cos(pitch))
         right = (math.cos(yaw), 0.0, -math.sin(yaw))
@@ -184,7 +224,6 @@ class Shotgun:
 
 
 def fixed_targets() -> list[TargetBoard]:
-    """Hedefler aynı hizada, sabit konumda durur."""
     z = 28.0
     y = 2.3
     xs = (-10.0, -6.0, -2.0, 2.0, 6.0, 10.0)
@@ -192,8 +231,20 @@ def fixed_targets() -> list[TargetBoard]:
     for i, x in enumerate(xs):
         radius = 0.95 if i % 2 == 0 else 0.80
         score = 90 if i % 2 == 0 else 120
-        targets.append(TargetBoard(center=(x, y, z), radius=radius, score_value=score))
+        health = 105.0 if i % 2 == 0 else 85.0
+        targets.append(TargetBoard(center=(x, y, z), radius=radius, score_value=score, max_health=health))
     return targets
+
+
+def draw_bar(screen: pygame.Surface, x: int, y: int, w: int, h: int, value: float, color: tuple[int, int, int], label: str) -> None:
+    value = clamp(value, 0.0, 1.0)
+    pygame.draw.rect(screen, (35, 35, 40), (x, y, w, h), border_radius=6)
+    pygame.draw.rect(screen, color, (x + 2, y + 2, int((w - 4) * value), h - 4), border_radius=5)
+    pygame.draw.rect(screen, (220, 220, 220), (x, y, w, h), 1, border_radius=6)
+
+    font = pygame.font.SysFont("consolas", 18)
+    txt = font.render(label, True, (235, 235, 235))
+    screen.blit(txt, (x, y - 22))
 
 
 def run_game() -> None:
@@ -223,13 +274,16 @@ def run_game() -> None:
 
     score = 0
     sensitivity = 0.0028
-    move_speed = 6.5
+    move_speed = 6.6
+    move_x = 0.0
+    move_z = 0.0
 
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
 
     while True:
         dt = renderer.clock.tick(renderer.fps) / 1000.0
+        dt = min(0.035, dt)  # spike durumunda stabil input/fizik
         shotgun.update(dt)
 
         for event in pygame.event.get():
@@ -247,31 +301,29 @@ def run_game() -> None:
                 if event.key == pygame.K_r:
                     shotgun.start_reload()
 
-        # Mouse look
         mdx, mdy = pygame.mouse.get_rel()
         cam.yaw += mdx * sensitivity
         cam.pitch = clamp(cam.pitch - mdy * sensitivity, -0.7, 0.7)
 
-        # WASD hareket
         keys = pygame.key.get_pressed()
+        target_z = float(keys[pygame.K_w]) - float(keys[pygame.K_s])
+        target_x = float(keys[pygame.K_d]) - float(keys[pygame.K_a])
+
+        # analog hissi veren input smoothing
+        move_z = approach(move_z, target_z, 8.2, dt)
+        move_x = approach(move_x, target_x, 8.2, dt)
+
         forward = (math.sin(cam.yaw), 0.0, math.cos(cam.yaw))
         right = (math.cos(cam.yaw), 0.0, -math.sin(cam.yaw))
-
-        if keys[pygame.K_w]:
-            cam.move(dx=forward[0] * move_speed * dt, dz=forward[2] * move_speed * dt)
-        if keys[pygame.K_s]:
-            cam.move(dx=-forward[0] * move_speed * dt, dz=-forward[2] * move_speed * dt)
-        if keys[pygame.K_a]:
-            cam.move(dx=-right[0] * move_speed * dt, dz=-right[2] * move_speed * dt)
-        if keys[pygame.K_d]:
-            cam.move(dx=right[0] * move_speed * dt, dz=right[2] * move_speed * dt)
+        cam.move(
+            dx=(forward[0] * move_z + right[0] * move_x) * move_speed * dt,
+            dz=(forward[2] * move_z + right[2] * move_x) * move_speed * dt,
+        )
 
         cam.position = (clamp(cam.position[0], -14.0, 14.0), 1.6, clamp(cam.position[2], -8.0, 10.0))
-
         shotgun.sync_to_camera(cam)
 
-        if pygame.mouse.get_pressed()[0] and shotgun.fire():
-            # Tek kurşun, gerçek uçuş hissi
+        if pygame.mouse.get_pressed()[0] and shotgun.fire() and len(bullets) < MAX_ACTIVE_BULLETS:
             shoot_dir = normalize((
                 math.sin(cam.yaw) * math.cos(cam.pitch),
                 math.sin(cam.pitch),
@@ -282,7 +334,7 @@ def run_game() -> None:
                 cam.position[1] - 0.03 + shoot_dir[1] * 1.0,
                 cam.position[2] + shoot_dir[2] * 1.0,
             )
-            bullet_speed = 115.0
+            bullet_speed = 118.0
             bullet = Bullet(
                 position=muzzle_pos,
                 velocity=(shoot_dir[0] * bullet_speed, shoot_dir[1] * bullet_speed, shoot_dir[2] * bullet_speed),
@@ -290,44 +342,50 @@ def run_game() -> None:
             bullets.append(bullet)
             scene.ekle(bullet.mesh)
 
-        for bullet in bullets:
-            if not bullet.active:
-                continue
+        # optimize: reverse iterate + early reject
+        for i in range(len(bullets) - 1, -1, -1):
+            bullet = bullets[i]
             bullet.update(dt)
+            if not bullet.active:
+                if bullet.mesh in scene.sekiller:
+                    scene.sekiller.remove(bullet.mesh)
+                bullets.pop(i)
+                continue
+
             for tgt in targets:
                 if not tgt.alive:
                     continue
-                # Hedef tahtası z düzlemine göre gerçek çarpışma kontrolü
                 dz = bullet.position[2] - tgt.center[2]
-                if abs(dz) > 0.22:
+                if abs(dz) > 0.23:
                     continue
                 dx = bullet.position[0] - tgt.center[0]
                 dy = bullet.position[1] - tgt.center[1]
                 if dx * dx + dy * dy <= tgt.radius * tgt.radius:
-                    tgt.hide()
-                    score += tgt.score_value
+                    gained = tgt.apply_damage(dx, dy, bullet.damage)
+                    score += gained
                     bullet.active = False
+                    if bullet.mesh in scene.sekiller:
+                        scene.sekiller.remove(bullet.mesh)
+                    bullets.pop(i)
                     break
-
-        for bullet in [b for b in bullets if not b.active]:
-            if bullet.mesh in scene.sekiller:
-                scene.sekiller.remove(bullet.mesh)
-            bullets.remove(bullet)
 
         renderer.screen.fill((24, 30, 35))
         for shape in renderer._sorted_shapes(scene.sekiller, scene.kamera):
             renderer.draw_shape(shape, scene.kamera)
 
-        # HUD
-        font = pygame.font.SysFont("consolas", 24)
-        hud = font.render(
-            f"Skor: {score}   Mermi: {shotgun.ammo}/2   Yedek: {shotgun.reserve}   Reload: {'Evet' if shotgun.reloading>0 else 'Hayir'}",
+        hud_font = pygame.font.SysFont("consolas", 24)
+        hud = hud_font.render(
+            f"Skor: {score}   Mermi: {shotgun.ammo}/2   Yedek: {shotgun.reserve}   Reload: {'Evet' if shotgun.reloading > 0 else 'Hayir'}",
             True,
             (240, 240, 240),
         )
         renderer.screen.blit(hud, (14, 14))
 
-        # crosshair
+        speed_ratio = clamp(math.sqrt(move_x * move_x + move_z * move_z), 0.0, 1.0)
+        draw_bar(renderer.screen, 16, 60, 260, 16, speed_ratio, (85, 205, 255), "Hiz (Analog)")
+        alive_targets = sum(1 for t in targets if t.alive)
+        draw_bar(renderer.screen, 16, 94, 260, 16, alive_targets / len(targets), (255, 165, 85), "Hedef Durumu")
+
         cx, cy = renderer.size[0] // 2, renderer.size[1] // 2
         pygame.draw.circle(renderer.screen, (255, 120, 120), (cx, cy), 10, 1)
         pygame.draw.line(renderer.screen, (255, 120, 120), (cx - 12, cy), (cx + 12, cy), 1)
