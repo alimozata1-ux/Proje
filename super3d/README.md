@@ -181,3 +181,27 @@ Amaç: Yoldaki engellerden kaçıp mümkün olduğunca skor toplamak.
 Kontroller:
 - `A/D` veya `←/→`: şerit değiştir
 - `ESC`: çıkış
+
+## GTA Tarzı Oyun
+
+```bash
+python gta_oyunu.py
+```
+
+Özellikler:
+- Silah sistemi (tabanca/rifle, şarjör + reload)
+- Arabaya binme/sürüş sistemi
+- Şehir binaları ve yollar
+- Gezen/saldıran NPC sistemi
+- Akıllı telefon arayüzü (harita/görev/kontak)
+
+Kontroller:
+- `W/A/S/D`: hareket
+- `Mouse`: kamera nişan
+- `Sol Tık`: ateş
+- `R`: reload
+- `1/2`: silah değiştir
+- `E`: araca bin/in
+- `TAB`: telefon
+- `P`: duraklat
+- `ESC`: çıkış
