@@ -9,10 +9,21 @@
 <body>
   <div class="window">
     <header class="window-header">
-      <div class="logo">◎</div>
-      <h1>Rocketcc Package</h1>
-      <a class="admin-link" href="/admin">Admin</a>
+      <div class="title-wrap">
+        <div class="logo">🪟</div>
+        <h1>Rocketcc Package</h1>
+      </div>
+      <div class="window-controls" aria-hidden="true">
+        <span class="win-btn">—</span>
+        <span class="win-btn">□</span>
+        <span class="win-btn close">×</span>
+      </div>
     </header>
+
+    <div class="window-subbar">
+      <a class="admin-link" href="/admin">Admin</a>
+    </div>
+
     <main class="grid">
       {{cards}}
     </main>

@@ -9,10 +9,21 @@
 <body>
   <div class="window slim">
     <header class="window-header">
-      <div class="logo">◎</div>
-      <h1>Admin Giriş</h1>
-      <a class="admin-link" href="/">Anasayfa</a>
+      <div class="title-wrap">
+        <div class="logo">🪟</div>
+        <h1>Admin Giriş</h1>
+      </div>
+      <div class="window-controls" aria-hidden="true">
+        <span class="win-btn">—</span>
+        <span class="win-btn">□</span>
+        <span class="win-btn close">×</span>
+      </div>
     </header>
+
+    <div class="window-subbar">
+      <a class="admin-link" href="/">Anasayfa</a>
+    </div>
+
     <main class="panel">
       {{message}}
       <form method="post" class="form" action="/admin">
