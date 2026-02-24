@@ -13,6 +13,7 @@ Kontroller:
 from __future__ import annotations
 
 import math
+import os
 import random
 from dataclasses import dataclass
 
@@ -21,6 +22,7 @@ import pygame
 from super3d import (
     Button,
     GuiManager,
+    ImageWidget,
     InputBox,
     Kamera,
     PixelShape,
@@ -33,6 +35,7 @@ from super3d import (
     Renderer,
     Sahne,
     Sphere,
+    Sekil3D,
     alpha25,
     alpha50,
     alpha75,
@@ -40,6 +43,8 @@ from super3d import (
 
 
 MAX_ACTIVE_BULLETS = 36
+EXTERNAL_MODEL_PATH = "super3d/assets/dis_model.obj"
+EXTERNAL_PHOTO_PATH = "super3d/assets/dis_foto.png"
 
 
 def clamp(v: float, lo: float, hi: float) -> float:
@@ -57,6 +62,10 @@ def approach(current: float, target: float, speed: float, dt: float) -> float:
     if current < target:
         return min(target, current + speed * dt)
     return max(target, current - speed * dt)
+
+
+def aim_dir(yaw: float, pitch: float) -> tuple[float, float, float]:
+    return normalize((math.sin(yaw) * math.cos(pitch), math.sin(pitch), math.cos(yaw) * math.cos(pitch)))
 
 
 @dataclass
@@ -336,6 +345,19 @@ def run_game() -> None:
         g.set_thickness(2)
         scene.ekle(g)
 
+    # Harici model/fotoğraf desteği
+    external_model = None
+    if os.path.exists(EXTERNAL_MODEL_PATH):
+        try:
+            external_model = Sekil3D.obj_dosyasindan(EXTERNAL_MODEL_PATH, position=(11.0, -1.1, 20.0), color=(200, 210, 220))
+            external_model.set_dimensions(0.9, 0.9, 0.9)
+            external_model.set_texture("checker", 0.14)
+            scene.ekle(external_model)
+        except Exception:
+            external_model = None
+
+    photo_widget = ImageWidget(700, 108, EXTERNAL_PHOTO_PATH, size=(120, 72), alpha=225) if os.path.exists(EXTERNAL_PHOTO_PATH) else None
+
     shotgun = Shotgun()
     for p in shotgun.parts:
         scene.ekle(p)
@@ -355,6 +377,8 @@ def run_game() -> None:
     move_speed = 6.6
     move_x = 0.0
     move_z = 0.0
+    ads = 0.0
+    recoil = 0.0
 
     player_name = InputBox(16, 122, 220, 28, text="Oyuncu")
     reload_button = Button(245, 122, 95, 28, text="Reload", on_click=shotgun.start_reload)
@@ -393,11 +417,7 @@ def run_game() -> None:
                 if event.key == pygame.K_r:
                     shotgun.start_reload()
                 if event.key == pygame.K_f and rocket_ammo > 0:
-                    shoot_dir = normalize((
-                        math.sin(cam.yaw) * math.cos(cam.pitch),
-                        math.sin(cam.pitch),
-                        math.cos(cam.yaw) * math.cos(cam.pitch),
-                    ))
+                    shoot_dir = aim_dir(cam.yaw, cam.pitch)
                     rocket = Rocket(
                         position=(cam.position[0] + shoot_dir[0] * 1.0, cam.position[1], cam.position[2] + shoot_dir[2] * 1.0),
                         velocity=(shoot_dir[0] * 65.0, shoot_dir[1] * 65.0, shoot_dir[2] * 65.0),
@@ -411,9 +431,13 @@ def run_game() -> None:
         sensitivity = sens_slider.value
         renderer.draw_edges = edge_toggle.value
 
+        aiming = bool(pygame.mouse.get_pressed()[2])
+        ads = approach(ads, 1.0 if aiming else 0.0, 7.5, dt)
+        recoil = max(0.0, recoil - dt * 4.5)
+
         mdx, mdy = pygame.mouse.get_rel()
-        cam.yaw += mdx * sensitivity
-        cam.pitch = clamp(cam.pitch - mdy * sensitivity, -0.7, 0.7)
+        cam.yaw += mdx * sensitivity * (0.55 if aiming else 1.0)
+        cam.pitch = clamp(cam.pitch - mdy * sensitivity - recoil * 0.003, -0.7, 0.7)
 
         keys = pygame.key.get_pressed()
         target_z = float(keys[pygame.K_w]) - float(keys[pygame.K_s])
@@ -432,13 +456,13 @@ def run_game() -> None:
 
         cam.position = (clamp(cam.position[0], -14.0, 14.0), 1.6, clamp(cam.position[2], -8.0, 10.0))
         shotgun.sync_to_camera(cam)
+        if external_model is not None:
+            external_model.rotate(dy=0.35 * dt)
 
         if pygame.mouse.get_pressed()[0] and shotgun.fire() and len(bullets) < MAX_ACTIVE_BULLETS:
-            shoot_dir = normalize((
-                math.sin(cam.yaw) * math.cos(cam.pitch),
-                math.sin(cam.pitch),
-                math.cos(cam.yaw) * math.cos(cam.pitch),
-            ))
+            spread = (1.0 - ads) * 0.016
+            shoot_dir = aim_dir(cam.yaw + random.uniform(-spread, spread), cam.pitch + random.uniform(-spread, spread))
+            recoil += 1.0
             muzzle_pos = (
                 cam.position[0] + shoot_dir[0] * 1.0,
                 cam.position[1] - 0.03 + shoot_dir[1] * 1.0,
@@ -537,7 +561,7 @@ def run_game() -> None:
 
         hud_font = pygame.font.SysFont("consolas", 24)
         hud = hud_font.render(
-            f"Skor: {score}   Mermi: {shotgun.ammo}/2   Roket: {rocket_ammo}   Yedek: {shotgun.reserve}   Reload: {'Evet' if shotgun.reloading > 0 else 'Hayir'}",
+            f"Skor: {score}   Mermi: {shotgun.ammo}/2   Roket: {rocket_ammo}   Yedek: {shotgun.reserve}   ADS: {'ON' if aiming else 'OFF'}   Reload: {'Evet' if shotgun.reloading > 0 else 'Hayir'}",
             True,
             (240, 240, 240),
         )
@@ -551,10 +575,17 @@ def run_game() -> None:
 
         gui.draw(renderer.screen)
         pixel_logo.draw(renderer.screen, 320, 122)
+        if photo_widget is not None:
+            photo_widget.draw(renderer.screen)
+            renderer.draw_hud_text("Dis Foto", (700, 88), size=15)
 
         renderer.draw_progress_bar(shotgun.ammo / 2.0, (16, 196), (260, 14), color=(170, 235, 120))
         renderer.draw_hud_text("Shotgun Ammo", (16, 176), size=16)
-        renderer.draw_crosshair()
+        # Yeni aim sistemi: ADS durumunda dar/odaklı nişan
+        if aiming:
+            renderer.draw_crosshair(color=(120, 255, 150), radius=5)
+        else:
+            renderer.draw_crosshair(color=(255, 120, 120), radius=10)
 
         pygame.display.flip()
 

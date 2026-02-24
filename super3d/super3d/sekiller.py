@@ -52,6 +52,40 @@ class Sekil3D:
             edges = sorted(edge_set)
         return cls(vertices=list(vertices), edges=list(edges), faces=list(faces), **kwargs)
 
+    @classmethod
+    def obj_dosyasindan(cls, yol: str, **kwargs) -> "Sekil3D":
+        """Harici .obj model dosyasından basit mesh yükler (v/f satırları)."""
+        vertices: List[Vector3] = []
+        faces: List[Face] = []
+        with open(yol, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if line.startswith("v "):
+                    parts = line.split()
+                    if len(parts) >= 4:
+                        vertices.append((float(parts[1]), float(parts[2]), float(parts[3])))
+                elif line.startswith("f "):
+                    idxs: list[int] = []
+                    for tok in line.split()[1:]:
+                        # f a/b/c ya da f a//c biçimlerine tolerans
+                        base = tok.split("/")[0]
+                        if not base:
+                            continue
+                        i = int(base)
+                        if i < 0:
+                            i = len(vertices) + i
+                        else:
+                            i = i - 1
+                        idxs.append(i)
+                    if len(idxs) >= 3:
+                        faces.append(tuple(idxs))
+
+        if not vertices or not faces:
+            raise ValueError(f"OBJ verisi boş veya geçersiz: {yol}")
+        return cls.ozel_sekil(vertices=vertices, faces=faces, **kwargs)
+
     def rotate(self, dx: float = 0.0, dy: float = 0.0, dz: float = 0.0) -> None:
         self.rotation = (
             self.rotation[0] + dx,

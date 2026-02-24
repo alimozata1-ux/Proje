@@ -2,7 +2,7 @@
 
 from .kamera import Kamera
 from .sahne import Sahne
-from .gui2d import Button, Circle2D, GuiManager, InputBox, Line2D, PixelShape, Rect2D, Slider, Toggle
+from .gui2d import Button, Circle2D, GuiManager, ImageWidget, InputBox, Line2D, PixelShape, Rect2D, Slider, Toggle
 from .sekiller import Capsule, Cone, Cube, Cylinder, Prism, Pyramid, Sekil3D, Sphere, Torus, alpha25, alpha50, alpha75
 
 __all__ = [
@@ -30,6 +30,7 @@ __all__ = [
     "GuiManager",
     "Slider",
     "Toggle",
+    "ImageWidget",
 ]
 
 

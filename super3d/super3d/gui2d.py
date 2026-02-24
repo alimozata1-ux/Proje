@@ -138,6 +138,33 @@ class InputBox:
 
 
 @dataclass
+class ImageWidget:
+    x: int
+    y: int
+    path: str
+    size: tuple[int, int] | None = None
+    alpha: int = 255
+
+    def __post_init__(self) -> None:
+        self.image: pygame.Surface | None = None
+        self.reload()
+
+    def reload(self) -> None:
+        try:
+            img = pygame.image.load(self.path).convert_alpha()
+            if self.size is not None:
+                img = pygame.transform.smoothscale(img, self.size)
+            img.set_alpha(max(0, min(255, self.alpha)))
+            self.image = img
+        except Exception:
+            self.image = None
+
+    def draw(self, screen: pygame.Surface) -> None:
+        if self.image is not None:
+            screen.blit(self.image, (self.x, self.y))
+
+
+@dataclass
 class Toggle:
     x: int
     y: int
