@@ -205,3 +205,26 @@ Kontroller:
 - `TAB`: telefon
 - `P`: duraklat
 - `ESC`: çıkış
+
+## BF 109 Orman Saldırısı
+
+```bash
+python bf109_orman_saldiri.py
+```
+
+Amaç: BF 109 ile büyük ormandaki düşman üssünü yok etmek.
+
+Özellikler:
+- Uçakta 2 makineli tüfek
+- Uçakta bomba sistemi
+- Düşman üssünde 4 adet AA gun
+- Büyük orman haritası
+
+Kontroller:
+- `A/D`: dön
+- `W/S`: hız artır/azalt
+- `Q/E`: yüksel/alçal
+- `Sol Tık`: makineli tüfek ateşi
+- `SPACE`: bomba bırak
+- `P`: duraklat
+- `ESC`: çıkış
