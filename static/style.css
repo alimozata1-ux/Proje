@@ -1,0 +1,179 @@
+:root {
+  --text: #eef8ff;
+  --glass-card: rgba(180, 224, 255, 0.20);
+  --glass-frame: rgba(210, 240, 255, 0.42);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 11% 76%, rgba(255, 170, 35, 0.92), transparent 28%),
+    radial-gradient(circle at 18% 84%, rgba(132, 205, 95, 0.68), transparent 42%),
+    radial-gradient(circle at 87% 32%, rgba(202, 231, 255, 0.65), transparent 38%),
+    linear-gradient(160deg, #3fa5e7 0%, #2568bc 42%, #7bb551 74%, #1d5e9f 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 28px;
+}
+
+.window {
+  width: min(1060px, 100%);
+  border: 1px solid var(--glass-frame);
+  border-radius: 10px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(99, 176, 230, 0.20), rgba(39, 110, 173, 0.22));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 20px 40px rgba(0, 0, 0, 0.34);
+}
+
+.window.slim { max-width: 560px; }
+
+.window-header {
+  background: linear-gradient(180deg, rgba(138, 197, 248, 0.62), rgba(56, 124, 190, 0.48));
+  border-bottom: 1px solid rgba(226, 246, 255, 0.45);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 28% 25%, #5bc9ff, #1768b7 70%);
+  border: 1px solid rgba(203, 239, 255, 0.85);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.45);
+  display: grid;
+  place-items: center;
+  font-size: 1.45rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 2.8vw, 3rem);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.window-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.win-btn {
+  width: 30px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid rgba(210, 233, 255, 0.75);
+  background: linear-gradient(180deg, rgba(169, 214, 252, 0.95), rgba(63, 128, 199, 0.95));
+  color: #e8f5ff;
+  font-weight: 700;
+  text-align: center;
+  line-height: 20px;
+  font-size: 0.9rem;
+}
+
+.win-btn.close {
+  background: linear-gradient(180deg, #f47d7d, #ca3333);
+  border-color: rgba(255, 208, 208, 0.9);
+}
+
+.window-subbar {
+  padding: 10px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.27);
+  border-bottom: 1px solid rgba(228, 246, 255, 0.3);
+  background: linear-gradient(180deg, rgba(157, 207, 247, 0.22), rgba(95, 163, 224, 0.20));
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-link {
+  color: #edf9ff;
+  text-decoration: none;
+  font-size: 1.15rem;
+}
+
+.grid {
+  padding: 26px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.card,
+.panel {
+  background: var(--glass-card);
+  border: 1px solid rgba(220, 242, 255, 0.68);
+  border-radius: 9px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.43),
+    0 5px 16px rgba(18, 65, 109, 0.22);
+}
+
+.card { padding: 20px; min-height: 205px; }
+.card h2 { margin: 0 0 12px; font-size: 2.7rem; }
+.card p { margin: 0 0 8px; font-size: 2rem; }
+.card small { display: block; margin-bottom: 14px; font-size: 1.8rem; opacity: 0.95; }
+.full { grid-column: 1 / -1; }
+
+.download-btn,
+button {
+  display: inline-block;
+  border: 1px solid #4ca8f4;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #2688df, #045fb0);
+  color: #f6fbff;
+  padding: 9px 16px;
+  font-size: 1.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38);
+}
+
+.panel {
+  margin: 22px;
+  padding: 20px;
+}
+
+.form {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+input {
+  border: 1px solid #97cff6;
+  border-radius: 6px;
+  padding: 10px;
+  background: rgba(238, 249, 255, 0.92);
+  font-size: 1rem;
+}
+
+.alerts { list-style: none; padding: 0; margin: 0 0 12px; }
+.success { color: #9bffd6; }
+.error { color: #ffcece; }
+.project-list { margin: 8px 0 0; }
+
+@media (max-width: 860px) {
+  .grid { grid-template-columns: 1fr; }
+  .card h2 { font-size: 2rem; }
+  .card p { font-size: 1.2rem; }
+  .card small { font-size: 1.1rem; }
+  .download-btn, button { font-size: 1.15rem; }
+}

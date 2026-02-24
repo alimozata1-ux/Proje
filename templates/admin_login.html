@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Giriş</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="window slim">
+    <header class="window-header">
+      <div class="title-wrap">
+        <div class="logo">🪟</div>
+        <h1>Admin Giriş</h1>
+      </div>
+      <div class="window-controls" aria-hidden="true">
+        <span class="win-btn">—</span>
+        <span class="win-btn">□</span>
+        <span class="win-btn close">×</span>
+      </div>
+    </header>
+
+    <div class="window-subbar">
+      <a class="admin-link" href="/">Anasayfa</a>
+    </div>
+
+    <main class="panel">
+      {{message}}
+      <form method="post" class="form" action="/admin">
+        <label>Şifre</label>
+        <input type="password" name="password" required>
+        <button type="submit">Giriş Yap</button>
+      </form>
+    </main>
+  </div>
+</body>
+</html>
