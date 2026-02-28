@@ -1,0 +1,5 @@
+worker->
+    @ "thread çalıştı"
+
+T-> worker
+await> __import__("asyncio").sleep(0, result=5)

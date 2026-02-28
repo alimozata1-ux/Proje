@@ -1,0 +1,17 @@
+x:10
+@ "Merhaba Proton"
+@ x
+
+f->
+    @ "Selam"
+    => 1
+
+sonuc:f
+@ sonuc()
+
+if: x > 5
+    @ "x büyük"
+else:
+    @ "x küçük"
+
+sh: "echo shell_ok"
