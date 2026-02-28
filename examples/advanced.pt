@@ -1,0 +1,19 @@
+nums:[1,2,3,4]
+map> (lambda x: x * 3, nums)
+@ _
+filter> (lambda x: x % 2 == 0, nums)
+@ _
+reduce> (lambda a,b: a+b, nums)
+@ _
+
+secret:"k"
+msg:"merhaba"
+sign> (secret, msg)
+sig:_
+verify> (secret, msg, sig)
+@ _
+
+timer> sum(range(10000))
+@ _
+compress> "proton"
+@ _

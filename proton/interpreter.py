@@ -52,6 +52,7 @@ class ProtonInterpreter:
         result = None
         for stmt in block.statements:
             result = self.execute(stmt)
+            self.context.locals["_"] = result
         return result
 
     def execute(self, node):

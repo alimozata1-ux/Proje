@@ -10,7 +10,7 @@ Proton, kısa ve sembolik komutlara sahip; shell, async/thread, Python uyumlulu�
 - **Plugin** desteği (`proton/plugins.py`, `plugins/*.py`)
 - **REPL** desteği (`proton/cli.py`)
 - **Sandbox** güvenlik modu (`proton/sandbox.py`)
-- Thread (`T->`, `bg>`) ve async await (`await>`) desteği
+- Thread (`T->`, `bg>`, `every>`) ve async await (`await>`) desteği
 
 ## Dosya Yapısı
 
@@ -28,6 +28,7 @@ proton/
 examples/
   hello.pt
   async_thread.pt
+  advanced.pt
 plugins/
   example_plugin.py
 ```
@@ -37,6 +38,7 @@ plugins/
 ```bash
 python -m proton.cli examples/hello.pt
 python -m proton.cli examples/async_thread.pt
+python -m proton.cli examples/advanced.pt
 python -m proton.cli               # REPL
 python -m proton.cli --sandbox examples/hello.pt
 ```
@@ -75,6 +77,14 @@ await> __import__("asyncio").sleep(0, result=1)
 - Web/AI/Donanım/Dağıtık/Meta/Geliştirici komutları da registry içinde yer alır.
 
 Not: Harici servis/kitaplık gerektiren komutların bir bölümü "stub" (genişletilebilir yer tutucu) olarak işaretlenmiştir.
+
+
+## Geliştirilmiş Komutlar (v0.2)
+- Dosya komutları sandbox path kontrolü ile güçlendirildi (`mk>`, `del>`, `r<`, `w>`, `append>`, `size>`, `perm>`).
+- Ağ komutlarına gerçek HTTP/host çözümleri eklendi (`get>`, `post>`, `ping>`, `port?>`, `ip?>`, `dns?>`).
+- Güvenlik komutları genişletildi (`sign>`, `verify>`, `vault>`).
+- Veri komutları işlevsel hale getirildi (`map>`, `filter>`, `reduce>`, `pipe>`, `chunk>`, `compress>`, `decompress>`, `index>`).
+- Yeni yardımcı komutlar eklendi: `calc>`, `retry>`, `debug>`, `trace>`, `profile>`.
 
 ## Plugin Yazımı
 
