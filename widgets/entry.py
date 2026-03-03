@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from aerotkinter import AeroEntry
 
-from animation import attach_hover_animation
+from animation import DEFAULT_ENGINE, attach_hover_animation
 from theme import ThemePalette
 
 
@@ -29,4 +29,4 @@ class GlassEntry(AeroEntry):
         def set_border(color: str) -> None:
             self.configure(border_color=color)
 
-        attach_hover_animation(self, theme.card_border[:7], theme.glow, set_border)
+        attach_hover_animation(DEFAULT_ENGINE, self, theme.card_border[:7], theme.glow, set_border, name="entry_hover")

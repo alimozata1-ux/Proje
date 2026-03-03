@@ -6,7 +6,7 @@ from typing import Callable, Optional
 
 from aerotkinter import AeroLabel, AeroWindow
 
-from animation import fade_in
+from animation import DEFAULT_ENGINE
 from theme import ThemePalette, get_theme
 from utils import blur_radius_for_scale, gradient_stops
 
@@ -17,6 +17,7 @@ class AeroAppWindow(AeroWindow):
     def __init__(self, title: str = "AeroTkinter App", theme_name: str = "light") -> None:
         super().__init__()
         self.theme: ThemePalette = get_theme(theme_name)
+        self.animation_engine = DEFAULT_ENGINE
         self._header_label: Optional[AeroLabel] = None
 
         # Core window surface configuration.
@@ -33,7 +34,7 @@ class AeroAppWindow(AeroWindow):
         )
 
         self._create_header(title)
-        fade_in(self, duration_ms=420, steps=18)
+        self.animation_engine.fade_in(self, duration_ms=420, steps=20)
 
     def _create_header(self, title: str) -> None:
         """Create a gradient title area for a Windows 7-like top bar."""

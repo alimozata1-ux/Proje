@@ -6,7 +6,7 @@ from typing import Callable, Optional
 
 from aerotkinter import AeroButton
 
-from animation import attach_click_animation, attach_hover_animation
+from animation import DEFAULT_ENGINE, attach_click_animation, attach_hover_animation
 from theme import ThemePalette
 
 
@@ -36,8 +36,9 @@ class GlassButton(AeroButton):
             padding=(16, 10),
         )
 
+        # GUI animasyon motoru ile hover/click efektlerini yönetiyoruz.
         def set_bg(color: str) -> None:
             self.configure(background_color=color)
 
-        attach_hover_animation(self, base, hover, set_bg)
-        attach_click_animation(self, theme.glow, base, set_bg)
+        attach_hover_animation(DEFAULT_ENGINE, self, base, hover, set_bg, name="button_hover")
+        attach_click_animation(DEFAULT_ENGINE, self, theme.glow, base, set_bg, name="button_click")

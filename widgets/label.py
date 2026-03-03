@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from aerotkinter import AeroLabel
 
-from animation import attach_hover_animation
+from animation import DEFAULT_ENGINE, attach_hover_animation
 from theme import ThemePalette
 
 
@@ -24,4 +24,4 @@ class GlassLabel(AeroLabel):
         def set_glow(color: str) -> None:
             self.configure(glow_color=color)
 
-        attach_hover_animation(self, theme.card_border[:7], theme.glow, set_glow)
+        attach_hover_animation(DEFAULT_ENGINE, self, theme.card_border[:7], theme.glow, set_glow, name="label_hover")
