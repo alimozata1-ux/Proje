@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import subprocess
 import sys
 
 # `python examples/...` çalıştırmalarında proje kökünü import yoluna ekle.
@@ -16,10 +17,21 @@ if PROJECT_ROOT not in sys.path:
 
 
 def _check_runtime_dependencies() -> bool:
-    """Örneği çalıştırmadan önce gerekli bağımlılıkların yüklü olduğunu doğrula."""
+    """Gerekirse aerotkinter kurulumu deneyip bağımlılıkları doğrula."""
+
+    if importlib.util.find_spec("aerotkinter") is not None:
+        return True
+
+    print("Bilgi: 'aerotkinter' bulunamadı, otomatik kurulum deneniyor...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "aerotkinter"])
+    except Exception as exc:
+        print(f"Hata: otomatik kurulum başarısız oldu: {exc}")
+        print("Lütfen elle kurun: pip install aerotkinter")
+        return False
 
     if importlib.util.find_spec("aerotkinter") is None:
-        print("Hata: 'aerotkinter' kurulu değil. Önce `pip install aerotkinter` çalıştırın.")
+        print("Hata: kurulum denendi ancak 'aerotkinter' yine bulunamadı.")
         return False
     return True
 
