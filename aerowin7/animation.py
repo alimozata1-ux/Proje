@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Dict, Optional
 
-from utils import blend_colors
+from .utils import blend_colors
 
 
 def ease_out_cubic(t: float) -> float:

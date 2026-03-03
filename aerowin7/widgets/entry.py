@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from aerotkinter import AeroEntry
 
-from animation import DEFAULT_ENGINE, attach_hover_animation
-from theme import ThemePalette
+from ..animation import DEFAULT_ENGINE, attach_hover_animation
+from ..theme import ThemePalette
 
 
 class GlassEntry(AeroEntry):

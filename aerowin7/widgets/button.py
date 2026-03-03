@@ -6,8 +6,8 @@ from typing import Callable, Optional
 
 from aerotkinter import AeroButton
 
-from animation import DEFAULT_ENGINE, attach_click_animation, attach_hover_animation
-from theme import ThemePalette
+from ..animation import DEFAULT_ENGINE, attach_click_animation, attach_hover_animation
+from ..theme import ThemePalette
 
 
 class GlassButton(AeroButton):

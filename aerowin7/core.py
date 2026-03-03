@@ -6,9 +6,9 @@ from typing import Callable, Optional
 
 from aerotkinter import AeroLabel, AeroWindow
 
-from animation import DEFAULT_ENGINE
-from theme import ThemePalette, get_theme
-from utils import blur_radius_for_scale, gradient_stops
+from .animation import DEFAULT_ENGINE
+from .theme import ThemePalette, get_theme
+from .utils import blur_radius_for_scale, gradient_stops
 
 
 class AeroAppWindow(AeroWindow):
