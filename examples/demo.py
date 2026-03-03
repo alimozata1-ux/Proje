@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import sys
 
@@ -10,15 +11,22 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from aerotkinter import AeroLabel
 
-from aerowin7.core import AeroAppWindow
-from aerowin7.theme import get_theme
-from aerowin7.widgets import GlassButton, GlassCard, GlassEntry, GlassLabel
+def _check_runtime_dependencies() -> bool:
+    """Demo çalışmadan önce gerekli bağımlılıkların yüklü olduğunu doğrula."""
+
+    if importlib.util.find_spec("aerotkinter") is None:
+        print("Hata: 'aerotkinter' kurulu değil. Önce `pip install aerotkinter` çalıştırın.")
+        return False
+    return True
 
 
-def build_ui(window: AeroAppWindow) -> None:
+def build_ui(window) -> None:
     """Create the sample GUI layout and connect simple interactions."""
+
+    from aerotkinter import AeroLabel
+    from aerowin7.theme import get_theme
+    from aerowin7.widgets import GlassButton, GlassCard, GlassEntry, GlassLabel
 
     theme = window.theme
 
@@ -63,7 +71,16 @@ def build_ui(window: AeroAppWindow) -> None:
     secondary.pack(side="left", pady=4)
 
 
-if __name__ == "__main__":
+def main() -> None:
+    if not _check_runtime_dependencies():
+        return
+
+    from aerowin7.core import AeroAppWindow
+
     app = AeroAppWindow(title="AeroTkinter Modular Demo", theme_name="light")
     build_ui(app)
     app.run()
+
+
+if __name__ == "__main__":
+    main()
