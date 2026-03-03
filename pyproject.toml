@@ -12,4 +12,4 @@ authors = [{name = "AeroWin7 Contributors"}]
 dependencies = ["aerotkinter"]
 
 [tool.setuptools]
-packages = ["aerowin7", "aerowin7.widgets"]
+packages = ["aerotkinter", "aerowin7", "aerowin7.widgets"]
