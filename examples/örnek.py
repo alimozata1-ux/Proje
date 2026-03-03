@@ -5,6 +5,14 @@ Bu dosya, kütüphaneyi hızlıca doğrulamak için ayrı bir çalıştırılabi
 
 from __future__ import annotations
 
+import os
+import sys
+
+# `python examples/...` çalıştırmalarında proje kökünü import yoluna ekle.
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from aerowin7.core import AeroAppWindow
 from aerowin7.widgets import GlassButton, GlassCard, GlassEntry, GlassLabel
 

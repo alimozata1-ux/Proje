@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+import os
+import sys
+
+# `python examples/...` çalıştırmalarında proje kökünü import yoluna ekle.
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from aerotkinter import AeroLabel
 
 from aerowin7.core import AeroAppWindow
