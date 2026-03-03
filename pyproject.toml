@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aerowin7"
+version = "0.1.0"
+description = "Windows 7 Aero style modular GUI toolkit built on aerotkinter"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{name = "AeroWin7 Contributors"}]
+dependencies = ["aerotkinter"]
+
+[tool.setuptools]
+packages = ["aerowin7", "aerowin7.widgets"]
