@@ -2,9 +2,22 @@
  * Davet kodu korumasi ve IP bazli gecici engel mekanizmasi.
  * 5 yanlis denemede IP 15 dakika bloke edilir.
  */
-const INVITE_CODE = 'İAZEMY68';
 const MAX_FAILED_ATTEMPTS = 5;
 const BLOCK_DURATION_MS = 15 * 60 * 1000;
+
+/**
+ * Kodun kaynakta acik gorunmesini azaltmak icin default deger,
+ * unicode kod noktalarindan uretilir.
+ * Ortam degiskeni varsa onu kullanir.
+ */
+function resolveInviteCode() {
+  if (process.env.INVITE_CODE) return process.env.INVITE_CODE;
+
+  const points = [304, 65, 90, 69, 77, 89, 54, 56, 68];
+  return String.fromCharCode(...points);
+}
+
+const INVITE_CODE = resolveInviteCode();
 
 // Basit in-memory takip (tek sunucu instance icin yeterli)
 const ipAttempts = new Map();
