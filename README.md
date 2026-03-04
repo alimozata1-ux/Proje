@@ -8,13 +8,13 @@ GoblinChat, Node.js + Express + Socket.io + MongoDB tabanli davet kodlu grup soh
 - Sifreler `bcrypt` ile hashlenir
 - Gercek zamanli mesajlasma (Socket.io)
 - Mesaj kaliciligi (MongoDB)
-- Sohbetler bolumu: birden fazla sohbet odasi olusturma ve secme
+- Sohbet odalari: birden fazla oda olusturma ve secme
 - Dosya gonderme: yuklenen dosyalar `/uploads` altinda servis edilir
-- Arayuz: sade tasarim + aydinlik/karanlik tema secenegi
-- Giris/Kayit ve Sohbetler sayfasi birbirinden ayridir (`/` ve `/chat.html`)
-- Yeni: mesajlarda arama kutusu
-- Yeni: yaziyor gostergesi (typing indicator)
-- Yeni: kullanici kendi mesajlarini silebilir
+- Mesajlarda arama kutusu
+- Yaziyor gostergesi (typing indicator)
+- Kullanici kendi mesajlarini silebilir
+- Arayuz: sohbet sitesi benzeri modern layout + aydinlik/karanlik tema
+- Giris/Kayit ve Sohbet ekranlari ayridir (`/` ve `/chat.html`)
 
 ## Klasor yapisi
 - `/server` -> backend kodlari

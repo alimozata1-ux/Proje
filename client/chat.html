@@ -3,44 +3,92 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GoblinChat | Sohbetler</title>
+    <title>GoblinChat | Sohbet</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main class="chat-wrap">
-      <header class="top-bar">
-        <h1>GoblinChat - Sohbetler</h1>
-        <div class="row-actions">
-          <button id="themeToggle" class="ghost" type="button">🌙 Karanlık</button>
-          <button id="logoutBtn" class="ghost" type="button">Çıkış</button>
+    <div class="bg-gradient"></div>
+    <main class="chat-page">
+      <aside class="left-sidebar card soft-shadow">
+        <div class="brand-head">
+          <h1>GoblinChat</h1>
+          <button id="themeToggle" class="icon-btn" type="button" aria-label="Tema değiştir">🌙</button>
         </div>
-      </header>
 
-      <section class="card chat-layout">
-        <aside class="sidebar">
-          <p id="welcomeText" class="muted"></p>
-          <form id="newConversationForm" class="new-conversation">
-            <input id="newConversationInput" type="text" placeholder="Yeni sohbet adı" maxlength="60" />
-            <button class="primary" type="submit">Ekle</button>
-          </form>
-          <ul id="conversationList" class="conversation-list"></ul>
-        </aside>
+        <div class="user-box">
+          <div class="avatar" id="avatarInitial">G</div>
+          <div>
+            <p id="welcomeText" class="welcome-text"></p>
+            <small class="muted">Çevrimiçi</small>
+          </div>
+        </div>
 
-        <section class="chat-main">
-          <h2 id="currentConversationName">Sohbet seçiniz</h2>
+        <form id="newConversationForm" class="new-room-form">
+          <input id="newConversationInput" type="text" placeholder="Yeni oda oluştur..." maxlength="60" />
+          <button class="primary" type="submit">Oluştur</button>
+        </form>
 
-          <input id="messageSearchInput" type="text" placeholder="Mesajlarda ara..." />
-          <p id="typingIndicator" class="muted typing"></p>
+        <div class="section-title-row">
+          <h2>Odalar</h2>
+          <small class="muted" id="roomCountBadge">0 oda</small>
+        </div>
+        <ul id="conversationList" class="conversation-list"></ul>
 
-          <ul id="messages" class="messages"></ul>
+        <div class="left-footer">
+          <button id="logoutBtn" class="ghost danger" type="button">Çıkış Yap</button>
+        </div>
+      </aside>
 
+      <section class="chat-main card soft-shadow">
+        <header class="chat-main-head">
+          <div>
+            <h2 id="currentConversationName">Sohbet seçiniz</h2>
+            <p id="typingIndicator" class="muted typing"></p>
+          </div>
+          <div class="header-actions">
+            <input id="messageSearchInput" type="text" placeholder="Mesajlarda ara..." />
+            <button id="clearSearchBtn" class="ghost" type="button">Temizle</button>
+          </div>
+        </header>
+
+        <section id="emptyState" class="empty-state hidden">
+          <h3>Henüz mesaj yok</h3>
+          <p>Bir mesaj yazarak sohbeti başlatabilir veya dosya paylaşabilirsin.</p>
+        </section>
+
+        <ul id="messages" class="messages" aria-live="polite"></ul>
+
+        <footer class="composer-wrap">
+          <div id="selectedFilePill" class="selected-file hidden"></div>
           <form id="messageForm" class="composer">
-            <input id="messageInput" type="text" placeholder="Mesaj yaz..." maxlength="1000" />
-            <label class="file-label">📎 Dosya<input id="fileInput" type="file" /></label>
+            <textarea id="messageInput" placeholder="Mesaj yaz..." maxlength="1000" rows="1"></textarea>
+            <label class="file-label" title="Dosya ekle">
+              📎
+              <input id="fileInput" type="file" />
+            </label>
             <button type="submit" class="primary">Gönder</button>
           </form>
-        </section>
+        </footer>
       </section>
+
+      <aside class="right-sidebar card soft-shadow">
+        <h3>Hızlı Bilgiler</h3>
+        <ul class="info-list">
+          <li>🟢 Yazıyor göstergesi aktif</li>
+          <li>🔎 Mesaj arama aktif</li>
+          <li>🗑️ Kendi mesajını silebilirsin</li>
+          <li>📁 Dosya paylaşımı aktif</li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <h3>Kısayollar</h3>
+        <ul class="info-list">
+          <li><kbd>Enter</kbd> Mesaj gönder</li>
+          <li><kbd>Shift</kbd> + <kbd>Enter</kbd> Yeni satır</li>
+          <li><kbd>/</kbd> Aramaya odaklan</li>
+        </ul>
+      </aside>
     </main>
 
     <script src="/socket.io/socket.io.js"></script>

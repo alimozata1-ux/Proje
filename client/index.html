@@ -7,29 +7,64 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main class="simple-wrap">
-      <header class="top-bar">
+    <div class="bg-gradient"></div>
+    <main class="auth-page">
+      <section class="auth-hero card soft-shadow">
+        <span class="chip">Gerçek zamanlı sohbet</span>
         <h1>GoblinChat</h1>
-        <button id="themeToggle" class="ghost" type="button">🌙 Karanlık</button>
-      </header>
+        <p>
+          Davet kodu ile korunan, sohbet odaları, dosya paylaşımı, yazıyor göstergesi ve modern arayüz sunan
+          topluluk platformu.
+        </p>
+        <ul class="feature-list">
+          <li>🔐 Davet kodlu kayıt</li>
+          <li>💬 Çoklu sohbet odaları</li>
+          <li>📎 Dosya paylaşımı</li>
+          <li>🌗 Aydınlık / Karanlık tema</li>
+        </ul>
+      </section>
 
-      <section class="card auth-card">
-        <h2>Giriş / Kayıt</h2>
-        <p class="muted">Sohbet ekranı ayrı sayfada açılır.</p>
+      <section class="auth-panel card soft-shadow">
+        <header class="auth-panel-head">
+          <div>
+            <h2>Hesabına giriş yap</h2>
+            <p class="muted">Kayıt olup direkt sohbet odalarına katılabilirsin.</p>
+          </div>
+          <button id="themeToggle" class="icon-btn" type="button" aria-label="Tema değiştir">🌙</button>
+        </header>
 
-        <div class="tabs">
-          <button id="tabLogin" class="active" type="button">Giriş</button>
-          <button id="tabRegister" type="button">Kayıt</button>
+        <div class="tabs" role="tablist" aria-label="Giriş ve kayıt sekmeleri">
+          <button id="tabLogin" class="active" type="button" role="tab" aria-selected="true">Giriş</button>
+          <button id="tabRegister" type="button" role="tab" aria-selected="false">Kayıt</button>
         </div>
 
-        <form id="authForm">
-          <label>Kullanıcı adı<input type="text" id="username" required minlength="3" /></label>
-          <label>Şifre<input type="password" id="password" required minlength="6" /></label>
-          <label id="inviteWrap" class="hidden">Davet kodu<input type="text" id="inviteCode" placeholder="İAZEMY68" /></label>
+        <form id="authForm" class="auth-form">
+          <label>
+            Kullanıcı adı
+            <input type="text" id="username" required minlength="3" maxlength="30" autocomplete="username" />
+          </label>
+
+          <label>
+            Şifre
+            <input
+              type="password"
+              id="password"
+              required
+              minlength="6"
+              maxlength="72"
+              autocomplete="current-password"
+            />
+          </label>
+
+          <label id="inviteWrap" class="hidden">
+            Davet kodu
+            <input type="text" id="inviteCode" placeholder="İAZEMY68" autocomplete="off" />
+          </label>
+
           <button type="submit" id="authSubmit" class="primary">Giriş Yap</button>
         </form>
 
-        <p id="authMessage" class="status"></p>
+        <p id="authMessage" class="status" aria-live="polite"></p>
       </section>
     </main>
 

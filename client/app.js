@@ -1,22 +1,69 @@
 const root = document.documentElement;
 const THEME_KEY = 'theme';
+const KEYS = {
+  TOKEN: 'token',
+  USER: 'user'
+};
+
+const state = {
+  socket: null,
+  mode: 'login',
+  token: null,
+  user: null,
+  activeConversationId: null,
+  conversations: [],
+  messages: [],
+  unreadByRoom: {},
+  typingTimer: null,
+  selectedFile: null
+};
+
+function qs(selector) {
+  return document.querySelector(selector);
+}
+
+function qid(id) {
+  return document.getElementById(id);
+}
+
+function toJSONSafe(value, fallback = null) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function getSavedTheme() {
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored === 'light' || stored === 'dark') return stored;
+
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return prefersDark ? 'dark' : 'light';
+}
+
+function setThemeButtonVisual(theme) {
+  const button = qid('themeToggle');
+  if (!button) return;
+  button.textContent = theme === 'dark' ? '☀️' : '🌙';
+  button.title = theme === 'dark' ? 'Aydınlık moda geç' : 'Karanlık moda geç';
+}
 
 function applyTheme(theme) {
   root.setAttribute('data-theme', theme);
-  const toggle = document.getElementById('themeToggle');
-  if (toggle) toggle.textContent = theme === 'dark' ? '☀️ Aydınlık' : '🌙 Karanlık';
+  setThemeButtonVisual(theme);
 }
 
-function initTheme() {
-  const saved = localStorage.getItem(THEME_KEY) || 'light';
-  applyTheme(saved);
+function initThemeSystem() {
+  const current = getSavedTheme();
+  applyTheme(current);
 
-  const toggle = document.getElementById('themeToggle');
+  const toggle = qid('themeToggle');
   if (!toggle) return;
 
   toggle.addEventListener('click', () => {
-    const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-    const next = current === 'dark' ? 'light' : 'dark';
+    const active = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+    const next = active === 'dark' ? 'light' : 'dark';
     localStorage.setItem(THEME_KEY, next);
     applyTheme(next);
   });
@@ -31,311 +78,624 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
-function initAuthPage() {
-  const authForm = document.getElementById('authForm');
-  if (!authForm) return;
-
-  const authMessage = document.getElementById('authMessage');
-  const inviteWrap = document.getElementById('inviteWrap');
-  const authSubmit = document.getElementById('authSubmit');
-  const tabLogin = document.getElementById('tabLogin');
-  const tabRegister = document.getElementById('tabRegister');
-
-  let mode = 'login';
-
-  function setMode(nextMode) {
-    mode = nextMode;
-    const isRegister = mode === 'register';
-    tabLogin.classList.toggle('active', !isRegister);
-    tabRegister.classList.toggle('active', isRegister);
-    inviteWrap.classList.toggle('hidden', !isRegister);
-    authSubmit.textContent = isRegister ? 'Kayıt Ol' : 'Giriş Yap';
-    authMessage.textContent = '';
-  }
-
-  tabLogin.addEventListener('click', () => setMode('login'));
-  tabRegister.addEventListener('click', () => setMode('register'));
-
-  authForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
-    const inviteCode = document.getElementById('inviteCode').value.trim();
-
-    const endpoint = mode === 'register' ? '/api/auth/register' : '/api/auth/login';
-    const payload = mode === 'register' ? { username, password, inviteCode } : { username, password };
-
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'İşlem başarısız');
-
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      window.location.href = '/chat.html';
-    } catch (err) {
-      authMessage.textContent = err.message;
-    }
-  });
-
-  setMode('login');
+function formatTime(dateValue) {
+  const date = new Date(dateValue || Date.now());
+  return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 }
 
-function initChatPage() {
-  const conversationList = document.getElementById('conversationList');
-  if (!conversationList) return;
+function formatDate(dateValue) {
+  const date = new Date(dateValue || Date.now());
+  return date.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
 
-  const logoutBtn = document.getElementById('logoutBtn');
-  const welcomeText = document.getElementById('welcomeText');
-  const newConversationForm = document.getElementById('newConversationForm');
-  const newConversationInput = document.getElementById('newConversationInput');
-  const currentConversationName = document.getElementById('currentConversationName');
-  const messagesEl = document.getElementById('messages');
-  const typingIndicator = document.getElementById('typingIndicator');
-  const messageSearchInput = document.getElementById('messageSearchInput');
-  const messageForm = document.getElementById('messageForm');
-  const messageInput = document.getElementById('messageInput');
-  const fileInput = document.getElementById('fileInput');
+async function fetchJSON(url, options = {}) {
+  const headers = {
+    ...(options.headers || {})
+  };
 
-  const token = localStorage.getItem('token');
-  const rawUser = localStorage.getItem('user');
-  if (!token || !rawUser) {
+  const response = await fetch(url, {
+    ...options,
+    headers
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.message || 'İstek başarısız');
+  }
+
+  return data;
+}
+
+async function authFetch(path, options = {}) {
+  return fetchJSON(path, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${state.token}`,
+      ...(options.headers || {})
+    }
+  });
+}
+
+function setAuthMessage(message = '') {
+  const box = qid('authMessage');
+  if (!box) return;
+  box.textContent = message;
+}
+
+function setAuthMode(nextMode) {
+  state.mode = nextMode;
+
+  const tabLogin = qid('tabLogin');
+  const tabRegister = qid('tabRegister');
+  const inviteWrap = qid('inviteWrap');
+  const submit = qid('authSubmit');
+
+  if (!tabLogin || !tabRegister || !inviteWrap || !submit) return;
+
+  const register = nextMode === 'register';
+  tabLogin.classList.toggle('active', !register);
+  tabRegister.classList.toggle('active', register);
+  tabLogin.setAttribute('aria-selected', String(!register));
+  tabRegister.setAttribute('aria-selected', String(register));
+  inviteWrap.classList.toggle('hidden', !register);
+  submit.textContent = register ? 'Kayıt Ol' : 'Giriş Yap';
+  setAuthMessage('');
+}
+
+async function onAuthSubmit(event) {
+  event.preventDefault();
+
+  const username = qid('username')?.value.trim() || '';
+  const password = qid('password')?.value || '';
+  const inviteCode = qid('inviteCode')?.value.trim() || '';
+
+  const isRegister = state.mode === 'register';
+
+  const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
+  const payload = isRegister ? { username, password, inviteCode } : { username, password };
+
+  try {
+    setAuthMessage('İşleniyor...');
+
+    const data = await fetchJSON(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    localStorage.setItem(KEYS.TOKEN, data.token);
+    localStorage.setItem(KEYS.USER, JSON.stringify(data.user));
+
+    window.location.href = '/chat.html';
+  } catch (error) {
+    setAuthMessage(error.message);
+  }
+}
+
+function initAuthPage() {
+  const authForm = qid('authForm');
+  if (!authForm) return;
+
+  const tabLogin = qid('tabLogin');
+  const tabRegister = qid('tabRegister');
+
+  tabLogin?.addEventListener('click', () => setAuthMode('login'));
+  tabRegister?.addEventListener('click', () => setAuthMode('register'));
+
+  authForm.addEventListener('submit', onAuthSubmit);
+
+  setAuthMode('login');
+}
+
+function getUser() {
+  const raw = localStorage.getItem(KEYS.USER);
+  return toJSONSafe(raw);
+}
+
+function ensureChatSession() {
+  state.token = localStorage.getItem(KEYS.TOKEN);
+  state.user = getUser();
+
+  if (!state.token || !state.user) {
     window.location.href = '/';
+    return false;
+  }
+
+  return true;
+}
+
+function updateUserVisuals() {
+  const welcome = qid('welcomeText');
+  const avatar = qid('avatarInitial');
+
+  if (welcome) {
+    welcome.textContent = state.user?.username ? `Hoş geldin, ${state.user.username}` : '';
+  }
+
+  if (avatar) {
+    avatar.textContent = state.user?.username?.[0]?.toUpperCase() || 'G';
+  }
+}
+
+function roomBadgeText() {
+  const total = state.conversations.length;
+  return `${total} oda`;
+}
+
+function updateRoomBadge() {
+  const badge = qid('roomCountBadge');
+  if (!badge) return;
+  badge.textContent = roomBadgeText();
+}
+
+function getConversationUnread(conversationId) {
+  return state.unreadByRoom[conversationId] || 0;
+}
+
+function incrementUnread(conversationId) {
+  if (!conversationId) return;
+  state.unreadByRoom[conversationId] = getConversationUnread(conversationId) + 1;
+}
+
+function resetUnread(conversationId) {
+  if (!conversationId) return;
+  state.unreadByRoom[conversationId] = 0;
+}
+
+function conversationButtonHTML(name, unreadCount) {
+  const unread = unreadCount > 0 ? `<span class="unread-dot" title="${unreadCount} yeni mesaj"></span>` : '';
+  return `
+    <span>${escapeHtml(name)}</span>
+    <span class="room-meta">${unread}</span>
+  `;
+}
+
+function renderConversations() {
+  const list = qid('conversationList');
+  if (!list) return;
+
+  list.innerHTML = '';
+
+  state.conversations.forEach((conversation) => {
+    const li = document.createElement('li');
+    const button = document.createElement('button');
+
+    button.type = 'button';
+    button.classList.toggle('active', state.activeConversationId === conversation._id);
+    button.innerHTML = conversationButtonHTML(conversation.name, getConversationUnread(conversation._id));
+
+    button.addEventListener('click', () => {
+      if (state.activeConversationId === conversation._id) return;
+
+      state.activeConversationId = conversation._id;
+      resetUnread(conversation._id);
+      qid('currentConversationName').textContent = conversation.name;
+      clearTypingIndicator();
+      renderConversations();
+      loadConversationHistory(conversation._id);
+      emitJoinRoom(conversation._id);
+    });
+
+    li.appendChild(button);
+    list.appendChild(li);
+  });
+
+  updateRoomBadge();
+}
+
+function setEmptyStateVisibility() {
+  const empty = qid('emptyState');
+  if (!empty) return;
+  empty.classList.toggle('hidden', state.messages.length > 0);
+}
+
+function filteredMessages() {
+  const query = (qid('messageSearchInput')?.value || '').trim().toLowerCase();
+  if (!query) return state.messages;
+
+  return state.messages.filter((message) => {
+    const searchable = `${message.username || ''} ${message.text || ''} ${message.fileName || ''}`.toLowerCase();
+    return searchable.includes(query);
+  });
+}
+
+function messageIsMine(message) {
+  if (!message || message.system) return false;
+  if (message.userId && state.user?.id) {
+    return String(message.userId) === String(state.user.id);
+  }
+  return message.username === state.user?.username;
+}
+
+function createDeleteButton(message) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'delete-btn';
+  button.textContent = 'Sil';
+
+  button.addEventListener('click', () => {
+    if (!state.activeConversationId) return;
+    state.socket?.emit('chat:delete', {
+      conversationId: state.activeConversationId,
+      messageId: message._id
+    });
+  });
+
+  return button;
+}
+
+function renderMessageContent(li, message) {
+  if (message.system) {
+    li.classList.add('system');
+    li.textContent = message.text;
     return;
   }
 
-  const currentUser = JSON.parse(rawUser);
-  welcomeText.textContent = `Hoş geldin, ${currentUser.username}`;
+  const mine = messageIsMine(message);
+  li.classList.add(mine ? 'self' : 'other');
 
-  let socket;
-  let conversations = [];
-  let activeConversationId = null;
-  let currentMessages = [];
-  let typingTimeout;
+  const sender = document.createElement('strong');
+  sender.textContent = message.username || 'Kullanıcı';
+  li.appendChild(sender);
 
-  async function api(path, options = {}) {
-    const response = await fetch(path, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(options.headers || {})
-      }
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || 'İstek başarısız');
-    return data;
+  if (message.text) {
+    const text = document.createElement('div');
+    text.textContent = message.text;
+    li.appendChild(text);
   }
 
-  function formatTime(value) {
-    return new Date(value || Date.now()).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  if (message.fileUrl) {
+    const link = document.createElement('a');
+    link.className = 'file-link';
+    link.href = message.fileUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = `📎 ${message.fileName || 'Dosya'}`;
+    li.appendChild(link);
   }
 
-  function renderMessages() {
-    const query = messageSearchInput.value.trim().toLowerCase();
-    const filtered = currentMessages.filter((message) => {
-      if (!query) return true;
-      return `${message.username || ''} ${message.text || ''} ${message.fileName || ''}`.toLowerCase().includes(query);
-    });
+  const meta = document.createElement('span');
+  meta.className = 'meta';
+  meta.textContent = `${formatDate(message.createdAt)} • ${formatTime(message.createdAt)}`;
+  li.appendChild(meta);
 
-    messagesEl.innerHTML = '';
-
-    filtered.forEach((message) => {
-      const li = document.createElement('li');
-      li.classList.add('message-item');
-      li.dataset.messageId = message._id || '';
-
-      if (message.system) {
-        li.classList.add('system');
-        li.textContent = message.text;
-      } else {
-        const isSelf = message.userId === currentUser.id || message.username === currentUser.username;
-        li.classList.add(isSelf ? 'self' : 'other');
-
-        const textHtml = message.text ? `<div>${escapeHtml(message.text)}</div>` : '';
-        const fileHtml = message.fileUrl
-          ? `<a class="file-link" href="${escapeHtml(message.fileUrl)}" target="_blank" rel="noopener noreferrer">📎 ${escapeHtml(message.fileName || 'Dosya')}</a>`
-          : '';
-        const deleteHtml = isSelf && message._id ? '<button class="delete-btn" type="button">Sil</button>' : '';
-
-        li.innerHTML = `<strong>${escapeHtml(message.username || 'Kullanıcı')}</strong>${textHtml}${fileHtml}<span class="meta">${formatTime(message.createdAt)}</span>${deleteHtml}`;
-
-        const deleteBtn = li.querySelector('.delete-btn');
-        if (deleteBtn) {
-          deleteBtn.addEventListener('click', () => {
-            socket.emit('chat:delete', {
-              conversationId: activeConversationId,
-              messageId: message._id
-            });
-          });
-        }
-      }
-
-      messagesEl.appendChild(li);
-    });
-
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+  if (mine && message._id) {
+    li.appendChild(createDeleteButton(message));
   }
+}
 
-  function addSystemMessage(text) {
-    currentMessages.push({ system: true, text, createdAt: Date.now() });
-    renderMessages();
-  }
+function renderMessages() {
+  const messagesEl = qid('messages');
+  if (!messagesEl) return;
 
-  function renderConversations() {
-    conversationList.innerHTML = '';
+  messagesEl.innerHTML = '';
 
-    conversations.forEach((conversation) => {
-      const li = document.createElement('li');
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = conversation.name;
-      btn.classList.toggle('active', conversation._id === activeConversationId);
+  filteredMessages().forEach((message) => {
+    const li = document.createElement('li');
+    li.classList.add('message-item');
+    li.dataset.messageId = message._id || '';
 
-      btn.addEventListener('click', () => {
-        activeConversationId = conversation._id;
-        currentConversationName.textContent = conversation.name;
-        currentMessages = [];
-        typingIndicator.textContent = '';
-        renderConversations();
-        renderMessages();
-        socket.emit('chat:join', { conversationId: activeConversationId });
-      });
+    renderMessageContent(li, message);
+    messagesEl.appendChild(li);
+  });
 
-      li.appendChild(btn);
-      conversationList.appendChild(li);
-    });
-  }
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  setEmptyStateVisibility();
+}
 
-  async function uploadSelectedFile() {
-    if (!fileInput.files.length) return null;
+function setTypingIndicator(text = '') {
+  const indicator = qid('typingIndicator');
+  if (!indicator) return;
+  indicator.textContent = text;
+}
 
-    const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
+function clearTypingIndicator() {
+  setTypingIndicator('');
+}
 
-    const response = await fetch('/api/chat/upload', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData
-    });
+function addSystemMessage(text) {
+  state.messages.push({
+    system: true,
+    text,
+    createdAt: Date.now()
+  });
+  renderMessages();
+}
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || 'Dosya yüklenemedi');
-    fileInput.value = '';
-    return data;
-  }
-
-  async function loadConversations() {
-    conversations = await api('/api/chat/conversations');
+function appendIncomingMessage(message) {
+  if (message.conversationId !== state.activeConversationId) {
+    incrementUnread(message.conversationId);
     renderConversations();
-
-    if (conversations.length) {
-      activeConversationId = conversations[0]._id;
-      currentConversationName.textContent = conversations[0].name;
-      renderConversations();
-      socket.emit('chat:join', { conversationId: activeConversationId });
-    }
+    return;
   }
 
-  socket = io({ auth: { token } });
+  state.messages.push(message);
+  clearTypingIndicator();
+  renderMessages();
+}
 
-  socket.on('chat:history', (messages) => {
-    currentMessages = messages;
-    renderMessages();
-  });
+function replaceMessageList(messages) {
+  state.messages = Array.isArray(messages) ? messages : [];
+  renderMessages();
+}
 
-  socket.on('chat:new-message', (message) => {
-    if (message.conversationId !== activeConversationId) return;
-    currentMessages.push(message);
-    typingIndicator.textContent = '';
-    renderMessages();
-  });
+function removeMessageFromState(messageId) {
+  state.messages = state.messages.filter((message) => String(message._id) !== String(messageId));
+  renderMessages();
+}
 
-  socket.on('chat:deleted', ({ conversationId, messageId }) => {
-    if (conversationId !== activeConversationId) return;
-    currentMessages = currentMessages.filter((message) => message._id !== messageId);
-    renderMessages();
-  });
+function updateSelectedFilePill() {
+  const pill = qid('selectedFilePill');
+  if (!pill) return;
 
-  socket.on('chat:typing', ({ conversationId, username, isTyping }) => {
-    if (conversationId !== activeConversationId) return;
-    typingIndicator.textContent = isTyping ? `${username} yazıyor...` : '';
-  });
+  if (!state.selectedFile) {
+    pill.classList.add('hidden');
+    pill.textContent = '';
+    return;
+  }
 
-  socket.on('chat:user-joined', ({ message }) => addSystemMessage(message));
-  socket.on('chat:user-left', ({ message }) => addSystemMessage(message));
-  socket.on('chat:error', ({ message }) => addSystemMessage(message));
+  pill.classList.remove('hidden');
+  pill.innerHTML = `<span>📎 ${escapeHtml(state.selectedFile.name)}</span><button id="clearFileBtn" class="ghost" type="button">Kaldır</button>`;
 
-  loadConversations();
-
-  messageSearchInput.addEventListener('input', renderMessages);
-
-  newConversationForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const name = newConversationInput.value.trim();
-    if (!name) return;
-
-    try {
-      const created = await api('/api/chat/conversations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      });
-      conversations.push(created);
-      newConversationInput.value = '';
-      renderConversations();
-    } catch (err) {
-      addSystemMessage(err.message);
-    }
-  });
-
-  messageInput.addEventListener('input', () => {
-    if (!activeConversationId) return;
-    socket.emit('chat:typing', { conversationId: activeConversationId, isTyping: true });
-
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-      socket.emit('chat:typing', { conversationId: activeConversationId, isTyping: false });
-    }, 900);
-  });
-
-  messageForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (!activeConversationId) return;
-
-    const text = messageInput.value.trim();
-
-    try {
-      const uploaded = await uploadSelectedFile();
-      if (!text && !uploaded) return;
-
-      socket.emit('chat:send', {
-        conversationId: activeConversationId,
-        text,
-        fileUrl: uploaded?.fileUrl,
-        fileName: uploaded?.fileName,
-        fileType: uploaded?.fileType
-      });
-
-      socket.emit('chat:typing', { conversationId: activeConversationId, isTyping: false });
-      messageInput.value = '';
-    } catch (err) {
-      addSystemMessage(err.message);
-    }
-  });
-
-  logoutBtn.addEventListener('click', () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    socket.disconnect();
-    window.location.href = '/';
+  const clearButton = qid('clearFileBtn');
+  clearButton?.addEventListener('click', () => {
+    state.selectedFile = null;
+    const fileInput = qid('fileInput');
+    if (fileInput) fileInput.value = '';
+    updateSelectedFilePill();
   });
 }
 
-initTheme();
-initAuthPage();
-initChatPage();
+async function uploadSelectedFile() {
+  if (!state.selectedFile) return null;
+
+  const formData = new FormData();
+  formData.append('file', state.selectedFile);
+
+  const result = await authFetch('/api/chat/upload', {
+    method: 'POST',
+    body: formData
+  });
+
+  state.selectedFile = null;
+  updateSelectedFilePill();
+
+  return result;
+}
+
+function emitJoinRoom(conversationId) {
+  if (!state.socket || !conversationId) return;
+  state.socket.emit('chat:join', { conversationId });
+}
+
+async function loadConversationHistory(conversationId) {
+  if (!conversationId) {
+    replaceMessageList([]);
+    return;
+  }
+
+  // Socket history event kullanılacağı için önce boşaltıp join gönderiyoruz.
+  replaceMessageList([]);
+}
+
+async function loadConversations() {
+  const rooms = await authFetch('/api/chat/conversations');
+  state.conversations = rooms;
+
+  if (!state.activeConversationId && state.conversations.length > 0) {
+    state.activeConversationId = state.conversations[0]._id;
+    qid('currentConversationName').textContent = state.conversations[0].name;
+  }
+
+  renderConversations();
+
+  if (state.activeConversationId) {
+    emitJoinRoom(state.activeConversationId);
+  }
+}
+
+async function createConversation(name) {
+  const created = await authFetch('/api/chat/conversations', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ name })
+  });
+
+  state.conversations.push(created);
+  state.unreadByRoom[created._id] = 0;
+  renderConversations();
+}
+
+function emitTyping(isTyping) {
+  if (!state.socket || !state.activeConversationId) return;
+  state.socket.emit('chat:typing', {
+    conversationId: state.activeConversationId,
+    isTyping: Boolean(isTyping)
+  });
+}
+
+function scheduleTypingOff() {
+  clearTimeout(state.typingTimer);
+  state.typingTimer = setTimeout(() => emitTyping(false), 900);
+}
+
+function autoresizeTextarea(textarea) {
+  textarea.style.height = 'auto';
+  textarea.style.height = `${Math.min(textarea.scrollHeight, 140)}px`;
+}
+
+function resetComposer() {
+  const input = qid('messageInput');
+  if (!input) return;
+  input.value = '';
+  input.style.height = 'auto';
+  emitTyping(false);
+}
+
+async function onSendMessage(event) {
+  event.preventDefault();
+
+  if (!state.activeConversationId || !state.socket) return;
+
+  const textArea = qid('messageInput');
+  const text = textArea?.value.trim() || '';
+
+  try {
+    const uploaded = await uploadSelectedFile();
+    if (!text && !uploaded) return;
+
+    state.socket.emit('chat:send', {
+      conversationId: state.activeConversationId,
+      text,
+      fileUrl: uploaded?.fileUrl,
+      fileName: uploaded?.fileName,
+      fileType: uploaded?.fileType
+    });
+
+    resetComposer();
+  } catch (error) {
+    addSystemMessage(error.message);
+  }
+}
+
+function onMessageInput(event) {
+  const textarea = event.target;
+  autoresizeTextarea(textarea);
+
+  if (!state.activeConversationId) return;
+  emitTyping(true);
+  scheduleTypingOff();
+}
+
+function onMessageInputKeydown(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    qid('messageForm')?.requestSubmit();
+  }
+}
+
+function onGlobalKeydown(event) {
+  if (event.key === '/') {
+    const search = qid('messageSearchInput');
+    if (!search) return;
+
+    const activeTag = document.activeElement?.tagName;
+    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') return;
+
+    event.preventDefault();
+    search.focus();
+  }
+}
+
+function wireSocketEvents() {
+  state.socket.on('connect_error', (error) => {
+    addSystemMessage(`Bağlantı hatası: ${error.message}`);
+  });
+
+  state.socket.on('chat:history', (messages) => {
+    replaceMessageList(messages);
+    resetUnread(state.activeConversationId);
+    renderConversations();
+  });
+
+  state.socket.on('chat:new-message', (message) => {
+    appendIncomingMessage(message);
+  });
+
+  state.socket.on('chat:deleted', ({ conversationId, messageId }) => {
+    if (conversationId !== state.activeConversationId) return;
+    removeMessageFromState(messageId);
+  });
+
+  state.socket.on('chat:typing', ({ conversationId, username, isTyping }) => {
+    if (conversationId !== state.activeConversationId) return;
+    if (!isTyping) {
+      clearTypingIndicator();
+      return;
+    }
+    setTypingIndicator(`${username} yazıyor...`);
+  });
+
+  state.socket.on('chat:user-joined', ({ message }) => addSystemMessage(message));
+  state.socket.on('chat:user-left', ({ message }) => addSystemMessage(message));
+  state.socket.on('chat:error', ({ message }) => addSystemMessage(message));
+}
+
+function bindChatEvents() {
+  qid('logoutBtn')?.addEventListener('click', () => {
+    localStorage.removeItem(KEYS.TOKEN);
+    localStorage.removeItem(KEYS.USER);
+
+    state.socket?.disconnect();
+    window.location.href = '/';
+  });
+
+  qid('newConversationForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const input = qid('newConversationInput');
+    const name = input?.value.trim() || '';
+    if (!name) return;
+
+    try {
+      await createConversation(name);
+      input.value = '';
+    } catch (error) {
+      addSystemMessage(error.message);
+    }
+  });
+
+  qid('messageSearchInput')?.addEventListener('input', () => {
+    renderMessages();
+  });
+
+  qid('clearSearchBtn')?.addEventListener('click', () => {
+    const input = qid('messageSearchInput');
+    if (!input) return;
+    input.value = '';
+    renderMessages();
+  });
+
+  qid('fileInput')?.addEventListener('change', (event) => {
+    state.selectedFile = event.target.files?.[0] || null;
+    updateSelectedFilePill();
+  });
+
+  qid('messageInput')?.addEventListener('input', onMessageInput);
+  qid('messageInput')?.addEventListener('keydown', onMessageInputKeydown);
+  qid('messageForm')?.addEventListener('submit', onSendMessage);
+
+  window.addEventListener('keydown', onGlobalKeydown);
+}
+
+async function initChatPage() {
+  const chatRoot = qs('.chat-page');
+  if (!chatRoot) return;
+
+  if (!ensureChatSession()) return;
+
+  updateUserVisuals();
+
+  state.socket = io({ auth: { token: state.token } });
+  wireSocketEvents();
+  bindChatEvents();
+
+  try {
+    await loadConversations();
+  } catch (error) {
+    addSystemMessage(error.message);
+  }
+}
+
+function init() {
+  initThemeSystem();
+  initAuthPage();
+  initChatPage();
+}
+
+init();
