@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoblinChat | Sohbetler</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="chat-wrap">
+      <header class="top-bar">
+        <h1>GoblinChat - Sohbetler</h1>
+        <div class="row-actions">
+          <button id="themeToggle" class="ghost" type="button">🌙 Karanlık</button>
+          <button id="logoutBtn" class="ghost" type="button">Çıkış</button>
+        </div>
+      </header>
+
+      <section class="card chat-layout">
+        <aside class="sidebar">
+          <p id="welcomeText" class="muted"></p>
+          <form id="newConversationForm" class="new-conversation">
+            <input id="newConversationInput" type="text" placeholder="Yeni sohbet adı" maxlength="60" />
+            <button class="primary" type="submit">Ekle</button>
+          </form>
+          <ul id="conversationList" class="conversation-list"></ul>
+        </aside>
+
+        <section class="chat-main">
+          <h2 id="currentConversationName">Sohbet seçiniz</h2>
+
+          <input id="messageSearchInput" type="text" placeholder="Mesajlarda ara..." />
+          <p id="typingIndicator" class="muted typing"></p>
+
+          <ul id="messages" class="messages"></ul>
+
+          <form id="messageForm" class="composer">
+            <input id="messageInput" type="text" placeholder="Mesaj yaz..." maxlength="1000" />
+            <label class="file-label">📎 Dosya<input id="fileInput" type="file" /></label>
+            <button type="submit" class="primary">Gönder</button>
+          </form>
+        </section>
+      </section>
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>
