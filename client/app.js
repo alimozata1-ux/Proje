@@ -118,15 +118,22 @@ async function fetchJSON(url, options = {}) {
     ...(options.headers || {})
   };
 
-  const response = await fetch(url, {
-    ...options,
-    headers
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers
+    });
+  } catch (error) {
+    throw new Error(
+      'Sunucuya ulasilamadi. Backend URL ayarini (API_BASE/SOCKET_URL) ve ag baglantisini kontrol edin.'
+    );
+  }
 
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || 'İstek başarısız');
+    throw new Error(data.message || `İstek başarısız (${response.status})`);
   }
 
   return data;
