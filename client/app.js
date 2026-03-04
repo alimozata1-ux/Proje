@@ -133,7 +133,7 @@ async function fetchJSON(url, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || `İstek başarısız (${response.status})`);
+    throw new Error(data.message || `İstek başarısız. (HTTP ${response.status})`);
   }
 
   return data;
