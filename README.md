@@ -20,8 +20,9 @@ GoblinChat, Node.js + Express + Socket.io + MongoDB tabanli davet kodlu grup soh
 - `/server` -> backend kodlari
 - `/client` -> frontend dosyalari
 - `package.json` -> bagimliliklar
+- `netlify.toml` -> Netlify frontend deploy ayarlari
 
-## Kurulum
+## Lokal kurulum
 ```bash
 npm install
 cp .env.example .env
@@ -30,6 +31,23 @@ npm run dev
 ```
 
 Varsayilan adres: `http://localhost:3000`
+
+## Netlify icin hazirlama
+> Onemli: Netlify Node Socket.io sunucusunu host etmez. Backend'i Render/Railway/Fly.io gibi bir platformda ayri calistirmalisin.
+
+1. Backend'i deploy et (ornek: `https://goblinchat-api.onrender.com`).
+2. `client/config.js` dosyasini backend adresine gore guncelle:
+   ```js
+   window.GOBLINCHAT_CONFIG = {
+     API_BASE: 'https://goblinchat-api.onrender.com',
+     SOCKET_URL: 'https://goblinchat-api.onrender.com'
+   };
+   ```
+3. Netlify'da yeni site olustur ve bu repoyu bagla.
+4. Build ayarlari:
+   - Build command: (bos birakilabilir)
+   - Publish directory: `client`
+5. Deploy et.
 
 ## Render notu
 Render HTTPS'i platform seviyesinde saglar. Uygulama `trust proxy` ile buna uygun calisir.

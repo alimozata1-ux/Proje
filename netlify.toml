@@ -1,0 +1,13 @@
+[build]
+  publish = "client"
+
+# Netlify sadece frontend'i host eder.
+# Backend'i ayri bir serviste calistirip client/config.js icinde API_BASE ve SOCKET_URL tanimlayin.
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"

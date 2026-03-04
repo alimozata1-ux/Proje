@@ -6,6 +6,7 @@ const KEYS = {
 };
 
 const state = {
+  runtimeConfig: null,
   socket: null,
   mode: 'login',
   token: null,
@@ -17,6 +18,30 @@ const state = {
   typingTimer: null,
   selectedFile: null
 };
+
+
+function getRuntimeConfig() {
+  const cfg = window.GOBLINCHAT_CONFIG || {};
+  const apiBase = (cfg.API_BASE || '').trim();
+  const socketUrl = (cfg.SOCKET_URL || apiBase || '').trim();
+
+  return {
+    apiBase,
+    socketUrl
+  };
+}
+
+function buildApiUrl(path) {
+  const { apiBase } = getRuntimeConfig();
+  if (!apiBase) return path;
+  return `${apiBase}${path}`;
+}
+
+function getSocketTarget() {
+  const { socketUrl } = getRuntimeConfig();
+  return socketUrl || undefined;
+}
+
 
 function qs(selector) {
   return document.querySelector(selector);
@@ -108,7 +133,7 @@ async function fetchJSON(url, options = {}) {
 }
 
 async function authFetch(path, options = {}) {
-  return fetchJSON(path, {
+  return fetchJSON(buildApiUrl(path), {
     ...options,
     headers: {
       Authorization: `Bearer ${state.token}`,
@@ -158,7 +183,7 @@ async function onAuthSubmit(event) {
   try {
     setAuthMessage('İşleniyor...');
 
-    const data = await fetchJSON(endpoint, {
+    const data = await fetchJSON(buildApiUrl(endpoint), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -674,6 +699,10 @@ function bindChatEvents() {
 }
 
 async function initChatPage() {
+  if (typeof io === 'undefined') {
+    addSystemMessage('Socket.io istemcisi yuklenemedi. Backend URL ayarini kontrol et.');
+    return;
+  }
   const chatRoot = qs('.chat-page');
   if (!chatRoot) return;
 
@@ -681,7 +710,7 @@ async function initChatPage() {
 
   updateUserVisuals();
 
-  state.socket = io({ auth: { token: state.token } });
+  state.socket = io(getSocketTarget(), { auth: { token: state.token } });
   wireSocketEvents();
   bindChatEvents();
 
@@ -693,6 +722,7 @@ async function initChatPage() {
 }
 
 function init() {
+  state.runtimeConfig = getRuntimeConfig();
   initThemeSystem();
   initAuthPage();
   initChatPage();
