@@ -16,7 +16,8 @@ const state = {
   messages: [],
   unreadByRoom: {},
   typingTimer: null,
-  selectedFile: null
+  selectedFile: null,
+  authSubmitting: false
 };
 
 
@@ -155,6 +156,31 @@ function setAuthMessage(message = '') {
   box.textContent = message;
 }
 
+
+function normalizeErrorText(message) {
+  if (!message) return 'İstek başarısız. Lütfen tekrar deneyin.';
+
+  return String(message)
+    .replaceAll('başarırız', 'başarısız')
+    .replaceAll('basaririz', 'basarisiz');
+}
+
+function setAuthSubmitting(isSubmitting) {
+  state.authSubmitting = isSubmitting;
+
+  const submit = qid('authSubmit');
+  if (!submit) return;
+
+  submit.disabled = isSubmitting;
+  if (isSubmitting) {
+    submit.dataset.originalText = submit.textContent;
+    submit.textContent = 'İşleniyor...';
+  } else if (submit.dataset.originalText) {
+    submit.textContent = submit.dataset.originalText;
+  }
+}
+
+
 function setAuthMode(nextMode) {
   state.mode = nextMode;
 
@@ -177,6 +203,7 @@ function setAuthMode(nextMode) {
 
 async function onAuthSubmit(event) {
   event.preventDefault();
+  if (state.authSubmitting) return;
 
   const username = qid('username')?.value.trim() || '';
   const password = qid('password')?.value || '';
@@ -187,15 +214,20 @@ async function onAuthSubmit(event) {
   const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
   const payload = isRegister ? { username, password, inviteCode } : { username, password };
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+
   try {
-    setAuthMessage('İşleniyor...');
+    setAuthSubmitting(true);
+    setAuthMessage('');
 
     const data = await fetchJSON(buildApiUrl(endpoint), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: controller.signal
     });
 
     localStorage.setItem(KEYS.TOKEN, data.token);
@@ -203,7 +235,14 @@ async function onAuthSubmit(event) {
 
     window.location.href = '/chat.html';
   } catch (error) {
-    setAuthMessage(error.message);
+    if (error.name === 'AbortError') {
+      setAuthMessage('İstek zaman aşımına uğradı. Lütfen tekrar deneyin.');
+    } else {
+      setAuthMessage(normalizeErrorText(error.message));
+    }
+  } finally {
+    clearTimeout(timeoutId);
+    setAuthSubmitting(false);
   }
 }
 
