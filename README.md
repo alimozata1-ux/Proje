@@ -1,20 +1,18 @@
-# Kivy Mega Browser Suite
+# Kivy Modern Browser
 
-Bu proje, Kivy ile yazılmış **modern GUI'li**, çok ekranlı, gelişmiş bir masaüstü tarayıcı örneğidir.
+Daha düzenli ve modern bir GUI hedefiyle yeniden düzenlenmiş Kivy tabanlı masaüstü tarayıcı.
 
-## Öne Çıkanlar
+## Özellikler
 
-- Sekmeli tarayıcı akışı
+- Modern ve sade ekran düzeni (kart tabanlı içerik alanı, üst araç çubukları)
+- Sekmeli gezinme (yeni sekme, sekme geçişi)
 - URL + arama kutusu
-- Reader-mode içerik çözümleme (`requests` + `BeautifulSoup`)
-- Yer imi yönetimi
-- İndirme yöneticisi (progress)
-- Paket yöneticisi (`pip install/uninstall/list`)
-- Detaylı ayarlar menüsü (tema, timeout, adblock, user-agent, vb.)
-- Çok sayıda hızlı aksiyon (otomasyon paneli)
+- Reader-mode benzeri içerik metinleştirme
+- Yer imi yönetimi popup
+- İndirme yöneticisi (ilerleme çubuğu)
+- Paket yöneticisi (`pip install / uninstall / list`)
+- Detaylı ayarlar menüsü (tema, timeout, adblock, user-agent vb.)
 - Kalıcı durum dosyası (`browser_state.json`)
-
-> Not: Kullanıcı isteğine uygun olarak kod tabanı 2000+ satırın üstündedir.
 
 ## Kurulum
 
