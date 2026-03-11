@@ -2,7 +2,8 @@ const root = document.documentElement;
 const THEME_KEY = 'theme';
 const KEYS = {
   TOKEN: 'token',
-  USER: 'user'
+  USER: 'user',
+  MUTED_ROOMS: 'mutedRooms'
 };
 
 const state = {
@@ -17,7 +18,9 @@ const state = {
   unreadByRoom: {},
   typingTimer: null,
   selectedFile: null,
-  authSubmitting: false
+  authSubmitting: false,
+  mutedRooms: {},
+  presenceByRoom: {}
 };
 
 
@@ -266,6 +269,51 @@ function getUser() {
   return toJSONSafe(raw);
 }
 
+function mutedRoomsStorageKey() {
+  const userId = state.user?.id || 'guest';
+  return `${KEYS.MUTED_ROOMS}:${userId}`;
+}
+
+function loadMutedRooms() {
+  const raw = localStorage.getItem(mutedRoomsStorageKey());
+  state.mutedRooms = toJSONSafe(raw, {}) || {};
+}
+
+function saveMutedRooms() {
+  localStorage.setItem(mutedRoomsStorageKey(), JSON.stringify(state.mutedRooms));
+}
+
+function isRoomMuted(conversationId) {
+  return Boolean(state.mutedRooms[conversationId]);
+}
+
+function toggleRoomMute(conversationId) {
+  if (!conversationId) return;
+
+  if (isRoomMuted(conversationId)) {
+    delete state.mutedRooms[conversationId];
+  } else {
+    state.mutedRooms[conversationId] = true;
+  }
+
+  saveMutedRooms();
+  renderConversations();
+  updateMuteButtonText();
+}
+
+function updateMuteButtonText() {
+  const btn = qid('toggleMuteRoomBtn');
+  if (!btn || !state.activeConversationId) return;
+  btn.textContent = isRoomMuted(state.activeConversationId) ? 'Sessizi Kaldır' : 'Odayı Sessize Al';
+}
+
+function setPresenceText(conversationId) {
+  const el = qid('presenceIndicator');
+  if (!el) return;
+  const count = state.presenceByRoom[conversationId] || 0;
+  el.textContent = `${count} kişi çevrimiçi`;
+}
+
 function ensureChatSession() {
   state.token = localStorage.getItem(KEYS.TOKEN);
   state.user = getUser();
@@ -316,11 +364,14 @@ function resetUnread(conversationId) {
   state.unreadByRoom[conversationId] = 0;
 }
 
-function conversationButtonHTML(name, unreadCount) {
-  const unread = unreadCount > 0 ? `<span class="unread-dot" title="${unreadCount} yeni mesaj"></span>` : '';
+function conversationButtonHTML(conversation, unreadCount) {
+  const muted = isRoomMuted(conversation._id);
+  const unread = unreadCount > 0 && !muted ? `<span class="unread-dot" title="${unreadCount} yeni mesaj"></span>` : '';
+  const mutedLabel = muted ? '🔕' : '';
+
   return `
-    <span>${escapeHtml(name)}</span>
-    <span class="room-meta">${unread}</span>
+    <span class="${muted ? 'room-muted' : ''}">${escapeHtml(conversation.name)}</span>
+    <span class="room-meta">${mutedLabel} ${unread}</span>
   `;
 }
 
@@ -336,7 +387,7 @@ function renderConversations() {
 
     button.type = 'button';
     button.classList.toggle('active', state.activeConversationId === conversation._id);
-    button.innerHTML = conversationButtonHTML(conversation.name, getConversationUnread(conversation._id));
+    button.innerHTML = conversationButtonHTML(conversation, getConversationUnread(conversation._id));
 
     button.addEventListener('click', () => {
       if (state.activeConversationId === conversation._id) return;
@@ -345,7 +396,9 @@ function renderConversations() {
       resetUnread(conversation._id);
       qid('currentConversationName').textContent = conversation.name;
       clearTypingIndicator();
+      setPresenceText(conversation._id);
       renderConversations();
+      updateMuteButtonText();
       loadConversationHistory(conversation._id);
       emitJoinRoom(conversation._id);
     });
@@ -398,6 +451,32 @@ function createDeleteButton(message) {
   return button;
 }
 
+function createEditButton(message) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'edit-btn';
+  button.textContent = 'Düzenle';
+
+  button.addEventListener('click', () => {
+    const nextText = prompt('Yeni mesaj metni:', message.text || '');
+    if (nextText === null) return;
+
+    const trimmed = nextText.trim();
+    if (!trimmed) {
+      addSystemMessage('Mesaj boş olamaz.');
+      return;
+    }
+
+    state.socket?.emit('chat:edit', {
+      conversationId: state.activeConversationId,
+      messageId: message._id,
+      text: trimmed
+    });
+  });
+
+  return button;
+}
+
 function renderMessageContent(li, message) {
   if (message.system) {
     li.classList.add('system');
@@ -430,11 +509,16 @@ function renderMessageContent(li, message) {
 
   const meta = document.createElement('span');
   meta.className = 'meta';
-  meta.textContent = `${formatDate(message.createdAt)} • ${formatTime(message.createdAt)}`;
+  const editedTag = message.edited ? ' • düzenlendi' : '';
+  meta.textContent = `${formatDate(message.createdAt)} • ${formatTime(message.createdAt)}${editedTag}`;
   li.appendChild(meta);
 
   if (mine && message._id) {
-    li.appendChild(createDeleteButton(message));
+    const actions = document.createElement('div');
+    actions.className = 'message-actions';
+    actions.appendChild(createEditButton(message));
+    actions.appendChild(createDeleteButton(message));
+    li.appendChild(actions);
   }
 }
 
@@ -478,7 +562,9 @@ function addSystemMessage(text) {
 
 function appendIncomingMessage(message) {
   if (message.conversationId !== state.activeConversationId) {
-    incrementUnread(message.conversationId);
+    if (!isRoomMuted(message.conversationId)) {
+      incrementUnread(message.conversationId);
+    }
     renderConversations();
     return;
   }
@@ -564,6 +650,8 @@ async function loadConversations() {
   renderConversations();
 
   if (state.activeConversationId) {
+    updateMuteButtonText();
+    setPresenceText(state.activeConversationId);
     emitJoinRoom(state.activeConversationId);
   }
 }
@@ -683,6 +771,23 @@ function wireSocketEvents() {
     removeMessageFromState(messageId);
   });
 
+  state.socket.on('chat:edited', ({ conversationId, messageId, text, updatedAt }) => {
+    if (conversationId !== state.activeConversationId) return;
+    state.messages = state.messages.map((message) =>
+      String(message._id) === String(messageId)
+        ? { ...message, text, updatedAt, edited: true }
+        : message
+    );
+    renderMessages();
+  });
+
+  state.socket.on('chat:presence', ({ conversationId, onlineCount }) => {
+    state.presenceByRoom[conversationId] = onlineCount;
+    if (conversationId === state.activeConversationId) {
+      setPresenceText(conversationId);
+    }
+  });
+
   state.socket.on('chat:typing', ({ conversationId, username, isTyping }) => {
     if (conversationId !== state.activeConversationId) return;
     if (!isTyping) {
@@ -725,6 +830,10 @@ function bindChatEvents() {
     renderMessages();
   });
 
+  qid('toggleMuteRoomBtn')?.addEventListener('click', () => {
+    toggleRoomMute(state.activeConversationId);
+  });
+
   qid('clearSearchBtn')?.addEventListener('click', () => {
     const input = qid('messageSearchInput');
     if (!input) return;
@@ -755,6 +864,7 @@ async function initChatPage() {
   if (!ensureChatSession()) return;
 
   updateUserVisuals();
+  loadMutedRooms();
 
   state.socket = io(getSocketTarget(), { auth: { token: state.token } });
   wireSocketEvents();

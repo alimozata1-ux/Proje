@@ -13,6 +13,9 @@ GoblinChat, Node.js + Express + Socket.io + MongoDB tabanli davet kodlu grup soh
 - Mesajlarda arama kutusu
 - Yaziyor gostergesi (typing indicator)
 - Kullanici kendi mesajlarini silebilir
+- **Yeni:** kullanici kendi mesajini duzenleyebilir
+- **Yeni:** oda bazli anlik cevrimici kisi sayisi
+- **Yeni:** oda sessize alma (mute) ozelligi (istemci tarafi)
 - Arayuz: sohbet sitesi benzeri modern layout + aydinlik/karanlik tema
 - Giris/Kayit ve Sohbet ekranlari ayridir (`/` ve `/chat.html`)
 
@@ -21,6 +24,7 @@ GoblinChat, Node.js + Express + Socket.io + MongoDB tabanli davet kodlu grup soh
 - `/client` -> frontend dosyalari
 - `package.json` -> bagimliliklar
 - `netlify.toml` -> Netlify frontend deploy ayarlari
+- `Dockerfile` / `docker-compose.yml` -> Docker ile calistirma
 
 ## Lokal kurulum
 ```bash
@@ -31,6 +35,24 @@ npm run dev
 ```
 
 Varsayilan adres: `http://localhost:3000`
+
+## Docker ile calistirma
+### 1) Tek container (harici MongoDB ile)
+```bash
+docker build -t goblinchat .
+docker run --rm -p 3000:3000 \
+  -e MONGODB_URI='mongodb://host.docker.internal:27017/goblinchat' \
+  -e JWT_SECRET='change-this-secret' \
+  -e INVITE_CODE='change-this-invite' \
+  goblinchat
+```
+
+### 2) Docker Compose (uygulama + MongoDB)
+```bash
+docker compose up --build
+```
+Uygulama: `http://localhost:3000`
+MongoDB: `mongodb://localhost:27017`
 
 ## Netlify icin hazirlama
 > Onemli: Netlify Node Socket.io sunucusunu host etmez. Backend'i Render/Railway/Fly.io gibi bir platformda ayri calistirmalisin.

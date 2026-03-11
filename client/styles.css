@@ -419,6 +419,31 @@ textarea {
   font-size: 0.88rem;
 }
 
+.presence {
+  min-height: 18px;
+  font-size: 0.82rem;
+}
+
+.room-muted {
+  opacity: 0.7;
+}
+
+.message-actions {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.edit-btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: var(--panel-alt);
+}
+
+
 .header-actions {
   display: flex;
   gap: 0.45rem;

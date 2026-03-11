@@ -59,15 +59,33 @@ io.use(async (socket, next) => {
   }
 });
 
+
+function emitPresence(ioServer, conversationId) {
+  if (!conversationId) return;
+  const roomName = `conversation:${conversationId}`;
+  const room = ioServer.sockets.adapter.rooms.get(roomName);
+  const count = room ? room.size : 0;
+
+  ioServer.to(roomName).emit('chat:presence', {
+    conversationId,
+    onlineCount: count
+  });
+}
+
 io.on('connection', (socket) => {
   socket.on('chat:join', async ({ conversationId }) => {
     if (!conversationId) return;
 
     const roomName = `conversation:${conversationId}`;
     for (const room of socket.rooms) {
-      if (room.startsWith('conversation:')) socket.leave(room);
+      if (room.startsWith('conversation:')) {
+        const previousConversationId = room.replace('conversation:', '');
+        socket.leave(room);
+        emitPresence(io, previousConversationId);
+      }
     }
     socket.join(roomName);
+    emitPresence(io, conversationId);
 
     const history = await Message.find({ conversationId }).sort({ createdAt: -1 }).limit(100).lean();
     socket.emit('chat:history', history.reverse());
@@ -121,6 +139,42 @@ io.on('connection', (socket) => {
     });
   });
 
+
+  // Kendi mesajini duzenleme
+  socket.on('chat:edit', async ({ conversationId, messageId, text }) => {
+    if (!conversationId || !messageId) return;
+
+    const nextText = typeof text === 'string' ? text.trim() : '';
+    if (!nextText) {
+      socket.emit('chat:error', { message: 'Mesaj bos olamaz.' });
+      return;
+    }
+
+    const updated = await Message.findOneAndUpdate(
+      {
+        _id: messageId,
+        conversationId,
+        userId: socket.user.id
+      },
+      {
+        $set: { text: nextText }
+      },
+      { new: true }
+    ).lean();
+
+    if (!updated) {
+      socket.emit('chat:error', { message: 'Mesaj duzenlenemedi veya yetkiniz yok.' });
+      return;
+    }
+
+    io.to(`conversation:${conversationId}`).emit('chat:edited', {
+      conversationId,
+      messageId,
+      text: updated.text,
+      updatedAt: updated.updatedAt
+    });
+  });
+
   // Kendi mesajini silme
   socket.on('chat:delete', async ({ conversationId, messageId }) => {
     if (!conversationId || !messageId) return;
@@ -145,10 +199,12 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     for (const room of socket.rooms) {
       if (room.startsWith('conversation:')) {
+        const conversationId = room.replace('conversation:', '');
         socket.to(room).emit('chat:user-left', {
           username: socket.user.username,
           message: `${socket.user.username} sohbetten ayrildi.`
         });
+        emitPresence(io, conversationId);
       }
     }
   });
