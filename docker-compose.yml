@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  goblinchat:
+    build: .
+    container_name: goblinchat-app
+    ports:
+      - '3000:3000'
+    environment:
+      - PORT=3000
+      - JWT_SECRET=change-this-secret
+      - INVITE_CODE=change-this-invite
+      - MONGODB_URI=mongodb://mongo:27017/goblinchat
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    container_name: goblinchat-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongo_data:

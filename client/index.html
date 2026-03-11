@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoblinChat</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="bg-gradient"></div>
+
+    <main id="authPage" class="auth-page">
+      <section class="auth-hero card soft-shadow">
+        <span class="chip">Gerçek zamanlı sohbet</span>
+        <h1>GoblinChat</h1>
+        <p>
+          Davet kodu ile korunan, sohbet odaları, dosya paylaşımı, yazıyor göstergesi ve modern arayüz sunan
+          topluluk platformu.
+        </p>
+        <ul class="feature-list">
+          <li>🔐 Davet kodlu kayıt</li>
+          <li>💬 Çoklu sohbet odaları</li>
+          <li>📎 Dosya paylaşımı</li>
+          <li>🌗 Aydınlık / Karanlık tema</li>
+        </ul>
+      </section>
+
+      <section class="auth-panel card soft-shadow">
+        <header class="auth-panel-head">
+          <div>
+            <h2>Hesabına giriş yap</h2>
+            <p class="muted">Kayıt olup direkt sohbet odalarına katılabilirsin.</p>
+          </div>
+          <button id="themeToggle" class="icon-btn" type="button" aria-label="Tema değiştir">🌙</button>
+        </header>
+
+        <div class="tabs" role="tablist" aria-label="Giriş ve kayıt sekmeleri">
+          <button id="tabLogin" class="active" type="button" role="tab" aria-selected="true">Giriş</button>
+          <button id="tabRegister" type="button" role="tab" aria-selected="false">Kayıt</button>
+        </div>
+
+        <form id="authForm" class="auth-form">
+          <label>
+            Kullanıcı adı
+            <input type="text" id="username" required minlength="3" maxlength="30" autocomplete="username" />
+          </label>
+
+          <label>
+            Şifre
+            <input
+              type="password"
+              id="password"
+              required
+              minlength="6"
+              maxlength="72"
+              autocomplete="current-password"
+            />
+          </label>
+
+          <label id="inviteWrap" class="hidden">
+            Davet kodu
+            <input type="text" id="inviteCode" placeholder="Özel davet kodunuz" autocomplete="off" />
+          </label>
+
+          <button type="submit" id="authSubmit" class="primary">Giriş Yap</button>
+        </form>
+
+        <p id="authMessage" class="status" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <main id="chatPage" class="chat-page hidden">
+      <aside class="left-sidebar card soft-shadow">
+        <div class="brand-head">
+          <h1>GoblinChat</h1>
+          <button id="themeToggleChat" class="icon-btn" type="button" aria-label="Tema değiştir">🌙</button>
+        </div>
+
+        <div class="user-box">
+          <div class="avatar" id="avatarInitial">G</div>
+          <div>
+            <p id="welcomeText" class="welcome-text"></p>
+            <small class="muted">Çevrimiçi</small>
+          </div>
+        </div>
+
+        <form id="newConversationForm" class="new-room-form">
+          <input id="newConversationInput" type="text" placeholder="Yeni oda oluştur..." maxlength="60" />
+          <button class="primary" type="submit">Oluştur</button>
+        </form>
+
+        <div class="section-title-row">
+          <h2>Odalar</h2>
+          <small class="muted" id="roomCountBadge">0 oda</small>
+        </div>
+        <ul id="conversationList" class="conversation-list"></ul>
+
+        <div class="left-footer">
+          <button id="logoutBtn" class="ghost danger" type="button">Çıkış Yap</button>
+        </div>
+      </aside>
+
+      <section class="chat-main card soft-shadow">
+        <header class="chat-main-head">
+          <div>
+            <h2 id="currentConversationName">Sohbet seçiniz</h2>
+            <p id="typingIndicator" class="muted typing"></p>
+            <p id="presenceIndicator" class="muted presence">0 kişi çevrimiçi</p>
+          </div>
+          <div class="header-actions">
+            <input id="messageSearchInput" type="text" placeholder="Mesajlarda ara..." />
+            <button id="toggleMuteRoomBtn" class="ghost" type="button">Odayı Sessize Al</button>
+            <button id="clearSearchBtn" class="ghost" type="button">Temizle</button>
+          </div>
+        </header>
+
+        <section id="emptyState" class="empty-state hidden">
+          <h3>Henüz mesaj yok</h3>
+          <p>Bir mesaj yazarak sohbeti başlatabilir veya dosya paylaşabilirsin.</p>
+        </section>
+
+        <ul id="messages" class="messages" aria-live="polite"></ul>
+
+        <footer class="composer-wrap">
+          <div id="selectedFilePill" class="selected-file hidden"></div>
+          <form id="messageForm" class="composer">
+            <textarea id="messageInput" placeholder="Mesaj yaz..." maxlength="1000" rows="1"></textarea>
+            <label class="file-label" title="Dosya ekle">
+              📎
+              <input id="fileInput" type="file" />
+            </label>
+            <button type="submit" class="primary">Gönder</button>
+          </form>
+        </footer>
+      </section>
+
+      <aside class="right-sidebar card soft-shadow">
+        <h3>Hızlı Bilgiler</h3>
+        <ul class="info-list">
+          <li>🟢 Yazıyor göstergesi aktif</li>
+          <li>🔎 Mesaj arama aktif</li>
+          <li>🗑️ Kendi mesajını silebilirsin</li>
+          <li>📁 Dosya paylaşımı aktif</li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <h3>Kısayollar</h3>
+        <ul class="info-list">
+          <li><kbd>Enter</kbd> Mesaj gönder</li>
+          <li><kbd>Shift</kbd> + <kbd>Enter</kbd> Yeni satır</li>
+          <li><kbd>/</kbd> Aramaya odaklan</li>
+        </ul>
+      </aside>
+    </main>
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <script src="/config.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>
