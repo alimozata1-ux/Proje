@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bulut Dosya Sitesi</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="overlay"></div>
+    <main class="app">
+      <header class="hero card">
+        <h1>Bulut Dosya Merkezi</h1>
+        <p>Dosyalarını yükle, ara, indir ve tarayıcıda güvenli şekilde sakla.</p>
+      </header>
+
+      <nav class="tabs card" aria-label="Uygulama sekmeleri">
+        <button type="button" class="tab-btn active" data-tab="filesPanel">📁 Dosya Yönetimi</button>
+        <button type="button" class="tab-btn" data-tab="serverPanel">🖥️ Sunucu İstatistikleri</button>
+      </nav>
+
+      <section id="filesPanel" class="tab-panel active" aria-labelledby="Dosya Yönetimi">
+        <section class="controls card">
+          <div class="control-group">
+            <label for="fileInput">Dosya yükle</label>
+            <input id="fileInput" type="file" multiple />
+          </div>
+
+          <div class="control-group">
+            <label for="searchInput">Dosya ara</label>
+            <input id="searchInput" type="search" placeholder="Dosya adına göre ara..." />
+          </div>
+
+          <div class="buttons">
+            <button id="themeToggle" type="button">🌙 Gece Modu</button>
+            <button id="clearAll" type="button" class="danger">Tümünü Sil</button>
+          </div>
+        </section>
+
+        <section id="dropZone" class="drop-zone card" aria-label="Dosya sürükle bırak alanı">
+          <p>📂 Dosyalarını buraya sürükleyip bırakabilirsin.</p>
+        </section>
+
+        <section class="stats card">
+          <h2>Dosya İstatistikleri</h2>
+          <div class="stat-grid">
+            <p><strong>Toplam Dosya:</strong> <span id="totalCount">0</span></p>
+            <p><strong>Toplam Boyut:</strong> <span id="totalSize">0 KB</span></p>
+            <p><strong>Son Yükleme:</strong> <span id="lastUpload">-</span></p>
+          </div>
+        </section>
+
+        <section class="list card">
+          <h2>Dosya Listesi</h2>
+          <ul id="fileList" aria-live="polite"></ul>
+          <p id="emptyState" class="empty">Henüz dosya yok. Yükleyerek başlayabilirsin.</p>
+        </section>
+      </section>
+
+      <section id="serverPanel" class="tab-panel" aria-labelledby="Sunucu İstatistikleri">
+        <section class="card stats">
+          <h2>Sunucu / Sistem İstatistikleri</h2>
+          <div class="stat-grid">
+            <p><strong>Durum:</strong> <span id="serverStatus">Kontrol ediliyor...</span></p>
+            <p><strong>Gecikme (Ping):</strong> <span id="serverLatency">-</span></p>
+            <p><strong>Sayfa Çalışma Süresi:</strong> <span id="uptime">00:00:00</span></p>
+            <p><strong>Yerel Kayıt Kullanımı:</strong> <span id="storageUsage">0 KB</span></p>
+            <p><strong>Tarayıcı:</strong> <span id="browserName">-</span></p>
+            <p><strong>Çevrim Durumu:</strong> <span id="onlineStatus">-</span></p>
+          </div>
+          <p class="muted-note">Not: Netlify statik yayında gerçek sunucu CPU/RAM bilgileri tarayıcıdan doğrudan okunamaz. Bu panel istemci tabanlı sağlık ve bağlantı ölçümü sunar.</p>
+          <button id="refreshServerStats" type="button">🔄 İstatistikleri Yenile</button>
+        </section>
+      </section>
+    </main>
+
+    <template id="fileItemTemplate">
+      <li class="file-item">
+        <div>
+          <p class="file-name"></p>
+          <p class="file-meta"></p>
+        </div>
+        <div class="item-actions">
+          <button class="download-btn" type="button">İndir</button>
+          <button class="delete-btn danger" type="button">Sil</button>
+        </div>
+      </li>
+    </template>
+
+    <script src="script.js"></script>
+  </body>
+</html>
