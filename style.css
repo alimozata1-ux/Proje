@@ -121,7 +121,8 @@ label {
 }
 
 input[type="file"],
-input[type="search"] {
+input[type="search"],
+select {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -130,7 +131,8 @@ input[type="search"] {
 }
 
 body.dark input[type="file"],
-body.dark input[type="search"] {
+body.dark input[type="search"],
+body.dark select {
   background: rgba(0, 0, 0, 0.2);
   color: var(--text);
 }
@@ -153,6 +155,14 @@ button {
 
 button.danger {
   background: var(--danger);
+}
+
+.favorite-btn {
+  min-width: 40px;
+}
+
+.favorite-btn.active {
+  background: #f3b814;
 }
 
 .drop-zone {
@@ -180,6 +190,24 @@ button.danger {
 
 .stat-grid p {
   margin: 0;
+}
+
+.quota-wrap {
+  margin-top: 0.9rem;
+}
+
+.quota-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.quota-bar {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #2cd274, #ffcc00, #ff5b5b);
 }
 
 #fileList {
@@ -230,9 +258,20 @@ body.dark .file-item {
   font-size: 0.9rem;
 }
 
+.preview-wrap {
+  margin-top: 0.5rem;
+}
+
+.file-preview {
+  width: min(220px, 100%);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
 .item-actions {
   display: flex;
   gap: 0.4rem;
+  flex-wrap: wrap;
 }
 
 .empty {

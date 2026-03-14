@@ -31,10 +31,37 @@
             <input id="searchInput" type="search" placeholder="Dosya adına göre ara..." />
           </div>
 
+          <div class="control-group">
+            <label for="sortSelect">Sırala</label>
+            <select id="sortSelect">
+              <option value="newest">En yeni</option>
+              <option value="oldest">En eski</option>
+              <option value="nameAsc">İsim (A-Z)</option>
+              <option value="nameDesc">İsim (Z-A)</option>
+              <option value="sizeDesc">Boyut (büyük-küçük)</option>
+              <option value="sizeAsc">Boyut (küçük-büyük)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="typeFilter">Tür filtresi</label>
+            <select id="typeFilter">
+              <option value="all">Tümü</option>
+              <option value="image">Görseller</option>
+              <option value="video">Videolar</option>
+              <option value="audio">Ses</option>
+              <option value="application">Belgeler/Uygulamalar</option>
+              <option value="other">Diğer</option>
+            </select>
+          </div>
+
           <div class="buttons">
             <button id="themeToggle" type="button">🌙 Gece Modu</button>
+            <button id="exportData" type="button">⬇️ Yedeği Dışa Aktar</button>
+            <button id="importTrigger" type="button">⬆️ Yedek İçe Aktar</button>
             <button id="clearAll" type="button" class="danger">Tümünü Sil</button>
           </div>
+          <input id="importInput" type="file" accept="application/json" hidden />
         </section>
 
         <section id="dropZone" class="drop-zone card" aria-label="Dosya sürükle bırak alanı">
@@ -46,7 +73,12 @@
           <div class="stat-grid">
             <p><strong>Toplam Dosya:</strong> <span id="totalCount">0</span></p>
             <p><strong>Toplam Boyut:</strong> <span id="totalSize">0 KB</span></p>
+            <p><strong>Favoriler:</strong> <span id="favoriteCount">0</span></p>
             <p><strong>Son Yükleme:</strong> <span id="lastUpload">-</span></p>
+          </div>
+          <div class="quota-wrap" aria-label="Yerel kullanım çubuğu">
+            <span id="quotaText">Kullanım: 0%</span>
+            <div class="quota-track"><div id="quotaBar" class="quota-bar"></div></div>
           </div>
         </section>
 
@@ -79,8 +111,12 @@
         <div>
           <p class="file-name"></p>
           <p class="file-meta"></p>
+          <div class="preview-wrap" hidden>
+            <img class="file-preview" alt="Dosya önizleme" />
+          </div>
         </div>
         <div class="item-actions">
+          <button class="favorite-btn" type="button">⭐</button>
           <button class="download-btn" type="button">İndir</button>
           <button class="delete-btn danger" type="button">Sil</button>
         </div>

@@ -1,17 +1,26 @@
 const STORAGE_KEY = "cloud-files-v1";
 const THEME_KEY = "cloud-theme";
+const ESTIMATED_STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 
 const fileInput = document.getElementById("fileInput");
 const searchInput = document.getElementById("searchInput");
+const sortSelect = document.getElementById("sortSelect");
+const typeFilter = document.getElementById("typeFilter");
 const fileList = document.getElementById("fileList");
 const emptyState = document.getElementById("emptyState");
 const fileItemTemplate = document.getElementById("fileItemTemplate");
 const totalCount = document.getElementById("totalCount");
 const totalSize = document.getElementById("totalSize");
+const favoriteCount = document.getElementById("favoriteCount");
 const lastUpload = document.getElementById("lastUpload");
 const clearAll = document.getElementById("clearAll");
 const themeToggle = document.getElementById("themeToggle");
 const dropZone = document.getElementById("dropZone");
+const exportData = document.getElementById("exportData");
+const importTrigger = document.getElementById("importTrigger");
+const importInput = document.getElementById("importInput");
+const quotaText = document.getElementById("quotaText");
+const quotaBar = document.getElementById("quotaBar");
 
 const tabButtons = Array.from(document.querySelectorAll(".tab-btn"));
 const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
@@ -38,6 +47,12 @@ fileInput.addEventListener("change", async (event) => {
 });
 
 searchInput.addEventListener("input", render);
+sortSelect.addEventListener("change", render);
+typeFilter.addEventListener("change", render);
+
+exportData.addEventListener("click", handleExport);
+importTrigger.addEventListener("click", () => importInput.click());
+importInput.addEventListener("change", handleImport);
 
 clearAll.addEventListener("click", () => {
   if (!files.length) return;
@@ -86,10 +101,11 @@ async function handleFiles(fileListObj) {
     files.unshift({
       id: crypto.randomUUID(),
       name: file.name,
-      type: file.type || "bilinmeyen",
+      type: file.type || "other/unknown",
       size: file.size,
       uploadedAt: new Date().toISOString(),
       dataUrl: fileDataUrl,
+      favorite: false,
     });
   }
   persist();
@@ -99,13 +115,36 @@ async function handleFiles(fileListObj) {
 
 function render() {
   const q = searchInput.value.trim().toLowerCase();
-  const visibleFiles = files.filter((f) => f.name.toLowerCase().includes(q));
+  const selectedType = typeFilter.value;
+  const sortedAndFiltered = [...files]
+    .filter((file) => file.name.toLowerCase().includes(q))
+    .filter((file) => matchesType(file.type, selectedType))
+    .sort(sortBySelectedRule);
+
   fileList.innerHTML = "";
 
-  for (const file of visibleFiles) {
+  for (const file of sortedAndFiltered) {
     const item = fileItemTemplate.content.cloneNode(true);
-    item.querySelector(".file-name").textContent = file.name;
+    item.querySelector(".file-name").textContent = `${file.favorite ? "⭐ " : ""}${file.name}`;
     item.querySelector(".file-meta").textContent = `${prettySize(file.size)} • ${new Date(file.uploadedAt).toLocaleString("tr-TR")}`;
+
+    const previewWrap = item.querySelector(".preview-wrap");
+    const previewImage = item.querySelector(".file-preview");
+    if (file.type.startsWith("image/")) {
+      previewWrap.hidden = false;
+      previewImage.src = file.dataUrl;
+    }
+
+    const favoriteBtn = item.querySelector(".favorite-btn");
+    favoriteBtn.classList.toggle("active", Boolean(file.favorite));
+    favoriteBtn.textContent = file.favorite ? "⭐ Favori" : "☆ Favori";
+
+    favoriteBtn.addEventListener("click", () => {
+      files = files.map((f) => (f.id === file.id ? { ...f, favorite: !f.favorite } : f));
+      persist();
+      render();
+      updateServerStats();
+    });
 
     item.querySelector(".download-btn").addEventListener("click", () => {
       const a = document.createElement("a");
@@ -124,15 +163,37 @@ function render() {
     fileList.appendChild(item);
   }
 
-  emptyState.style.display = visibleFiles.length ? "none" : "block";
+  emptyState.style.display = sortedAndFiltered.length ? "none" : "block";
   totalCount.textContent = String(files.length);
   totalSize.textContent = prettySize(files.reduce((acc, file) => acc + file.size, 0));
+  favoriteCount.textContent = String(files.filter((file) => file.favorite).length);
   lastUpload.textContent = files[0] ? new Date(files[0].uploadedAt).toLocaleString("tr-TR") : "-";
+
+  updateQuotaMeter();
+}
+
+function sortBySelectedRule(a, b) {
+  const rule = sortSelect.value;
+  if (rule === "oldest") return new Date(a.uploadedAt) - new Date(b.uploadedAt);
+  if (rule === "nameAsc") return a.name.localeCompare(b.name, "tr");
+  if (rule === "nameDesc") return b.name.localeCompare(a.name, "tr");
+  if (rule === "sizeAsc") return a.size - b.size;
+  if (rule === "sizeDesc") return b.size - a.size;
+  return new Date(b.uploadedAt) - new Date(a.uploadedAt);
+}
+
+function matchesType(mimeType, selectedType) {
+  if (selectedType === "all") return true;
+  if (selectedType === "other") {
+    return !["image", "video", "audio", "application"].some((prefix) => mimeType.startsWith(`${prefix}/`));
+  }
+  return mimeType.startsWith(`${selectedType}/`);
 }
 
 function loadFiles() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return parsed.map((f) => ({ ...f, favorite: Boolean(f.favorite), type: f.type || "other/unknown" }));
   } catch {
     return [];
   }
@@ -190,6 +251,63 @@ async function measureLatency() {
   } catch {
     serverStatus.textContent = "Bağlantı Yok";
     serverLatency.textContent = "-";
+  }
+}
+
+function updateQuotaMeter() {
+  const usage = new Blob([localStorage.getItem(STORAGE_KEY) || ""]).size;
+  const percentage = Math.min(100, Math.round((usage / ESTIMATED_STORAGE_LIMIT_BYTES) * 100));
+  quotaBar.style.width = `${percentage}%`;
+  quotaText.textContent = `Kullanım: %${percentage} (${prettySize(usage)} / ~${prettySize(ESTIMATED_STORAGE_LIMIT_BYTES)})`;
+}
+
+function handleExport() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    fileCount: files.length,
+    files,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `cloud-files-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function handleImport(event) {
+  const importFile = event.target.files?.[0];
+  if (!importFile) return;
+
+  try {
+    const text = await importFile.text();
+    const parsed = JSON.parse(text);
+    if (!Array.isArray(parsed.files)) {
+      throw new Error("Yedek formatı geçersiz");
+    }
+
+    const normalized = parsed.files
+      .filter((f) => f && typeof f === "object" && f.name && f.dataUrl)
+      .map((f) => ({
+        id: typeof f.id === "string" ? f.id : crypto.randomUUID(),
+        name: String(f.name),
+        type: String(f.type || "other/unknown"),
+        size: Number(f.size || 0),
+        uploadedAt: f.uploadedAt || new Date().toISOString(),
+        dataUrl: String(f.dataUrl),
+        favorite: Boolean(f.favorite),
+      }));
+
+    files = normalized;
+    persist();
+    render();
+    updateServerStats();
+    alert("Yedek başarıyla içe aktarıldı.");
+  } catch {
+    alert("Yedek okunamadı. Lütfen geçerli bir JSON dosyası seç.");
+  } finally {
+    importInput.value = "";
   }
 }
 
