@@ -42,12 +42,13 @@ body {
 }
 
 .top-dock-wrap {
-  position: sticky;
-  top: 0.7rem;
-  z-index: 3;
+  position: fixed;
+  top: 0.65rem;
+  left: 0;
+  right: 0;
+  z-index: 20;
   display: grid;
   justify-items: center;
-  padding-top: 0.7rem;
 }
 
 .top-dock {
@@ -115,7 +116,7 @@ button.dock-item:hover {
   position: relative;
   z-index: 1;
   width: min(1040px, 92%);
-  margin: 1rem auto 3rem;
+  margin: 7.2rem auto 3rem;
   display: grid;
   gap: 1rem;
 }
@@ -281,4 +282,8 @@ body.compact .file-item { padding: 0.58rem; }
   .tabs { grid-template-columns: 1fr; }
   .file-item { flex-direction: column; align-items: flex-start; }
   .item-actions { width: 100%; }
+}
+
+@media (max-width: 700px) {
+  .app { margin-top: 10.3rem; }
 }
