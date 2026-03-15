@@ -87,6 +87,8 @@
             <button id="themeToggle" type="button">🌙 Gece Modu</button>
             <button id="exportData" type="button">⬇️ Yedeği Dışa Aktar</button>
             <button id="importTrigger" type="button">⬆️ Yedek İçe Aktar</button>
+            <button id="favoriteOnlyToggle" type="button">⭐ Sadece Favoriler</button>
+            <button id="resetFilters" type="button">♻️ Filtreleri Sıfırla</button>
             <button id="clearAll" type="button" class="danger">Tümünü Sil</button>
           </div>
           <input id="importInput" type="file" accept="application/json" hidden />
@@ -122,6 +124,12 @@
           <textarea id="quickNotes" rows="4" placeholder="Kendine kısa not bırak... (otomatik kaydedilir)"></textarea>
           <p class="muted-note">Notlar bu tarayıcıda yerel olarak saklanır.</p>
         </section>
+
+        <section class="activity card">
+          <h2>Son Aktiviteler</h2>
+          <ul id="activityList" class="activity-list"></ul>
+          <p id="activityEmpty" class="empty">Henüz aktivite kaydı yok.</p>
+        </section>
       </section>
 
       <section id="serverPanel" class="tab-panel" aria-labelledby="Sunucu İstatistikleri">
@@ -154,6 +162,7 @@
         </div>
         <div class="item-actions">
           <button class="favorite-btn" type="button">⭐</button>
+          <button class="copy-name-btn" type="button">Adı Kopyala</button>
           <button class="download-btn" type="button">İndir</button>
           <button class="delete-btn danger" type="button">Sil</button>
         </div>

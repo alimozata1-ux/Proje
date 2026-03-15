@@ -2,6 +2,7 @@ const STORAGE_KEY = "cloud-files-v1";
 const THEME_KEY = "cloud-theme";
 const ESTIMATED_STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 const NOTES_KEY = "cloud-quick-notes";
+const ACTIVITY_KEY = "cloud-activity-log";
 
 const fileInput = document.getElementById("fileInput");
 const searchInput = document.getElementById("searchInput");
@@ -15,6 +16,8 @@ const totalSize = document.getElementById("totalSize");
 const favoriteCount = document.getElementById("favoriteCount");
 const lastUpload = document.getElementById("lastUpload");
 const clearAll = document.getElementById("clearAll");
+const favoriteOnlyToggle = document.getElementById("favoriteOnlyToggle");
+const resetFilters = document.getElementById("resetFilters");
 const themeToggle = document.getElementById("themeToggle");
 const dropZone = document.getElementById("dropZone");
 const exportData = document.getElementById("exportData");
@@ -23,6 +26,8 @@ const importInput = document.getElementById("importInput");
 const quotaText = document.getElementById("quotaText");
 const quotaBar = document.getElementById("quotaBar");
 const quickNotes = document.getElementById("quickNotes");
+const activityList = document.getElementById("activityList");
+const activityEmpty = document.getElementById("activityEmpty");
 const toast = document.getElementById("toast");
 
 const dockServerStatus = document.getElementById("dockServerStatus");
@@ -54,6 +59,8 @@ const onlineStatus = document.getElementById("onlineStatus");
 const refreshServerStats = document.getElementById("refreshServerStats");
 
 let files = loadFiles();
+let favoriteOnlyMode = false;
+let activities = loadActivities();
 const appStartTime = Date.now();
 
 applySavedTheme();
@@ -62,6 +69,7 @@ wireTabs();
 wireDock();
 wireShortcuts();
 loadQuickNotes();
+renderActivity();
 initServerStats();
 
 fileInput.addEventListener("change", async (event) => {
@@ -72,6 +80,20 @@ fileInput.addEventListener("change", async (event) => {
 searchInput.addEventListener("input", render);
 sortSelect.addEventListener("change", render);
 typeFilter.addEventListener("change", render);
+favoriteOnlyToggle.addEventListener("click", () => {
+  favoriteOnlyMode = !favoriteOnlyMode;
+  favoriteOnlyToggle.textContent = favoriteOnlyMode ? "⭐ Favoriler Açık" : "⭐ Sadece Favoriler";
+  render();
+});
+resetFilters.addEventListener("click", () => {
+  searchInput.value = "";
+  sortSelect.value = "newest";
+  typeFilter.value = "all";
+  favoriteOnlyMode = false;
+  favoriteOnlyToggle.textContent = "⭐ Sadece Favoriler";
+  render();
+  showToast("Filtreler sıfırlandı");
+});
 
 exportData.addEventListener("click", handleExport);
 importTrigger.addEventListener("click", () => importInput.click());
@@ -87,6 +109,8 @@ clearAll.addEventListener("click", () => {
     persist();
     render();
     updateServerStats();
+    addActivity("Tüm dosyalar temizlendi");
+    showToast("Tüm dosyalar silindi");
   }
 });
 
@@ -136,6 +160,7 @@ async function handleFiles(fileListObj) {
   persist();
   render();
   updateServerStats();
+  addActivity(`${incoming.length} dosya yüklendi`);
   showToast(`${incoming.length} dosya yüklendi`);
 }
 
@@ -145,6 +170,7 @@ function render() {
   const sortedAndFiltered = [...files]
     .filter((file) => file.name.toLowerCase().includes(q))
     .filter((file) => matchesType(file.type, selectedType))
+    .filter((file) => (favoriteOnlyMode ? file.favorite : true))
     .sort(sortBySelectedRule);
 
   fileList.innerHTML = "";
@@ -170,7 +196,18 @@ function render() {
       persist();
       render();
       updateServerStats();
+      addActivity(`Favori güncellendi: ${file.name}`);
       showToast("Favori durumu güncellendi");
+    });
+
+    item.querySelector(".copy-name-btn").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(file.name);
+        addActivity(`Dosya adı kopyalandı: ${file.name}`);
+        showToast("Dosya adı kopyalandı");
+      } catch {
+        showToast("Kopyalama desteklenmiyor");
+      }
     });
 
     item.querySelector(".download-btn").addEventListener("click", () => {
@@ -178,6 +215,7 @@ function render() {
       a.href = file.dataUrl;
       a.download = file.name;
       a.click();
+      addActivity(`Dosya indirildi: ${file.name}`);
     });
 
     item.querySelector(".delete-btn").addEventListener("click", () => {
@@ -185,6 +223,7 @@ function render() {
       persist();
       render();
       updateServerStats();
+      addActivity(`Dosya silindi: ${file.name}`);
       showToast("Dosya silindi");
     });
 
@@ -338,6 +377,7 @@ function handleExport() {
   a.download = `cloud-files-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
+  addActivity("Yedek dışa aktarıldı");
   showToast("Yedek dışa aktarıldı");
 }
 
@@ -369,6 +409,7 @@ async function handleImport(event) {
     render();
     updateServerStats();
     alert("Yedek başarıyla içe aktarıldı.");
+    addActivity("Yedek içe aktarıldı");
     showToast("Yedek içe aktarıldı");
   } catch {
     alert("Yedek okunamadı. Lütfen geçerli bir JSON dosyası seç.");
@@ -401,6 +442,31 @@ function wireShortcuts() {
       searchInput.focus();
     }
   });
+}
+
+function loadActivities() {
+  try {
+    return JSON.parse(localStorage.getItem(ACTIVITY_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function addActivity(text) {
+  activities.unshift({ text, at: new Date().toISOString() });
+  activities = activities.slice(0, 20);
+  localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activities));
+  renderActivity();
+}
+
+function renderActivity() {
+  activityList.innerHTML = "";
+  for (const item of activities) {
+    const li = document.createElement("li");
+    li.textContent = `${new Date(item.at).toLocaleTimeString("tr-TR")} • ${item.text}`;
+    activityList.appendChild(li);
+  }
+  activityEmpty.style.display = activities.length ? "none" : "block";
 }
 
 function loadQuickNotes() {
