@@ -66,6 +66,8 @@ const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
 const serverStatus = document.getElementById("serverStatus");
 const serverLatency = document.getElementById("serverLatency");
 const serverEndpoint = document.getElementById("serverEndpoint");
+const serverRam = document.getElementById("serverRam");
+const serverWifi = document.getElementById("serverWifi");
 const serverLastChecked = document.getElementById("serverLastChecked");
 const refreshServerStats = document.getElementById("refreshServerStats");
 
@@ -491,6 +493,11 @@ async function measureLatency() {
   try {
     const response = await fetch(window.location.href, { method: "HEAD", cache: "no-store" });
     const duration = Math.round(performance.now() - start);
+    const serverRamHeader = response.headers.get("x-server-ram");
+    const serverWifiHeader = response.headers.get("x-server-wifi");
+    serverRam.textContent = serverRamHeader || "Sunucu verisi yok";
+    serverWifi.textContent = serverWifiHeader || "Sunucu verisi yok";
+
     if (response.ok) {
       serverStatus.textContent = "Aktif";
       serverLatency.textContent = `${duration} ms`;
@@ -503,6 +510,8 @@ async function measureLatency() {
   } catch {
     serverStatus.textContent = "Bağlantı Yok";
     serverLatency.textContent = "-";
+    serverRam.textContent = "-";
+    serverWifi.textContent = "-";
     dockServerStatus.textContent = "Çevrimdışı";
   }
 }

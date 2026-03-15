@@ -168,9 +168,11 @@
             <p><strong>Sunucu:</strong> <span id="serverEndpoint">-</span></p>
             <p><strong>Durum:</strong> <span id="serverStatus">Kontrol ediliyor...</span></p>
             <p><strong>Gecikme (Ping):</strong> <span id="serverLatency">-</span></p>
+            <p><strong>Sunucu RAM:</strong> <span id="serverRam">-</span></p>
+            <p><strong>Sunucu Wi-Fi/Ağ:</strong> <span id="serverWifi">-</span></p>
             <p><strong>Son Kontrol:</strong> <span id="serverLastChecked">-</span></p>
           </div>
-          <p class="muted-note">Not: Bu panel yalnızca bağlı olduğun sunucuya ait erişim durumu ve gecikme bilgisini gösterir.</p>
+          <p class="muted-note">Not: RAM ve ağ bilgisi, yalnızca bağlı sunucu bu verileri HTTP başlıklarında (x-server-ram, x-server-wifi) sağlıyorsa gösterilir.</p>
           <button id="refreshServerStats" type="button">🔄 İstatistikleri Yenile</button>
         </section>
       </section>
