@@ -30,6 +30,8 @@ const dropZone = document.getElementById("dropZone");
 const exportData = document.getElementById("exportData");
 const importTrigger = document.getElementById("importTrigger");
 const importInput = document.getElementById("importInput");
+const folderTrigger = document.getElementById("folderTrigger");
+const folderInput = document.getElementById("folderInput");
 const quotaText = document.getElementById("quotaText");
 const quotaBar = document.getElementById("quotaBar");
 const quickNotes = document.getElementById("quickNotes");
@@ -138,6 +140,13 @@ smartCleanup.addEventListener("click", () => {
 exportData.addEventListener("click", handleExport);
 importTrigger.addEventListener("click", () => importInput.click());
 importInput.addEventListener("change", handleImport);
+folderTrigger.addEventListener("click", () => folderInput.click());
+folderInput.addEventListener("change", async (event) => {
+  const filesFromFolder = Array.from(event.target.files || []);
+  if (!filesFromFolder.length) return;
+  await handleFiles(filesFromFolder);
+  folderInput.value = "";
+});
 quickNotes.addEventListener("input", () => {
   localStorage.setItem(NOTES_KEY, quickNotes.value);
 });
@@ -182,7 +191,16 @@ themeToggle.addEventListener("click", toggleTheme);
 });
 
 dropZone.addEventListener("drop", async (event) => {
-  const dropped = event.dataTransfer?.files;
+  const dt = event.dataTransfer;
+  if (!dt) return;
+
+  const fromEntries = await extractDroppedFiles(dt);
+  if (fromEntries.length) {
+    await handleFiles(fromEntries);
+    return;
+  }
+
+  const dropped = dt.files;
   if (!dropped?.length) return;
   await handleFiles(dropped);
 });
@@ -194,12 +212,49 @@ if (navigator.connection) {
 }
 refreshServerStats.addEventListener("click", updateServerStats);
 
+
+async function extractDroppedFiles(dataTransfer) {
+  const items = Array.from(dataTransfer.items || []);
+  if (!items.length) return [];
+
+  const collected = [];
+  for (const item of items) {
+    const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+    if (!entry) continue;
+    await walkEntry(entry, collected);
+  }
+  return collected;
+}
+
+async function walkEntry(entry, collected) {
+  if (entry.isFile) {
+    await new Promise((resolve) => {
+      entry.file((file) => {
+        collected.push(file);
+        resolve();
+      }, () => resolve());
+    });
+    return;
+  }
+
+  if (!entry.isDirectory) return;
+  const reader = entry.createReader();
+  while (true) {
+    const entries = await new Promise((resolve) => reader.readEntries(resolve));
+    if (!entries.length) break;
+    for (const child of entries) {
+      await walkEntry(child, collected);
+    }
+  }
+}
+
 async function handleFiles(fileListObj) {
   const incoming = Array.from(fileListObj);
   let added = 0;
   let skipped = 0;
   for (const file of incoming) {
-    const duplicate = files.some((f) => f.name === file.name && f.size === file.size);
+    const incomingName = file.webkitRelativePath || file.name;
+    const duplicate = files.some((f) => f.name === incomingName && f.size === file.size);
     if (duplicate) {
       skipped += 1;
       continue;
@@ -207,7 +262,7 @@ async function handleFiles(fileListObj) {
     const fileDataUrl = await readAsDataURL(file);
     files.unshift({
       id: crypto.randomUUID(),
-      name: file.name,
+      name: incomingName,
       type: file.type || "other/unknown",
       size: file.size,
       uploadedAt: new Date().toISOString(),
