@@ -8,6 +8,31 @@
   </head>
   <body>
     <div class="overlay"></div>
+
+    <div class="top-dock-wrap">
+      <nav class="top-dock" aria-label="Hızlı dock">
+        <button id="dockOpenFiles" class="dock-item" type="button" title="Dosya Yönetimi">📁<span>Dosyalar</span></button>
+        <button id="dockOpenServer" class="dock-item" type="button" title="Sunucu Durumu">🖥️<span id="dockServerStatus">Kontrol...</span></button>
+        <div class="dock-item dock-static" title="Toplam Boyut">💾<span id="dockTotalSize">0 KB</span></div>
+        <div class="dock-item dock-static" title="Çalışma Süresi">⏱️<span id="dockUptime">00:00:00</span></div>
+        <button id="dockExport" class="dock-item" type="button" title="Yedek Dışa Aktar">📤<span>Yedek</span></button>
+        <button id="dockQuickTheme" class="dock-item" type="button" title="Tema">🎨<span>Tema</span></button>
+        <button id="dockSettings" class="dock-item" type="button" title="Ayarlar">⚙️<span>Ayarlar</span></button>
+      </nav>
+
+      <section id="dockSettingsPanel" class="dock-settings card" hidden>
+        <h3>Hızlı Ayarlar</h3>
+        <label class="toggle-row">
+          <input id="compactModeToggle" type="checkbox" />
+          <span>Kompakt görünüm</span>
+        </label>
+        <label class="toggle-row">
+          <input id="softGlassToggle" type="checkbox" checked />
+          <span>Yumuşak saydamlık</span>
+        </label>
+      </section>
+    </div>
+
     <main class="app">
       <header class="hero card">
         <h1>Bulut Dosya Merkezi</h1>

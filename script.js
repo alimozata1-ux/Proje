@@ -22,6 +22,18 @@ const importInput = document.getElementById("importInput");
 const quotaText = document.getElementById("quotaText");
 const quotaBar = document.getElementById("quotaBar");
 
+const dockServerStatus = document.getElementById("dockServerStatus");
+const dockTotalSize = document.getElementById("dockTotalSize");
+const dockUptime = document.getElementById("dockUptime");
+const dockOpenFiles = document.getElementById("dockOpenFiles");
+const dockOpenServer = document.getElementById("dockOpenServer");
+const dockQuickTheme = document.getElementById("dockQuickTheme");
+const dockSettings = document.getElementById("dockSettings");
+const dockExport = document.getElementById("dockExport");
+const dockSettingsPanel = document.getElementById("dockSettingsPanel");
+const compactModeToggle = document.getElementById("compactModeToggle");
+const softGlassToggle = document.getElementById("softGlassToggle");
+
 const tabButtons = Array.from(document.querySelectorAll(".tab-btn"));
 const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
 
@@ -39,6 +51,7 @@ const appStartTime = Date.now();
 applySavedTheme();
 render();
 wireTabs();
+wireDock();
 initServerStats();
 
 fileInput.addEventListener("change", async (event) => {
@@ -64,11 +77,7 @@ clearAll.addEventListener("click", () => {
   }
 });
 
-themeToggle.addEventListener("click", () => {
-  document.body.classList.toggle("dark");
-  localStorage.setItem(THEME_KEY, document.body.classList.contains("dark") ? "dark" : "light");
-  themeToggle.textContent = document.body.classList.contains("dark") ? "☀️ Gündüz Modu" : "🌙 Gece Modu";
-});
+themeToggle.addEventListener("click", toggleTheme);
 
 ["dragenter", "dragover"].forEach((eventName) => {
   dropZone.addEventListener(eventName, (event) => {
@@ -163,9 +172,12 @@ function render() {
     fileList.appendChild(item);
   }
 
+  const totalBytes = files.reduce((acc, file) => acc + file.size, 0);
+
   emptyState.style.display = sortedAndFiltered.length ? "none" : "block";
   totalCount.textContent = String(files.length);
-  totalSize.textContent = prettySize(files.reduce((acc, file) => acc + file.size, 0));
+  totalSize.textContent = prettySize(totalBytes);
+  dockTotalSize.textContent = prettySize(totalBytes);
   favoriteCount.textContent = String(files.filter((file) => file.favorite).length);
   lastUpload.textContent = files[0] ? new Date(files[0].uploadedAt).toLocaleString("tr-TR") : "-";
 
@@ -211,13 +223,38 @@ function applySavedTheme() {
   }
 }
 
+function toggleTheme() {
+  document.body.classList.toggle("dark");
+  localStorage.setItem(THEME_KEY, document.body.classList.contains("dark") ? "dark" : "light");
+  themeToggle.textContent = document.body.classList.contains("dark") ? "☀️ Gündüz Modu" : "🌙 Gece Modu";
+}
+
 function wireTabs() {
   tabButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const tabId = btn.dataset.tab;
-      tabButtons.forEach((b) => b.classList.toggle("active", b === btn));
-      tabPanels.forEach((panel) => panel.classList.toggle("active", panel.id === tabId));
-    });
+    btn.addEventListener("click", () => setActiveTab(btn.dataset.tab || "filesPanel"));
+  });
+}
+
+function setActiveTab(tabId) {
+  tabButtons.forEach((b) => b.classList.toggle("active", b.dataset.tab === tabId));
+  tabPanels.forEach((panel) => panel.classList.toggle("active", panel.id === tabId));
+}
+
+function wireDock() {
+  dockOpenFiles.addEventListener("click", () => setActiveTab("filesPanel"));
+  dockOpenServer.addEventListener("click", () => setActiveTab("serverPanel"));
+  dockQuickTheme.addEventListener("click", toggleTheme);
+  dockSettings.addEventListener("click", () => {
+    dockSettingsPanel.hidden = !dockSettingsPanel.hidden;
+  });
+  dockExport.addEventListener("click", handleExport);
+
+  compactModeToggle.addEventListener("change", () => {
+    document.body.classList.toggle("compact", compactModeToggle.checked);
+  });
+
+  softGlassToggle.addEventListener("change", () => {
+    document.body.classList.toggle("no-glass", !softGlassToggle.checked);
   });
 }
 
@@ -226,7 +263,9 @@ function initServerStats() {
   updateServerStats();
   setInterval(() => {
     const elapsedSeconds = Math.floor((Date.now() - appStartTime) / 1000);
-    uptime.textContent = formatDuration(elapsedSeconds);
+    const formatted = formatDuration(elapsedSeconds);
+    uptime.textContent = formatted;
+    dockUptime.textContent = formatted;
   }, 1000);
 }
 
@@ -244,13 +283,16 @@ async function measureLatency() {
     if (response.ok) {
       serverStatus.textContent = "Aktif";
       serverLatency.textContent = `${duration} ms`;
+      dockServerStatus.textContent = "Aktif";
     } else {
       serverStatus.textContent = `Hata (${response.status})`;
       serverLatency.textContent = `${duration} ms`;
+      dockServerStatus.textContent = "Hata";
     }
   } catch {
     serverStatus.textContent = "Bağlantı Yok";
     serverLatency.textContent = "-";
+    dockServerStatus.textContent = "Çevrimdışı";
   }
 }
 
