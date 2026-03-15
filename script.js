@@ -3,6 +3,7 @@ const THEME_KEY = "cloud-theme";
 const ESTIMATED_STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 const NOTES_KEY = "cloud-quick-notes";
 const ACTIVITY_KEY = "cloud-activity-log";
+const VIEW_PREFS_KEY = "cloud-view-prefs";
 
 const fileInput = document.getElementById("fileInput");
 const searchInput = document.getElementById("searchInput");
@@ -15,9 +16,11 @@ const totalCount = document.getElementById("totalCount");
 const totalSize = document.getElementById("totalSize");
 const favoriteCount = document.getElementById("favoriteCount");
 const lastUpload = document.getElementById("lastUpload");
+const storageHealth = document.getElementById("storageHealth");
 const clearAll = document.getElementById("clearAll");
 const favoriteOnlyToggle = document.getElementById("favoriteOnlyToggle");
 const resetFilters = document.getElementById("resetFilters");
+const smartCleanup = document.getElementById("smartCleanup");
 const themeToggle = document.getElementById("themeToggle");
 const dropZone = document.getElementById("dropZone");
 const exportData = document.getElementById("exportData");
@@ -69,6 +72,7 @@ wireTabs();
 wireDock();
 wireShortcuts();
 loadQuickNotes();
+loadViewPrefs();
 renderActivity();
 initServerStats();
 
@@ -77,13 +81,14 @@ fileInput.addEventListener("change", async (event) => {
   fileInput.value = "";
 });
 
-searchInput.addEventListener("input", render);
-sortSelect.addEventListener("change", render);
-typeFilter.addEventListener("change", render);
+searchInput.addEventListener("input", () => { render(); saveViewPrefs(); });
+sortSelect.addEventListener("change", () => { render(); saveViewPrefs(); });
+typeFilter.addEventListener("change", () => { render(); saveViewPrefs(); });
 favoriteOnlyToggle.addEventListener("click", () => {
   favoriteOnlyMode = !favoriteOnlyMode;
   favoriteOnlyToggle.textContent = favoriteOnlyMode ? "⭐ Favoriler Açık" : "⭐ Sadece Favoriler";
   render();
+  saveViewPrefs();
 });
 resetFilters.addEventListener("click", () => {
   searchInput.value = "";
@@ -92,7 +97,29 @@ resetFilters.addEventListener("click", () => {
   favoriteOnlyMode = false;
   favoriteOnlyToggle.textContent = "⭐ Sadece Favoriler";
   render();
+  saveViewPrefs();
   showToast("Filtreler sıfırlandı");
+});
+smartCleanup.addEventListener("click", () => {
+  const before = files.length;
+  const threshold = Math.round(ESTIMATED_STORAGE_LIMIT_BYTES * 0.8);
+  let usage = new Blob([localStorage.getItem(STORAGE_KEY) || ""]).size;
+  if (usage <= threshold) {
+    showToast("Depolama zaten sağlıklı");
+    return;
+  }
+  files = [...files].sort((a, b) => new Date(a.uploadedAt) - new Date(b.uploadedAt));
+  while (files.length && usage > threshold) {
+    files.shift();
+    usage = new Blob([JSON.stringify(files)]).size;
+  }
+  files = files.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+  persist();
+  render();
+  updateServerStats();
+  const removed = before - files.length;
+  addActivity(`Akıllı temizlik: ${removed} dosya kaldırıldı`);
+  showToast(`Akıllı temizlik tamamlandı (${removed} dosya)`);
 });
 
 exportData.addEventListener("click", handleExport);
@@ -145,7 +172,14 @@ refreshServerStats.addEventListener("click", updateServerStats);
 
 async function handleFiles(fileListObj) {
   const incoming = Array.from(fileListObj);
+  let added = 0;
+  let skipped = 0;
   for (const file of incoming) {
+    const duplicate = files.some((f) => f.name === file.name && f.size === file.size);
+    if (duplicate) {
+      skipped += 1;
+      continue;
+    }
     const fileDataUrl = await readAsDataURL(file);
     files.unshift({
       id: crypto.randomUUID(),
@@ -156,12 +190,19 @@ async function handleFiles(fileListObj) {
       dataUrl: fileDataUrl,
       favorite: false,
     });
+    added += 1;
   }
   persist();
   render();
   updateServerStats();
-  addActivity(`${incoming.length} dosya yüklendi`);
-  showToast(`${incoming.length} dosya yüklendi`);
+  if (added) {
+    addActivity(`${added} dosya yüklendi`);
+    showToast(`${added} dosya yüklendi`);
+  }
+  if (skipped) {
+    addActivity(`${skipped} yinelenen dosya atlandı`);
+    showToast(`${skipped} yinelenen dosya atlandı`);
+  }
 }
 
 function render() {
@@ -241,6 +282,7 @@ function render() {
   lastUpload.textContent = files[0] ? new Date(files[0].uploadedAt).toLocaleString("tr-TR") : "-";
 
   updateQuotaMeter();
+  updateStorageHealth();
 }
 
 function sortBySelectedRule(a, b) {
@@ -483,6 +525,42 @@ function showToast(message) {
     toast.classList.remove("show");
     toast.hidden = true;
   }, 1800);
+}
+
+function saveViewPrefs() {
+  const prefs = {
+    search: searchInput.value,
+    sort: sortSelect.value,
+    type: typeFilter.value,
+    favoriteOnlyMode,
+  };
+  localStorage.setItem(VIEW_PREFS_KEY, JSON.stringify(prefs));
+}
+
+function loadViewPrefs() {
+  try {
+    const prefs = JSON.parse(localStorage.getItem(VIEW_PREFS_KEY) || "{}");
+    searchInput.value = prefs.search || "";
+    sortSelect.value = prefs.sort || "newest";
+    typeFilter.value = prefs.type || "all";
+    favoriteOnlyMode = Boolean(prefs.favoriteOnlyMode);
+    favoriteOnlyToggle.textContent = favoriteOnlyMode ? "⭐ Favoriler Açık" : "⭐ Sadece Favoriler";
+    render();
+  } catch {
+    // ignore invalid prefs
+  }
+}
+
+function updateStorageHealth() {
+  const usage = new Blob([localStorage.getItem(STORAGE_KEY) || ""]).size;
+  const percentage = Math.round((usage / ESTIMATED_STORAGE_LIMIT_BYTES) * 100);
+  if (percentage >= 90) {
+    storageHealth.textContent = "Kritik";
+  } else if (percentage >= 70) {
+    storageHealth.textContent = "Dikkat";
+  } else {
+    storageHealth.textContent = "İyi";
+  }
 }
 
 function formatDuration(totalSeconds) {
