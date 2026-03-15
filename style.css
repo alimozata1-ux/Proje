@@ -172,7 +172,7 @@ body.dark .tab-btn { background: rgba(8, 14, 24, 0.45); }
 .control-group { display: grid; gap: 0.35rem; }
 label { font-weight: 600; }
 
-input[type="file"], input[type="search"], select {
+input[type="file"], input[type="search"], select, textarea {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -182,12 +182,12 @@ input[type="file"], input[type="search"], select {
   outline: none;
 }
 
-input[type="file"]:focus, input[type="search"]:focus, select:focus {
+input[type="file"]:focus, input[type="search"]:focus, select:focus, textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
-body.dark input[type="file"], body.dark input[type="search"], body.dark select {
+body.dark input[type="file"], body.dark input[type="search"], body.dark select, body.dark textarea {
   background: rgba(0, 0, 0, 0.24);
 }
 
@@ -286,4 +286,31 @@ body.compact .file-item { padding: 0.58rem; }
 
 @media (max-width: 700px) {
   .app { margin-top: 10.3rem; }
+}
+
+
+.notes textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 40;
+  background: rgba(12, 22, 40, 0.82);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
 }

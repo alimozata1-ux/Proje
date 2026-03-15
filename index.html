@@ -14,6 +14,7 @@
         <button id="dockOpenFiles" class="dock-item" type="button" title="Dosya Yönetimi">📁<span>Dosyalar</span></button>
         <button id="dockOpenServer" class="dock-item" type="button" title="Sunucu Durumu">🖥️<span id="dockServerStatus">Kontrol...</span></button>
         <div class="dock-item dock-static" title="Toplam Boyut">💾<span id="dockTotalSize">0 KB</span></div>
+        <div class="dock-item dock-static" title="Dosya Adedi">🗂️<span id="dockFileCount">0 dosya</span></div>
         <div class="dock-item dock-static" title="Çalışma Süresi">⏱️<span id="dockUptime">00:00:00</span></div>
         <div class="dock-item dock-static" title="RAM">🧠<span id="dockRam">RAM: -</span></div>
         <div class="dock-item dock-static" title="Wi-Fi">📶<span id="dockWifi">Wi-Fi: -</span></div>
@@ -114,6 +115,13 @@
           <ul id="fileList" aria-live="polite"></ul>
           <p id="emptyState" class="empty">Henüz dosya yok. Yükleyerek başlayabilirsin.</p>
         </section>
+
+
+        <section class="notes card">
+          <h2>Hızlı Notlar</h2>
+          <textarea id="quickNotes" rows="4" placeholder="Kendine kısa not bırak... (otomatik kaydedilir)"></textarea>
+          <p class="muted-note">Notlar bu tarayıcıda yerel olarak saklanır.</p>
+        </section>
       </section>
 
       <section id="serverPanel" class="tab-panel" aria-labelledby="Sunucu İstatistikleri">
@@ -151,6 +159,8 @@
         </div>
       </li>
     </template>
+
+    <div id="toast" class="toast" hidden></div>
 
     <script src="script.js"></script>
   </body>

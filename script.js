@@ -1,6 +1,7 @@
 const STORAGE_KEY = "cloud-files-v1";
 const THEME_KEY = "cloud-theme";
 const ESTIMATED_STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
+const NOTES_KEY = "cloud-quick-notes";
 
 const fileInput = document.getElementById("fileInput");
 const searchInput = document.getElementById("searchInput");
@@ -21,9 +22,12 @@ const importTrigger = document.getElementById("importTrigger");
 const importInput = document.getElementById("importInput");
 const quotaText = document.getElementById("quotaText");
 const quotaBar = document.getElementById("quotaBar");
+const quickNotes = document.getElementById("quickNotes");
+const toast = document.getElementById("toast");
 
 const dockServerStatus = document.getElementById("dockServerStatus");
 const dockTotalSize = document.getElementById("dockTotalSize");
+const dockFileCount = document.getElementById("dockFileCount");
 const dockUptime = document.getElementById("dockUptime");
 const dockRam = document.getElementById("dockRam");
 const dockWifi = document.getElementById("dockWifi");
@@ -57,6 +61,7 @@ render();
 wireTabs();
 wireDock();
 wireShortcuts();
+loadQuickNotes();
 initServerStats();
 
 fileInput.addEventListener("change", async (event) => {
@@ -71,6 +76,9 @@ typeFilter.addEventListener("change", render);
 exportData.addEventListener("click", handleExport);
 importTrigger.addEventListener("click", () => importInput.click());
 importInput.addEventListener("change", handleImport);
+quickNotes.addEventListener("input", () => {
+  localStorage.setItem(NOTES_KEY, quickNotes.value);
+});
 
 clearAll.addEventListener("click", () => {
   if (!files.length) return;
@@ -128,6 +136,7 @@ async function handleFiles(fileListObj) {
   persist();
   render();
   updateServerStats();
+  showToast(`${incoming.length} dosya yüklendi`);
 }
 
 function render() {
@@ -161,6 +170,7 @@ function render() {
       persist();
       render();
       updateServerStats();
+      showToast("Favori durumu güncellendi");
     });
 
     item.querySelector(".download-btn").addEventListener("click", () => {
@@ -175,6 +185,7 @@ function render() {
       persist();
       render();
       updateServerStats();
+      showToast("Dosya silindi");
     });
 
     fileList.appendChild(item);
@@ -187,6 +198,7 @@ function render() {
   totalSize.textContent = prettySize(totalBytes);
   dockTotalSize.textContent = prettySize(totalBytes);
   favoriteCount.textContent = String(files.filter((file) => file.favorite).length);
+  dockFileCount.textContent = `${files.length} dosya`;
   lastUpload.textContent = files[0] ? new Date(files[0].uploadedAt).toLocaleString("tr-TR") : "-";
 
   updateQuotaMeter();
@@ -326,6 +338,7 @@ function handleExport() {
   a.download = `cloud-files-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
+  showToast("Yedek dışa aktarıldı");
 }
 
 async function handleImport(event) {
@@ -356,6 +369,7 @@ async function handleImport(event) {
     render();
     updateServerStats();
     alert("Yedek başarıyla içe aktarıldı.");
+    showToast("Yedek içe aktarıldı");
   } catch {
     alert("Yedek okunamadı. Lütfen geçerli bir JSON dosyası seç.");
   } finally {
@@ -387,6 +401,22 @@ function wireShortcuts() {
       searchInput.focus();
     }
   });
+}
+
+function loadQuickNotes() {
+  quickNotes.value = localStorage.getItem(NOTES_KEY) || "";
+}
+
+let toastTimer;
+function showToast(message) {
+  toast.textContent = message;
+  toast.hidden = false;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+    toast.hidden = true;
+  }, 1800);
 }
 
 function formatDuration(totalSeconds) {
