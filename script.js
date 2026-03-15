@@ -11,6 +11,8 @@ const sortSelect = document.getElementById("sortSelect");
 const typeFilter = document.getElementById("typeFilter");
 const fileList = document.getElementById("fileList");
 const emptyState = document.getElementById("emptyState");
+const quickAccess = document.getElementById("quickAccess");
+const quickAccessEmpty = document.getElementById("quickAccessEmpty");
 const fileItemTemplate = document.getElementById("fileItemTemplate");
 const totalCount = document.getElementById("totalCount");
 const totalSize = document.getElementById("totalSize");
@@ -283,6 +285,7 @@ function render() {
 
   updateQuotaMeter();
   updateStorageHealth();
+  renderQuickAccess();
 }
 
 function sortBySelectedRule(a, b) {
@@ -301,6 +304,29 @@ function matchesType(mimeType, selectedType) {
     return !["image", "video", "audio", "application"].some((prefix) => mimeType.startsWith(`${prefix}/`));
   }
   return mimeType.startsWith(`${selectedType}/`);
+}
+
+
+function renderQuickAccess() {
+  const favorites = files.filter((f) => f.favorite).slice(0, 8);
+  quickAccess.innerHTML = "";
+  for (const file of favorites) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "quick-chip";
+    btn.textContent = file.name;
+    btn.title = file.name;
+    btn.addEventListener("click", () => {
+      const a = document.createElement("a");
+      a.href = file.dataUrl;
+      a.download = file.name;
+      a.click();
+      addActivity(`Hızlı erişimden indirildi: ${file.name}`);
+      showToast("Hızlı erişim indirildi");
+    });
+    quickAccess.appendChild(btn);
+  }
+  quickAccessEmpty.style.display = favorites.length ? "none" : "block";
 }
 
 function loadFiles() {
