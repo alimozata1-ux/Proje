@@ -4,7 +4,8 @@ const ESTIMATED_STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 const NOTES_KEY = "cloud-quick-notes";
 const ACTIVITY_KEY = "cloud-activity-log";
 const VIEW_PREFS_KEY = "cloud-view-prefs";
-const ACCENT_KEY = "cloud-accent-color";
+const ACCENT_KEY_LIGHT = "cloud-accent-color-light";
+const ACCENT_KEY_DARK = "cloud-accent-color-dark";
 
 const fileInput = document.getElementById("fileInput");
 const searchInput = document.getElementById("searchInput");
@@ -363,7 +364,7 @@ function toggleTheme() {
   document.body.classList.toggle("dark");
   localStorage.setItem(THEME_KEY, document.body.classList.contains("dark") ? "dark" : "light");
   themeToggle.textContent = document.body.classList.contains("dark") ? "☀️ Gündüz Modu" : "🌙 Gece Modu";
-  if (!localStorage.getItem(ACCENT_KEY)) applyAccentTheme();
+  applyAccentTheme();
 }
 
 function wireTabs() {
@@ -396,15 +397,16 @@ function wireDock() {
 
   accentColorPicker.addEventListener("input", () => {
     const color = accentColorPicker.value;
-    document.documentElement.style.setProperty("--accent", color);
-    document.documentElement.style.setProperty("--accent-soft", hexToRgba(color, 0.2));
-    localStorage.setItem(ACCENT_KEY, color);
+    applyAccentColor(color);
+    const key = document.body.classList.contains("dark") ? ACCENT_KEY_DARK : ACCENT_KEY_LIGHT;
+    localStorage.setItem(key, color);
   });
 
   resetAccent.addEventListener("click", () => {
-    localStorage.removeItem(ACCENT_KEY);
+    const key = document.body.classList.contains("dark") ? ACCENT_KEY_DARK : ACCENT_KEY_LIGHT;
+    localStorage.removeItem(key);
     applyAccentTheme();
-    showToast("Tema rengi sıfırlandı");
+    showToast("Bu mod için tema rengi sıfırlandı");
   });
 }
 
@@ -614,12 +616,17 @@ function updateStorageHealth() {
 }
 
 function applyAccentTheme() {
-  const saved = localStorage.getItem(ACCENT_KEY);
-  const fallback = document.body.classList.contains("dark") ? "#4a8dff" : "#1f6fff";
-  const color = saved || fallback;
+  const isDark = document.body.classList.contains("dark");
+  const key = isDark ? ACCENT_KEY_DARK : ACCENT_KEY_LIGHT;
+  const fallback = isDark ? "#4a8dff" : "#1f6fff";
+  const color = localStorage.getItem(key) || fallback;
+  applyAccentColor(color);
+  accentColorPicker.value = color;
+}
+
+function applyAccentColor(color) {
   document.documentElement.style.setProperty("--accent", color);
   document.documentElement.style.setProperty("--accent-soft", hexToRgba(color, 0.2));
-  accentColorPicker.value = color;
 }
 
 function hexToRgba(hex, alpha) {
