@@ -423,3 +423,31 @@ body.dark .quick-chip {
   margin: 0 0 0.7rem;
   color: var(--muted);
 }
+
+
+.app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
+}
+
+.app-footer p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+kbd {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.08rem 0.35rem;
+  background: rgba(255, 255, 255, 0.35);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.mini-btn {
+  padding: 0.42rem 0.65rem;
+  font-size: 0.8rem;
+}

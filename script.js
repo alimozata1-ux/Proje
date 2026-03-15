@@ -38,6 +38,8 @@ const activityEmpty = document.getElementById("activityEmpty");
 const toast = document.getElementById("toast");
 const tipText = document.getElementById("tipText");
 const newTip = document.getElementById("newTip");
+const footerYear = document.getElementById("footerYear");
+const scrollTopBtn = document.getElementById("scrollTopBtn");
 
 const dockServerStatus = document.getElementById("dockServerStatus");
 const dockTotalSize = document.getElementById("dockTotalSize");
@@ -85,6 +87,7 @@ loadViewPrefs();
 renderActivity();
 initServerStats();
 renderTip();
+initFinalTouches();
 
 fileInput.addEventListener("change", async (event) => {
   await handleFiles(event.target.files);
@@ -140,6 +143,15 @@ quickNotes.addEventListener("input", () => {
 });
 
 newTip.addEventListener("click", renderTip);
+
+scrollTopBtn.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+window.addEventListener("scroll", () => {
+  const shouldShow = window.scrollY > 280;
+  scrollTopBtn.hidden = !shouldShow;
+});
 
 clearAll.addEventListener("click", () => {
   if (!files.length) return;
@@ -652,6 +664,13 @@ function renderTip() {
   ];
   const selected = tips[Math.floor(Math.random() * tips.length)];
   tipText.textContent = selected;
+}
+
+function initFinalTouches() {
+  footerYear.textContent = String(new Date().getFullYear());
+  setTimeout(() => {
+    showToast("İpucu: Ctrl/Cmd + K ile hızlı arama");
+  }, 700);
 }
 
 function formatDuration(totalSeconds) {
