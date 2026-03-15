@@ -6,6 +6,7 @@ const ACTIVITY_KEY = "cloud-activity-log";
 const VIEW_PREFS_KEY = "cloud-view-prefs";
 const ACCENT_KEY_LIGHT = "cloud-accent-color-light";
 const ACCENT_KEY_DARK = "cloud-accent-color-dark";
+const CLIENT_ID_KEY = "cloud-client-id";
 
 const fileInput = document.getElementById("fileInput");
 const searchInput = document.getElementById("searchInput");
@@ -68,6 +69,7 @@ const serverLatency = document.getElementById("serverLatency");
 const serverEndpoint = document.getElementById("serverEndpoint");
 const serverRam = document.getElementById("serverRam");
 const serverWifi = document.getElementById("serverWifi");
+const serverStorage = document.getElementById("serverStorage");
 const serverLastChecked = document.getElementById("serverLastChecked");
 const refreshServerStats = document.getElementById("refreshServerStats");
 
@@ -75,6 +77,7 @@ let files = loadFiles();
 let favoriteOnlyMode = false;
 let activities = loadActivities();
 const appStartTime = Date.now();
+const clientId = getOrCreateClientId();
 
 applySavedTheme();
 applyAccentTheme();
@@ -114,25 +117,31 @@ resetFilters.addEventListener("click", () => {
   showToast("Filtreler sıfırlandı");
 });
 smartCleanup.addEventListener("click", () => {
-  const before = files.length;
   const threshold = Math.round(ESTIMATED_STORAGE_LIMIT_BYTES * 0.8);
   let usage = new Blob([localStorage.getItem(STORAGE_KEY) || ""]).size;
   if (usage <= threshold) {
     showToast("Depolama zaten sağlıklı");
     return;
   }
-  files = [...files].sort((a, b) => new Date(a.uploadedAt) - new Date(b.uploadedAt));
-  while (files.length && usage > threshold) {
-    files.shift();
+
+  const ownFileIdsByOldest = [...files]
+    .filter((f) => f.ownerId === clientId)
+    .sort((a, b) => new Date(a.uploadedAt) - new Date(b.uploadedAt))
+    .map((f) => f.id);
+
+  let removed = 0;
+  for (const fileId of ownFileIdsByOldest) {
+    if (usage <= threshold) break;
+    files = files.filter((f) => f.id !== fileId);
     usage = new Blob([JSON.stringify(files)]).size;
+    removed += 1;
   }
-  files = files.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+
   persist();
   render();
   updateServerStats();
-  const removed = before - files.length;
-  addActivity(`Akıllı temizlik: ${removed} dosya kaldırıldı`);
-  showToast(`Akıllı temizlik tamamlandı (${removed} dosya)`);
+  addActivity(`Akıllı temizlik: ${removed} kendi dosyan kaldırıldı`);
+  showToast(removed ? `Akıllı temizlik tamamlandı (${removed} dosya)` : "Silinebilir kendi dosyan bulunamadı");
 });
 
 exportData.addEventListener("click", handleExport);
@@ -161,14 +170,15 @@ window.addEventListener("scroll", () => {
 });
 
 clearAll.addEventListener("click", () => {
-  if (!files.length) return;
-  if (confirm("Tüm dosyalar silinsin mi?")) {
-    files = [];
+  const ownCount = files.filter((f) => f.ownerId === clientId).length;
+  if (!ownCount) return;
+  if (confirm("Sadece sana ait tüm dosyalar silinsin mi?")) {
+    files = files.filter((f) => f.ownerId !== clientId);
     persist();
     render();
     updateServerStats();
-    addActivity("Tüm dosyalar temizlendi");
-    showToast("Tüm dosyalar silindi");
+    addActivity("Kullanıcı kendi tüm dosyalarını temizledi");
+    showToast(`${ownCount} dosya silindi (yalnızca sana ait)`);
   }
 });
 
@@ -203,8 +213,11 @@ dropZone.addEventListener("drop", async (event) => {
   await handleFiles(dropped);
 });
 
-window.addEventListener("online", updateServerStats);
-window.addEventListener("offline", updateServerStats);
+window.addEventListener("online", () => { updateServerStats(); updateDockClientStats(); });
+window.addEventListener("offline", () => { updateServerStats(); updateDockClientStats(); });
+if (navigator.connection) {
+  navigator.connection.addEventListener("change", updateDockClientStats);
+}
 refreshServerStats.addEventListener("click", updateServerStats);
 
 
@@ -263,6 +276,7 @@ async function handleFiles(fileListObj) {
       uploadedAt: new Date().toISOString(),
       dataUrl: fileDataUrl,
       favorite: false,
+      ownerId: clientId,
     });
     added += 1;
   }
@@ -333,7 +347,18 @@ function render() {
       addActivity(`Dosya indirildi: ${file.name}`);
     });
 
-    item.querySelector(".delete-btn").addEventListener("click", () => {
+    const deleteBtn = item.querySelector(".delete-btn");
+    const isOwnedByCurrentUser = file.ownerId === clientId;
+    deleteBtn.disabled = !isOwnedByCurrentUser;
+    if (!isOwnedByCurrentUser) {
+      deleteBtn.title = "Sadece dosyanın sahibi silebilir";
+    }
+
+    deleteBtn.addEventListener("click", () => {
+      if (!isOwnedByCurrentUser) {
+        showToast("Bu dosya sana ait değil, silemezsin");
+        return;
+      }
       files = files.filter((f) => f.id !== file.id);
       persist();
       render();
@@ -404,7 +429,7 @@ function renderQuickAccess() {
 function loadFiles() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    return parsed.map((f) => ({ ...f, favorite: Boolean(f.favorite), type: f.type || "other/unknown" }));
+    return parsed.map((f) => ({ ...f, favorite: Boolean(f.favorite), type: f.type || "other/unknown", ownerId: f.ownerId || clientId }));
   } catch {
     return [];
   }
@@ -412,6 +437,24 @@ function loadFiles() {
 
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+}
+
+function getOrCreateClientId() {
+  const existing = localStorage.getItem(CLIENT_ID_KEY);
+  if (existing) return existing;
+  const generated = crypto.randomUUID();
+  localStorage.setItem(CLIENT_ID_KEY, generated);
+  return generated;
+}
+
+function updateDockClientStats() {
+  dockRam.textContent = `RAM: ${navigator.deviceMemory ? `${navigator.deviceMemory}GB` : "-"}`;
+  const connection = navigator.connection;
+  if (connection && connection.downlink) {
+    dockWifi.textContent = `${connection.downlink}Mbps`;
+  } else {
+    dockWifi.textContent = navigator.onLine ? "Online" : "Offline";
+  }
 }
 
 function applySavedTheme() {
@@ -475,6 +518,7 @@ function wireDock() {
 
 function initServerStats() {
   serverEndpoint.textContent = window.location.origin;
+  updateDockClientStats();
   updateServerStats();
   setInterval(() => {
     const elapsedSeconds = Math.floor((Date.now() - appStartTime) / 1000);
@@ -495,8 +539,13 @@ async function measureLatency() {
     const duration = Math.round(performance.now() - start);
     const serverRamHeader = response.headers.get("x-server-ram");
     const serverWifiHeader = response.headers.get("x-server-wifi");
+    const serverStorageHeader = response.headers.get("x-server-storage");
+    const serverStorageUsed = response.headers.get("x-server-storage-used");
+    const serverStorageTotal = response.headers.get("x-server-storage-total");
+
     serverRam.textContent = serverRamHeader || "Sunucu verisi yok";
     serverWifi.textContent = serverWifiHeader || "Sunucu verisi yok";
+    serverStorage.textContent = serverStorageHeader || ((serverStorageUsed && serverStorageTotal) ? `${serverStorageUsed} / ${serverStorageTotal}` : "Sunucu verisi yok");
 
     if (response.ok) {
       serverStatus.textContent = "Aktif";
@@ -512,6 +561,7 @@ async function measureLatency() {
     serverLatency.textContent = "-";
     serverRam.textContent = "-";
     serverWifi.textContent = "-";
+    serverStorage.textContent = "-";
     dockServerStatus.textContent = "Çevrimdışı";
   }
 }
@@ -561,6 +611,7 @@ async function handleImport(event) {
         uploadedAt: f.uploadedAt || new Date().toISOString(),
         dataUrl: String(f.dataUrl),
         favorite: Boolean(f.favorite),
+        ownerId: clientId,
       }));
 
     files = normalized;
