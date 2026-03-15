@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoblinPackege</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="overlay"></div>
+
+    <div class="top-dock-wrap">
+      <nav class="top-dock" aria-label="Sabit görev çubuğu">
+        <button id="dockOpenFiles" class="dock-item" type="button" title="Dosya Yönetimi">📁<span>Dosyalar</span></button>
+        <button id="dockOpenServer" class="dock-item" type="button" title="Sunucu Durumu">🖥️<span id="dockServerStatus">Kontrol...</span></button>
+        <div class="dock-item dock-static" title="Toplam Boyut">💾<span id="dockTotalSize">0 KB</span></div>
+        <div class="dock-item dock-static" title="Dosya Adedi">🗂️<span id="dockFileCount">0 dosya</span></div>
+        <div class="dock-item dock-static" title="Çalışma Süresi">⏱️<span id="dockUptime">00:00:00</span></div>
+        <div class="dock-item dock-static" title="RAM">🧠<span id="dockRam">RAM: -</span></div>
+        <div class="dock-item dock-static" title="Wi-Fi">📶<span id="dockWifi">Wi-Fi: -</span></div>
+        <button id="dockExport" class="dock-item" type="button" title="Yedek Dışa Aktar">📤<span>Yedek</span></button>
+        <button id="dockQuickTheme" class="dock-item" type="button" title="Tema">🎨<span>Tema</span></button>
+        <button id="dockSettings" class="dock-item" type="button" title="Ayarlar">⚙️<span>Ayarlar</span></button>
+      </nav>
+
+      <section id="dockSettingsPanel" class="dock-settings card" hidden>
+        <h3>Görev Çubuğu Ayarları</h3>
+        <label class="toggle-row">
+          <input id="compactModeToggle" type="checkbox" />
+          <span>Kompakt görünüm</span>
+        </label>
+        <label class="toggle-row">
+          <input id="softGlassToggle" type="checkbox" checked />
+          <span>Yumuşak saydamlık</span>
+        </label>
+        <label class="toggle-row color-row">
+          <span>Tema rengi</span>
+          <input id="accentColorPicker" type="color" value="#1f6fff" />
+          <button id="resetAccent" type="button">Sıfırla</button>
+        </label>
+      </section>
+    </div>
+
+    <main class="app">
+      <header class="hero card">
+        <h1>GoblinPackege</h1>
+        <p>Dosyalarını yükle, ara, indir ve GoblinPackege içinde tarayıcıda güvenli şekilde sakla.</p>
+      </header>
+
+      <nav class="tabs card" aria-label="Uygulama sekmeleri">
+        <button type="button" class="tab-btn active" data-tab="filesPanel">📁 Dosya Yönetimi</button>
+        <button type="button" class="tab-btn" data-tab="serverPanel">🖥️ Sunucu İstatistikleri</button>
+      </nav>
+
+      <section id="filesPanel" class="tab-panel active" aria-labelledby="Dosya Yönetimi">
+        <section class="controls card">
+          <div class="control-group">
+            <label for="fileInput">Dosya yükle</label>
+            <input id="fileInput" type="file" multiple />
+          </div>
+
+          <div class="control-group">
+            <label for="searchInput">Dosya ara</label>
+            <input id="searchInput" type="search" placeholder="Dosya adına göre ara..." />
+          </div>
+
+          <div class="control-group">
+            <label for="sortSelect">Sırala</label>
+            <select id="sortSelect">
+              <option value="newest">En yeni</option>
+              <option value="oldest">En eski</option>
+              <option value="nameAsc">İsim (A-Z)</option>
+              <option value="nameDesc">İsim (Z-A)</option>
+              <option value="sizeDesc">Boyut (büyük-küçük)</option>
+              <option value="sizeAsc">Boyut (küçük-büyük)</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label for="typeFilter">Tür filtresi</label>
+            <select id="typeFilter">
+              <option value="all">Tümü</option>
+              <option value="image">Görseller</option>
+              <option value="video">Videolar</option>
+              <option value="audio">Ses</option>
+              <option value="application">Belgeler/Uygulamalar</option>
+              <option value="other">Diğer</option>
+            </select>
+          </div>
+
+          <div class="buttons primary-actions">
+            <button id="themeToggle" type="button">🌙 Gece Modu</button>
+            <button id="favoriteOnlyToggle" type="button">⭐ Sadece Favoriler</button>
+            <button id="resetFilters" type="button">♻️ Filtreleri Sıfırla</button>
+            <button id="smartCleanup" type="button">🧠 Akıllı Temizlik</button>
+          </div>
+
+          <details class="advanced-tools">
+            <summary>Gelişmiş Araçlar</summary>
+            <div class="buttons secondary-actions">
+              <button id="exportData" type="button">⬇️ Yedeği Dışa Aktar</button>
+              <button id="importTrigger" type="button">⬆️ Yedek İçe Aktar</button>
+              <button id="clearAll" type="button" class="danger">Tümünü Sil</button>
+            </div>
+          </details>
+          <input id="importInput" type="file" accept="application/json" hidden />
+        </section>
+
+        <section id="dropZone" class="drop-zone card" aria-label="Dosya sürükle bırak alanı">
+          <p>📂 Dosyalarını buraya sürükleyip bırakabilirsin.</p>
+        </section>
+
+        <section class="stats card">
+          <h2>Dosya İstatistikleri</h2>
+          <div class="stat-grid">
+            <p><strong>Toplam Dosya:</strong> <span id="totalCount">0</span></p>
+            <p><strong>Toplam Boyut:</strong> <span id="totalSize">0 KB</span></p>
+            <p><strong>Favoriler:</strong> <span id="favoriteCount">0</span></p>
+            <p><strong>Son Yükleme:</strong> <span id="lastUpload">-</span></p>
+            <p><strong>Depolama Sağlığı:</strong> <span id="storageHealth">İyi</span></p>
+          </div>
+          <div class="quota-wrap" aria-label="Yerel kullanım çubuğu">
+            <span id="quotaText">Kullanım: 0%</span>
+            <div class="quota-track"><div id="quotaBar" class="quota-bar"></div></div>
+          </div>
+        </section>
+
+        <section class="list card">
+          <h2>Dosya Listesi</h2>
+          <ul id="fileList" aria-live="polite"></ul>
+          <p id="emptyState" class="empty">Henüz dosya yok. Yükleyerek başlayabilirsin.</p>
+        </section>
+        <section class="quick-access card">
+          <h2>Hızlı Erişim (Favoriler)</h2>
+          <div id="quickAccess" class="quick-access-list"></div>
+          <p id="quickAccessEmpty" class="empty">Favori dosya eklediğinde burada hızlı erişim oluşacak.</p>
+        </section>
+
+        <section class="tip card">
+          <h2>Goblin İpucu</h2>
+          <p id="tipText">Hazır...</p>
+          <button id="newTip" type="button">✨ Yeni İpucu</button>
+        </section>
+
+
+
+        <div class="extras-grid">
+          <section class="notes card">
+            <h2>Hızlı Notlar</h2>
+            <textarea id="quickNotes" rows="4" placeholder="Kendine kısa not bırak... (otomatik kaydedilir)"></textarea>
+            <p class="muted-note">Notlar bu tarayıcıda yerel olarak saklanır.</p>
+          </section>
+
+          <section class="activity card">
+            <h2>Son Aktiviteler</h2>
+            <ul id="activityList" class="activity-list"></ul>
+            <p id="activityEmpty" class="empty">Henüz aktivite kaydı yok.</p>
+          </section>
+        </div>
+      </section>
+
+      <section id="serverPanel" class="tab-panel" aria-labelledby="Sunucu İstatistikleri">
+        <section class="card stats">
+          <h2>Sunucu / Sistem İstatistikleri</h2>
+          <div class="stat-grid">
+            <p><strong>Durum:</strong> <span id="serverStatus">Kontrol ediliyor...</span></p>
+            <p><strong>Gecikme (Ping):</strong> <span id="serverLatency">-</span></p>
+            <p><strong>Sayfa Çalışma Süresi:</strong> <span id="uptime">00:00:00</span></p>
+            <p><strong>Yerel Kayıt Kullanımı:</strong> <span id="storageUsage">0 KB</span></p>
+            <p><strong>RAM (Tahmini):</strong> <span id="ramUsage">-</span></p>
+            <p><strong>Wi-Fi/Ağ Bilgisi:</strong> <span id="wifiUsage">-</span></p>
+            <p><strong>Tarayıcı:</strong> <span id="browserName">-</span></p>
+            <p><strong>Çevrim Durumu:</strong> <span id="onlineStatus">-</span></p>
+          </div>
+          <p class="muted-note">Not: Netlify statik yayında gerçek sunucu CPU/RAM bilgileri tarayıcıdan doğrudan okunamaz. Bu panel istemci tabanlı sağlık ve bağlantı ölçümü sunar.</p>
+          <button id="refreshServerStats" type="button">🔄 İstatistikleri Yenile</button>
+        </section>
+      </section>
+    </main>
+
+    <template id="fileItemTemplate">
+      <li class="file-item">
+        <div>
+          <p class="file-name"></p>
+          <p class="file-meta"></p>
+          <div class="preview-wrap" hidden>
+            <img class="file-preview" alt="Dosya önizleme" />
+          </div>
+        </div>
+        <div class="item-actions">
+          <button class="favorite-btn" type="button">⭐</button>
+          <button class="copy-name-btn" type="button">Adı Kopyala</button>
+          <button class="download-btn" type="button">İndir</button>
+          <button class="delete-btn danger" type="button">Sil</button>
+        </div>
+      </li>
+    </template>
+
+    <footer class="app-footer card">
+      <p>GoblinPackege • <span id="footerYear"></span> • Kısayol: <kbd>Ctrl/Cmd + K</kbd></p>
+      <button id="scrollTopBtn" type="button" class="mini-btn" hidden>⬆️ Yukarı Çık</button>
+    </footer>
+
+    <div id="toast" class="toast" hidden></div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
