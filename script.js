@@ -625,8 +625,12 @@ function applyAccentTheme() {
 }
 
 function applyAccentColor(color) {
+  // body.dark içindeki CSS değişkenlerini gerçekten override etmek için
+  // rengi doğrudan body üzerine de yazıyoruz.
   document.documentElement.style.setProperty("--accent", color);
   document.documentElement.style.setProperty("--accent-soft", hexToRgba(color, 0.2));
+  document.body.style.setProperty("--accent", color);
+  document.body.style.setProperty("--accent-soft", hexToRgba(color, 0.2));
 }
 
 function hexToRgba(hex, alpha) {
