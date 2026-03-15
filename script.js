@@ -4,6 +4,7 @@ const ESTIMATED_STORAGE_LIMIT_BYTES = 5 * 1024 * 1024;
 const NOTES_KEY = "cloud-quick-notes";
 const ACTIVITY_KEY = "cloud-activity-log";
 const VIEW_PREFS_KEY = "cloud-view-prefs";
+const ACCENT_KEY = "cloud-accent-color";
 
 const fileInput = document.getElementById("fileInput");
 const searchInput = document.getElementById("searchInput");
@@ -34,6 +35,8 @@ const quickNotes = document.getElementById("quickNotes");
 const activityList = document.getElementById("activityList");
 const activityEmpty = document.getElementById("activityEmpty");
 const toast = document.getElementById("toast");
+const tipText = document.getElementById("tipText");
+const newTip = document.getElementById("newTip");
 
 const dockServerStatus = document.getElementById("dockServerStatus");
 const dockTotalSize = document.getElementById("dockTotalSize");
@@ -49,6 +52,8 @@ const dockExport = document.getElementById("dockExport");
 const dockSettingsPanel = document.getElementById("dockSettingsPanel");
 const compactModeToggle = document.getElementById("compactModeToggle");
 const softGlassToggle = document.getElementById("softGlassToggle");
+const accentColorPicker = document.getElementById("accentColorPicker");
+const resetAccent = document.getElementById("resetAccent");
 
 const tabButtons = Array.from(document.querySelectorAll(".tab-btn"));
 const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
@@ -69,6 +74,7 @@ let activities = loadActivities();
 const appStartTime = Date.now();
 
 applySavedTheme();
+applyAccentTheme();
 render();
 wireTabs();
 wireDock();
@@ -77,6 +83,7 @@ loadQuickNotes();
 loadViewPrefs();
 renderActivity();
 initServerStats();
+renderTip();
 
 fileInput.addEventListener("change", async (event) => {
   await handleFiles(event.target.files);
@@ -130,6 +137,8 @@ importInput.addEventListener("change", handleImport);
 quickNotes.addEventListener("input", () => {
   localStorage.setItem(NOTES_KEY, quickNotes.value);
 });
+
+newTip.addEventListener("click", renderTip);
 
 clearAll.addEventListener("click", () => {
   if (!files.length) return;
@@ -354,6 +363,7 @@ function toggleTheme() {
   document.body.classList.toggle("dark");
   localStorage.setItem(THEME_KEY, document.body.classList.contains("dark") ? "dark" : "light");
   themeToggle.textContent = document.body.classList.contains("dark") ? "☀️ Gündüz Modu" : "🌙 Gece Modu";
+  if (!localStorage.getItem(ACCENT_KEY)) applyAccentTheme();
 }
 
 function wireTabs() {
@@ -383,7 +393,21 @@ function wireDock() {
   softGlassToggle.addEventListener("change", () => {
     document.body.classList.toggle("no-glass", !softGlassToggle.checked);
   });
+
+  accentColorPicker.addEventListener("input", () => {
+    const color = accentColorPicker.value;
+    document.documentElement.style.setProperty("--accent", color);
+    document.documentElement.style.setProperty("--accent-soft", hexToRgba(color, 0.2));
+    localStorage.setItem(ACCENT_KEY, color);
+  });
+
+  resetAccent.addEventListener("click", () => {
+    localStorage.removeItem(ACCENT_KEY);
+    applyAccentTheme();
+    showToast("Tema rengi sıfırlandı");
+  });
 }
+
 
 function initServerStats() {
   browserName.textContent = navigator.userAgent;
@@ -587,6 +611,36 @@ function updateStorageHealth() {
   } else {
     storageHealth.textContent = "İyi";
   }
+}
+
+function applyAccentTheme() {
+  const saved = localStorage.getItem(ACCENT_KEY);
+  const fallback = document.body.classList.contains("dark") ? "#4a8dff" : "#1f6fff";
+  const color = saved || fallback;
+  document.documentElement.style.setProperty("--accent", color);
+  document.documentElement.style.setProperty("--accent-soft", hexToRgba(color, 0.2));
+  accentColorPicker.value = color;
+}
+
+function hexToRgba(hex, alpha) {
+  const clean = hex.replace("#", "");
+  const bigint = parseInt(clean, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function renderTip() {
+  const tips = [
+    "Kısayol: Ctrl/Cmd + K ile aramaya hızlı odaklan.",
+    "Favori dosyaları hızlı erişime eklemek için yıldızla işaretle.",
+    "Depolama sağlığı Dikkat/Kritik olduğunda Akıllı Temizlik kullan.",
+    "Yedek dışa aktarıp farklı cihazda içe aktararak taşıma yapabilirsin.",
+    "Filtreleri sıfırla butonu yoğun listelerde hızlı toparlama sağlar.",
+  ];
+  const selected = tips[Math.floor(Math.random() * tips.length)];
+  tipText.textContent = selected;
 }
 
 function formatDuration(totalSeconds) {
