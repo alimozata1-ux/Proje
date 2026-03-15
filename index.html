@@ -83,14 +83,20 @@
             </select>
           </div>
 
-          <div class="buttons">
+          <div class="buttons primary-actions">
             <button id="themeToggle" type="button">🌙 Gece Modu</button>
-            <button id="exportData" type="button">⬇️ Yedeği Dışa Aktar</button>
-            <button id="importTrigger" type="button">⬆️ Yedek İçe Aktar</button>
             <button id="favoriteOnlyToggle" type="button">⭐ Sadece Favoriler</button>
             <button id="resetFilters" type="button">♻️ Filtreleri Sıfırla</button>
-            <button id="clearAll" type="button" class="danger">Tümünü Sil</button>
           </div>
+
+          <details class="advanced-tools">
+            <summary>Gelişmiş Araçlar</summary>
+            <div class="buttons secondary-actions">
+              <button id="exportData" type="button">⬇️ Yedeği Dışa Aktar</button>
+              <button id="importTrigger" type="button">⬆️ Yedek İçe Aktar</button>
+              <button id="clearAll" type="button" class="danger">Tümünü Sil</button>
+            </div>
+          </details>
           <input id="importInput" type="file" accept="application/json" hidden />
         </section>
 
@@ -119,17 +125,19 @@
         </section>
 
 
-        <section class="notes card">
-          <h2>Hızlı Notlar</h2>
-          <textarea id="quickNotes" rows="4" placeholder="Kendine kısa not bırak... (otomatik kaydedilir)"></textarea>
-          <p class="muted-note">Notlar bu tarayıcıda yerel olarak saklanır.</p>
-        </section>
+        <div class="extras-grid">
+          <section class="notes card">
+            <h2>Hızlı Notlar</h2>
+            <textarea id="quickNotes" rows="4" placeholder="Kendine kısa not bırak... (otomatik kaydedilir)"></textarea>
+            <p class="muted-note">Notlar bu tarayıcıda yerel olarak saklanır.</p>
+          </section>
 
-        <section class="activity card">
-          <h2>Son Aktiviteler</h2>
-          <ul id="activityList" class="activity-list"></ul>
-          <p id="activityEmpty" class="empty">Henüz aktivite kaydı yok.</p>
-        </section>
+          <section class="activity card">
+            <h2>Son Aktiviteler</h2>
+            <ul id="activityList" class="activity-list"></ul>
+            <p id="activityEmpty" class="empty">Henüz aktivite kaydı yok.</p>
+          </section>
+        </div>
       </section>
 
       <section id="serverPanel" class="tab-panel" aria-labelledby="Sunucu İstatistikleri">
