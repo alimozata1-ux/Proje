@@ -25,6 +25,8 @@ const quotaBar = document.getElementById("quotaBar");
 const dockServerStatus = document.getElementById("dockServerStatus");
 const dockTotalSize = document.getElementById("dockTotalSize");
 const dockUptime = document.getElementById("dockUptime");
+const dockRam = document.getElementById("dockRam");
+const dockWifi = document.getElementById("dockWifi");
 const dockOpenFiles = document.getElementById("dockOpenFiles");
 const dockOpenServer = document.getElementById("dockOpenServer");
 const dockQuickTheme = document.getElementById("dockQuickTheme");
@@ -41,6 +43,8 @@ const serverStatus = document.getElementById("serverStatus");
 const serverLatency = document.getElementById("serverLatency");
 const uptime = document.getElementById("uptime");
 const storageUsage = document.getElementById("storageUsage");
+const ramUsage = document.getElementById("ramUsage");
+const wifiUsage = document.getElementById("wifiUsage");
 const browserName = document.getElementById("browserName");
 const onlineStatus = document.getElementById("onlineStatus");
 const refreshServerStats = document.getElementById("refreshServerStats");
@@ -52,6 +56,7 @@ applySavedTheme();
 render();
 wireTabs();
 wireDock();
+wireShortcuts();
 initServerStats();
 
 fileInput.addEventListener("change", async (event) => {
@@ -101,6 +106,9 @@ dropZone.addEventListener("drop", async (event) => {
 
 window.addEventListener("online", updateServerStats);
 window.addEventListener("offline", updateServerStats);
+if (navigator.connection) {
+  navigator.connection.addEventListener("change", updateDeviceStats);
+}
 refreshServerStats.addEventListener("click", updateServerStats);
 
 async function handleFiles(fileListObj) {
@@ -261,6 +269,7 @@ function wireDock() {
 function initServerStats() {
   browserName.textContent = navigator.userAgent;
   updateServerStats();
+  updateDeviceStats();
   setInterval(() => {
     const elapsedSeconds = Math.floor((Date.now() - appStartTime) / 1000);
     const formatted = formatDuration(elapsedSeconds);
@@ -272,6 +281,7 @@ function initServerStats() {
 async function updateServerStats() {
   onlineStatus.textContent = navigator.onLine ? "Çevrimiçi" : "Çevrimdışı";
   storageUsage.textContent = prettySize(new Blob([localStorage.getItem(STORAGE_KEY) || ""]).size);
+  updateDeviceStats();
   await measureLatency();
 }
 
@@ -351,6 +361,32 @@ async function handleImport(event) {
   } finally {
     importInput.value = "";
   }
+}
+
+function updateDeviceStats() {
+  const ramText = navigator.deviceMemory ? `${navigator.deviceMemory} GB (tarayıcı bildirimi)` : "Desteklenmiyor";
+  ramUsage.textContent = ramText;
+  dockRam.textContent = `RAM: ${navigator.deviceMemory ? `${navigator.deviceMemory}GB` : "-"}`;
+
+  const connection = navigator.connection;
+  if (connection) {
+    const wifiText = `${connection.effectiveType || "?"} • ${connection.downlink || "?"} Mbps • ${connection.rtt || "?"} ms`;
+    wifiUsage.textContent = wifiText;
+    dockWifi.textContent = `${connection.downlink || "?"}Mbps`;
+  } else {
+    wifiUsage.textContent = navigator.onLine ? "Ağ API desteklenmiyor (çevrimiçi)" : "Çevrimdışı";
+    dockWifi.textContent = navigator.onLine ? "Online" : "Offline";
+  }
+}
+
+function wireShortcuts() {
+  window.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      setActiveTab("filesPanel");
+      searchInput.focus();
+    }
+  });
 }
 
 function formatDuration(totalSeconds) {
