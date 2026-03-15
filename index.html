@@ -163,18 +163,14 @@
 
       <section id="serverPanel" class="tab-panel" aria-labelledby="Sunucu İstatistikleri">
         <section class="card stats">
-          <h2>Sunucu / Sistem İstatistikleri</h2>
+          <h2>Bağlı Sunucu İstatistikleri</h2>
           <div class="stat-grid">
+            <p><strong>Sunucu:</strong> <span id="serverEndpoint">-</span></p>
             <p><strong>Durum:</strong> <span id="serverStatus">Kontrol ediliyor...</span></p>
             <p><strong>Gecikme (Ping):</strong> <span id="serverLatency">-</span></p>
-            <p><strong>Sayfa Çalışma Süresi:</strong> <span id="uptime">00:00:00</span></p>
-            <p><strong>Yerel Kayıt Kullanımı:</strong> <span id="storageUsage">0 KB</span></p>
-            <p><strong>RAM (Tahmini):</strong> <span id="ramUsage">-</span></p>
-            <p><strong>Wi-Fi/Ağ Bilgisi:</strong> <span id="wifiUsage">-</span></p>
-            <p><strong>Tarayıcı:</strong> <span id="browserName">-</span></p>
-            <p><strong>Çevrim Durumu:</strong> <span id="onlineStatus">-</span></p>
+            <p><strong>Son Kontrol:</strong> <span id="serverLastChecked">-</span></p>
           </div>
-          <p class="muted-note">Not: Netlify statik yayında gerçek sunucu CPU/RAM bilgileri tarayıcıdan doğrudan okunamaz. Bu panel istemci tabanlı sağlık ve bağlantı ölçümü sunar.</p>
+          <p class="muted-note">Not: Bu panel yalnızca bağlı olduğun sunucuya ait erişim durumu ve gecikme bilgisini gösterir.</p>
           <button id="refreshServerStats" type="button">🔄 İstatistikleri Yenile</button>
         </section>
       </section>

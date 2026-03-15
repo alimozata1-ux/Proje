@@ -65,12 +65,8 @@ const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
 
 const serverStatus = document.getElementById("serverStatus");
 const serverLatency = document.getElementById("serverLatency");
-const uptime = document.getElementById("uptime");
-const storageUsage = document.getElementById("storageUsage");
-const ramUsage = document.getElementById("ramUsage");
-const wifiUsage = document.getElementById("wifiUsage");
-const browserName = document.getElementById("browserName");
-const onlineStatus = document.getElementById("onlineStatus");
+const serverEndpoint = document.getElementById("serverEndpoint");
+const serverLastChecked = document.getElementById("serverLastChecked");
 const refreshServerStats = document.getElementById("refreshServerStats");
 
 let files = loadFiles();
@@ -207,9 +203,6 @@ dropZone.addEventListener("drop", async (event) => {
 
 window.addEventListener("online", updateServerStats);
 window.addEventListener("offline", updateServerStats);
-if (navigator.connection) {
-  navigator.connection.addEventListener("change", updateDeviceStats);
-}
 refreshServerStats.addEventListener("click", updateServerStats);
 
 
@@ -479,22 +472,18 @@ function wireDock() {
 
 
 function initServerStats() {
-  browserName.textContent = navigator.userAgent;
+  serverEndpoint.textContent = window.location.origin;
   updateServerStats();
-  updateDeviceStats();
   setInterval(() => {
     const elapsedSeconds = Math.floor((Date.now() - appStartTime) / 1000);
     const formatted = formatDuration(elapsedSeconds);
-    uptime.textContent = formatted;
     dockUptime.textContent = formatted;
   }, 1000);
 }
 
 async function updateServerStats() {
-  onlineStatus.textContent = navigator.onLine ? "Çevrimiçi" : "Çevrimdışı";
-  storageUsage.textContent = prettySize(new Blob([localStorage.getItem(STORAGE_KEY) || ""]).size);
-  updateDeviceStats();
   await measureLatency();
+  serverLastChecked.textContent = new Date().toLocaleTimeString("tr-TR");
 }
 
 async function measureLatency() {
@@ -576,22 +565,6 @@ async function handleImport(event) {
     alert("Yedek okunamadı. Lütfen geçerli bir JSON dosyası seç.");
   } finally {
     importInput.value = "";
-  }
-}
-
-function updateDeviceStats() {
-  const ramText = navigator.deviceMemory ? `${navigator.deviceMemory} GB (tarayıcı bildirimi)` : "Desteklenmiyor";
-  ramUsage.textContent = ramText;
-  dockRam.textContent = `RAM: ${navigator.deviceMemory ? `${navigator.deviceMemory}GB` : "-"}`;
-
-  const connection = navigator.connection;
-  if (connection) {
-    const wifiText = `${connection.effectiveType || "?"} • ${connection.downlink || "?"} Mbps • ${connection.rtt || "?"} ms`;
-    wifiUsage.textContent = wifiText;
-    dockWifi.textContent = `${connection.downlink || "?"}Mbps`;
-  } else {
-    wifiUsage.textContent = navigator.onLine ? "Ağ API desteklenmiyor (çevrimiçi)" : "Çevrimdışı";
-    dockWifi.textContent = navigator.onLine ? "Online" : "Offline";
   }
 }
 
