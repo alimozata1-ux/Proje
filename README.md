@@ -1,4 +1,4 @@
-# Python Sistem İzleyici (CLI + HTML GUI)
+# Python Sistem İzleyici (CLI + Custom Tkinter GUI)
 
 Bu proje gerçek sistem verilerini izler:
 - SSD / HDD / NVMe (M.2 olası) takılı mı
@@ -15,19 +15,16 @@ Tercihen:
 pip install psutil
 # Opsiyonel GPU takibi için:
 pip install gputil
+# SVG ikonları tkinter içinde görüntülemek için opsiyonel:
+pip install cairosvg pillow
 ```
 
 > `psutil` kurulu değilse uygulama Linux üzerinde `/proc` fallback ile çalışmaya devam eder.
 
-## GUI Çalıştırma
+## Custom Tkinter GUI Çalıştırma
 
 ```bash
-python3 dashboard_server.py --host 127.0.0.1 --port 8080
-```
-
-Tarayıcı:
-```text
-http://127.0.0.1:8080
+python3 tkinter_gui.py
 ```
 
 ## CLI Çalıştırma
@@ -40,6 +37,7 @@ python3 system_monitor.py --watch 5
 
 ## Notlar
 
-- SVG ikonlar `web/static/icons/` altında tutulur ve GUI’de kullanılır.
-- GUI kartlarında şeffaf cam (glassmorphism) efekti vardır.
+- HTML GUI kaldırıldı; yerine tamamen custom tkinter arayüzü eklendi.
+- SVG ikonlar `web/static/icons/` altında tutulur ve tkinter GUI tarafından kullanılır.
+- `cairosvg+pillow` yoksa uygulama SVG dosyalarını yine okuyup metin fallback gösterir.
 - Disk türü Linux üzerinde `/sys/class/block` ile tespit edilir.
