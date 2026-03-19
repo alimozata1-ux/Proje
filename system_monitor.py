@@ -1,23 +1,11 @@
 #!/usr/bin/env python3
-"""
-Gelişmiş Sistem İzleyici
-
-İzlenen bileşenler:
-- CPU kullanımı / frekansı
-- GPU kullanımı (nvidia-smi veya GPUtil varsa)
-- RAM kullanımı
-- Disk türleri (SSD/HDD/NVMe-M.2) ve okuma/yazma hızları
-- USB depolama aygıtı takılı mı
-- SD kart takılı mı
-
-Not:
-- Bazı bilgiler işletim sistemi ve yetkilere göre kısıtlı olabilir.
-- Linux üzerinde /sys/class/block kullanılarak SSD/HDD/NVMe tespiti yapılır.
-"""
+"""Gelişmiş Sistem İzleyici (psutil zorunlu değildir)."""
 
 from __future__ import annotations
 
 import argparse
+import importlib
+import importlib.util
 import json
 import platform
 import re
@@ -25,9 +13,13 @@ import subprocess
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-import psutil
+PSUTIL_AVAILABLE = importlib.util.find_spec("psutil") is not None
+if PSUTIL_AVAILABLE:
+    psutil = importlib.import_module("psutil")
+else:
+    psutil = None
 
 
 @dataclass
@@ -56,15 +48,104 @@ def _safe_read(path: Path) -> Optional[str]:
         return None
 
 
+def _read_proc_stat_cpu() -> Optional[Tuple[int, int]]:
+    data = _safe_read(Path("/proc/stat"))
+    if not data:
+        return None
+    line = data.splitlines()[0]
+    parts = [int(x) for x in line.split()[1:]]
+    idle = parts[3] + (parts[4] if len(parts) > 4 else 0)
+    total = sum(parts)
+    return idle, total
+
+
+def _cpu_percent_linux(interval: float = 1.0) -> float:
+    a = _read_proc_stat_cpu()
+    time.sleep(interval)
+    b = _read_proc_stat_cpu()
+    if not a or not b:
+        return 0.0
+    idle_delta = b[0] - a[0]
+    total_delta = b[1] - a[1]
+    if total_delta <= 0:
+        return 0.0
+    return max(0.0, min(100.0, 100.0 * (1.0 - idle_delta / total_delta)))
+
+
+def _cpu_freq_linux_mhz() -> Optional[float]:
+    text = _safe_read(Path("/proc/cpuinfo"))
+    if not text:
+        return None
+    for line in text.splitlines():
+        if "cpu MHz" in line:
+            try:
+                return float(line.split(":", 1)[1].strip())
+            except Exception:
+                return None
+    return None
+
+
+def _ram_usage_linux() -> Tuple[float, float]:
+    """return total_gb, used_percent"""
+    text = _safe_read(Path("/proc/meminfo"))
+    if not text:
+        return 0.0, 0.0
+    vals: Dict[str, int] = {}
+    for line in text.splitlines():
+        key, rest = line.split(":", 1)
+        vals[key] = int(rest.strip().split()[0])
+    total = vals.get("MemTotal", 0)
+    avail = vals.get("MemAvailable", vals.get("MemFree", 0))
+    used = max(0, total - avail)
+    if total == 0:
+        return 0.0, 0.0
+    return total / (1024 * 1024), (used / total) * 100.0
+
+
+def _disk_io_linux() -> Tuple[int, int]:
+    """read_bytes, write_bytes (aggregated)"""
+    text = _safe_read(Path("/proc/diskstats"))
+    if not text:
+        return 0, 0
+    read_sectors = 0
+    write_sectors = 0
+    for line in text.splitlines():
+        p = line.split()
+        if len(p) < 14:
+            continue
+        name = p[2]
+        if name.startswith(("loop", "ram")):
+            continue
+        read_sectors += int(p[5])
+        write_sectors += int(p[9])
+    return read_sectors * 512, write_sectors * 512
+
+
+def _disk_speed_interval(interval: float = 1.0) -> Dict[str, float]:
+    if PSUTIL_AVAILABLE:
+        io1 = psutil.disk_io_counters()
+        time.sleep(interval)
+        io2 = psutil.disk_io_counters()
+        if not io1 or not io2:
+            return {"read_mb_s": 0.0, "write_mb_s": 0.0}
+        read_speed = (io2.read_bytes - io1.read_bytes) / (1024 * 1024 * interval)
+        write_speed = (io2.write_bytes - io1.write_bytes) / (1024 * 1024 * interval)
+        return {"read_mb_s": max(0.0, read_speed), "write_mb_s": max(0.0, write_speed)}
+
+    r1, w1 = _disk_io_linux()
+    time.sleep(interval)
+    r2, w2 = _disk_io_linux()
+    return {
+        "read_mb_s": max(0.0, (r2 - r1) / (1024 * 1024 * interval)),
+        "write_mb_s": max(0.0, (w2 - w1) / (1024 * 1024 * interval)),
+    }
+
+
 def _linux_block_device_info(device: str) -> Dict[str, Any]:
-    """/dev/sda -> {'kind': 'HDD/SSD/NVMe', 'removable': bool, 'interface': str}"""
     result = {"kind": "Bilinmiyor", "removable": False, "interface": "Bilinmiyor"}
     dev_name = Path(device).name
-
-    # partition ise disk adını bul (sda1 -> sda, nvme0n1p1 -> nvme0n1)
     base = re.sub(r"p?\d+$", "", dev_name)
     sys_block = Path("/sys/class/block") / base
-
     if not sys_block.exists():
         return result
 
@@ -86,50 +167,52 @@ def _linux_block_device_info(device: str) -> Dict[str, Any]:
     removable = _safe_read(sys_block / "removable")
     result["removable"] = removable == "1"
 
-    # transport bilgisi (usb/sata vb.)
     uevent = _safe_read(sys_block / "device/uevent") or ""
     if "DRIVER=usb-storage" in uevent:
         result["interface"] = "USB"
-
     return result
+
+
+def _disk_partitions_linux() -> List[Tuple[str, str, str]]:
+    mounts = _safe_read(Path("/proc/mounts"))
+    out: List[Tuple[str, str, str]] = []
+    if not mounts:
+        return out
+    for line in mounts.splitlines():
+        dev, mnt, fstype = line.split()[:3]
+        if dev.startswith("/dev/"):
+            out.append((dev, mnt, fstype))
+    return out
 
 
 def get_storage_devices() -> List[DeviceInfo]:
     devices: List[DeviceInfo] = []
     seen: set[str] = set()
 
-    for p in psutil.disk_partitions(all=True):
-        if p.device in seen or not p.device.startswith("/dev/"):
+    if PSUTIL_AVAILABLE:
+        rows = [(p.device, p.mountpoint, p.fstype) for p in psutil.disk_partitions(all=True)]
+    else:
+        rows = _disk_partitions_linux()
+
+    for device, mountpoint, fstype in rows:
+        if device in seen:
             continue
-        seen.add(p.device)
+        seen.add(device)
 
         kind = "Bilinmiyor"
         removable = False
         interface = "Bilinmiyor"
-
         if platform.system().lower() == "linux":
-            info = _linux_block_device_info(p.device)
+            info = _linux_block_device_info(device)
             kind = info["kind"]
             removable = info["removable"]
             interface = info["interface"]
 
-        devices.append(
-            DeviceInfo(
-                name=p.device,
-                mountpoint=p.mountpoint,
-                fs_type=p.fstype,
-                removable=removable,
-                interface=interface,
-                kind=kind,
-            )
-        )
-
+        devices.append(DeviceInfo(device, mountpoint, fstype, removable, interface, kind))
     return devices
 
 
 def _detect_gpu_usage() -> Optional[float]:
-    """GPU kullanımını % döndür. Yoksa None."""
-    # 1) nvidia-smi
     try:
         proc = subprocess.run(
             ["nvidia-smi", "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits"],
@@ -145,87 +228,62 @@ def _detect_gpu_usage() -> Optional[float]:
     except Exception:
         pass
 
-    # 2) GPUtil (opsiyonel)
-    try:
-        import GPUtil  # type: ignore
-
-        gpus = GPUtil.getGPUs()
+    if importlib.util.find_spec("GPUtil") is not None:
+        gputil = importlib.import_module("GPUtil")
+        gpus = gputil.getGPUs()
         if gpus:
-            vals = [gpu.load * 100.0 for gpu in gpus]
-            return sum(vals) / len(vals)
-    except Exception:
-        pass
-
+            return sum(g.load * 100.0 for g in gpus) / len(gpus)
     return None
 
 
-def _disk_speed_interval(interval: float = 1.0) -> Dict[str, float]:
-    io1 = psutil.disk_io_counters()
-    time.sleep(interval)
-    io2 = psutil.disk_io_counters()
-
-    if not io1 or not io2:
-        return {"read_mb_s": 0.0, "write_mb_s": 0.0}
-
-    read_speed = (io2.read_bytes - io1.read_bytes) / (1024 * 1024 * interval)
-    write_speed = (io2.write_bytes - io1.write_bytes) / (1024 * 1024 * interval)
-    return {"read_mb_s": max(0.0, read_speed), "write_mb_s": max(0.0, write_speed)}
-
-
 def classify_external_devices(devices: List[DeviceInfo]) -> Dict[str, bool]:
-    usb = any(d.interface == "USB" or "usb" in d.name.lower() for d in devices)
-    sd = any("mmc" in d.name.lower() or "sd" in d.kind.lower() for d in devices)
-    has_m2 = any("nvme" in d.kind.lower() for d in devices)
-    has_ssd = any("ssd" in d.kind.lower() for d in devices)
-    has_hdd = any("hdd" in d.kind.lower() for d in devices)
-
     return {
-        "usb_takili": usb,
-        "sd_kart_takili": sd,
-        "m2_nvme_takili": has_m2,
-        "ssd_takili": has_ssd,
-        "hdd_takili": has_hdd,
+        "usb_takili": any(d.interface == "USB" or "usb" in d.name.lower() for d in devices),
+        "sd_kart_takili": any("mmc" in d.name.lower() or "sd" in d.kind.lower() for d in devices),
+        "m2_nvme_takili": any("nvme" in d.kind.lower() for d in devices),
+        "ssd_takili": any("ssd" in d.kind.lower() for d in devices),
+        "hdd_takili": any("hdd" in d.kind.lower() for d in devices),
     }
 
 
 def collect_snapshot(th: Thresholds) -> Dict[str, Any]:
-    cpu_percent = psutil.cpu_percent(interval=1.0)
-    cpu_freq = psutil.cpu_freq()
-    ram = psutil.virtual_memory()
+    if PSUTIL_AVAILABLE:
+        cpu_percent = psutil.cpu_percent(interval=1.0)
+        cpu_freq_mhz = psutil.cpu_freq().current if psutil.cpu_freq() else None
+        mem = psutil.virtual_memory()
+        ram_total_gb = mem.total / (1024**3)
+        ram_percent = mem.percent
+    else:
+        cpu_percent = _cpu_percent_linux(interval=1.0)
+        cpu_freq_mhz = _cpu_freq_linux_mhz()
+        ram_total_gb, ram_percent = _ram_usage_linux()
+
     disk_speeds = _disk_speed_interval(interval=1.0)
     gpu_percent = _detect_gpu_usage()
     devices = get_storage_devices()
     flags = classify_external_devices(devices)
 
     alerts: List[str] = []
-
     if cpu_percent >= th.max_cpu_percent:
         alerts.append(f"CPU kullanımı çok yüksek: %{cpu_percent:.1f}")
-
-    if ram.percent >= th.max_ram_percent:
-        alerts.append(f"RAM kullanımı çok yüksek: %{ram.percent:.1f}")
-
+    if ram_percent >= th.max_ram_percent:
+        alerts.append(f"RAM kullanımı çok yüksek: %{ram_percent:.1f}")
     if disk_speeds["read_mb_s"] < th.min_disk_read_mb_s:
-        alerts.append(
-            f"Disk okuma hızı düşük: {disk_speeds['read_mb_s']:.2f} MB/s (< {th.min_disk_read_mb_s} MB/s)"
-        )
-
+        alerts.append(f"Disk okuma hızı düşük: {disk_speeds['read_mb_s']:.2f} MB/s (< {th.min_disk_read_mb_s} MB/s)")
     if disk_speeds["write_mb_s"] < th.min_disk_write_mb_s:
-        alerts.append(
-            f"Disk yazma hızı düşük: {disk_speeds['write_mb_s']:.2f} MB/s (< {th.min_disk_write_mb_s} MB/s)"
-        )
-
+        alerts.append(f"Disk yazma hızı düşük: {disk_speeds['write_mb_s']:.2f} MB/s (< {th.min_disk_write_mb_s} MB/s)")
     if gpu_percent is not None and gpu_percent >= th.max_gpu_percent:
         alerts.append(f"GPU kullanımı çok yüksek: %{gpu_percent:.1f}")
 
-    snapshot = {
+    return {
         "system": {
             "platform": platform.platform(),
             "cpu_percent": cpu_percent,
-            "cpu_freq_mhz": cpu_freq.current if cpu_freq else None,
-            "ram_total_gb": ram.total / (1024**3),
-            "ram_used_percent": ram.percent,
+            "cpu_freq_mhz": cpu_freq_mhz,
+            "ram_total_gb": ram_total_gb,
+            "ram_used_percent": ram_percent,
             "gpu_percent": gpu_percent,
+            "psutil_available": PSUTIL_AVAILABLE,
         },
         "storage": {
             "read_mb_s": disk_speeds["read_mb_s"],
@@ -235,22 +293,17 @@ def collect_snapshot(th: Thresholds) -> Dict[str, Any]:
         },
         "alerts": alerts,
     }
-    return snapshot
 
 
 def pretty_print(snapshot: Dict[str, Any]) -> None:
-    s = snapshot["system"]
-    st = snapshot["storage"]
-
+    s, st = snapshot["system"], snapshot["storage"]
     print("\n=== Sistem Özeti ===")
     print(f"Platform      : {s['platform']}")
     print(f"CPU Kullanımı : %{s['cpu_percent']:.1f}")
     print(f"CPU Frekans   : {s['cpu_freq_mhz']:.0f} MHz" if s["cpu_freq_mhz"] else "CPU Frekans   : Bilinmiyor")
     print(f"RAM Kullanımı : %{s['ram_used_percent']:.1f} / {s['ram_total_gb']:.1f} GB")
-    if s["gpu_percent"] is None:
-        print("GPU Kullanımı : Tespit edilemedi")
-    else:
-        print(f"GPU Kullanımı : %{s['gpu_percent']:.1f}")
+    print("GPU Kullanımı : Tespit edilemedi" if s["gpu_percent"] is None else f"GPU Kullanımı : %{s['gpu_percent']:.1f}")
+    print(f"psutil        : {'Var' if s.get('psutil_available') else 'Yok (fallback aktif)'}")
 
     print("\n=== Depolama ===")
     print(f"Okuma Hızı    : {st['read_mb_s']:.2f} MB/s")
@@ -261,50 +314,27 @@ def pretty_print(snapshot: Dict[str, Any]) -> None:
     print(f"USB Bellek    : {'Evet' if st['usb_takili'] else 'Hayır'}")
     print(f"SD Kart       : {'Evet' if st['sd_kart_takili'] else 'Hayır'}")
 
-    if st["devices"]:
-        print("\nAygıtlar:")
-        for d in st["devices"]:
-            print(
-                f"- {d['name']} | {d['kind']} | {d['interface']} | removable={d['removable']} | {d['mountpoint']}"
-            )
-
-    print("\n=== Uyarılar ===")
-    if snapshot["alerts"]:
-        for a in snapshot["alerts"]:
-            print(f"! {a}")
-    else:
-        print("Uyarı yok.")
-
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="SSD/HDD/USB/SD/CPU/GPU/RAM izleyici")
-    p.add_argument("--json", action="store_true", help="JSON çıktı ver")
-    p.add_argument("--watch", type=int, default=0, help="N saniyede bir sürekli izle (0=tek sefer)")
-    p.add_argument("--min-read", type=float, default=5.0, help="Min disk okuma hızı MB/s")
-    p.add_argument("--min-write", type=float, default=5.0, help="Min disk yazma hızı MB/s")
-    p.add_argument("--max-cpu", type=float, default=90.0, help="Maks CPU kullanım eşiği %")
-    p.add_argument("--max-ram", type=float, default=90.0, help="Maks RAM kullanım eşiği %")
-    p.add_argument("--max-gpu", type=float, default=90.0, help="Maks GPU kullanım eşiği %")
+    p.add_argument("--json", action="store_true")
+    p.add_argument("--watch", type=int, default=0)
+    p.add_argument("--min-read", type=float, default=5.0)
+    p.add_argument("--min-write", type=float, default=5.0)
+    p.add_argument("--max-cpu", type=float, default=90.0)
+    p.add_argument("--max-ram", type=float, default=90.0)
+    p.add_argument("--max-gpu", type=float, default=90.0)
     return p.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    th = Thresholds(
-        min_disk_read_mb_s=args.min_read,
-        min_disk_write_mb_s=args.min_write,
-        max_cpu_percent=args.max_cpu,
-        max_ram_percent=args.max_ram,
-        max_gpu_percent=args.max_gpu,
-    )
-
+    th = Thresholds(args.min_read, args.min_write, args.max_cpu, args.max_ram, args.max_gpu)
     while True:
         snap = collect_snapshot(th)
-        if args.json:
-            print(json.dumps(snap, ensure_ascii=False, indent=2))
-        else:
+        print(json.dumps(snap, ensure_ascii=False, indent=2) if args.json else "")
+        if not args.json:
             pretty_print(snap)
-
         if args.watch <= 0:
             break
         time.sleep(args.watch)

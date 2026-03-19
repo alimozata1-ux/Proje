@@ -6,93 +6,85 @@
   <title>Sistem İzleyici GUI</title>
   <style>
     :root { color-scheme: dark; }
-    body {
-      margin: 0;
-      font-family: Inter, Segoe UI, Arial, sans-serif;
-      background: radial-gradient(circle at top, #1f2f45, #0b1017 60%);
-      color: #f2f7ff;
-      min-height: 100vh;
-    }
+    body { margin:0; font-family: Inter, Segoe UI, Arial, sans-serif; background: radial-gradient(circle at top, #1f2f45, #0b1017 60%); color:#f2f7ff; }
     .wrap { max-width: 1200px; margin: 0 auto; padding: 24px; }
-    h1 { margin: 0 0 14px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 14px; }
-    .card {
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 16px;
-      padding: 12px;
-      backdrop-filter: blur(12px) saturate(140%);
-      -webkit-backdrop-filter: blur(12px) saturate(140%);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.35);
-    }
-    .card img { width: 100%; height: 100px; object-fit: contain; }
-    .k { font-size: 13px; color: #cfe0ff; }
-    .v { font-size: 22px; font-weight: 700; margin-top: 4px; }
-    #alerts li { margin: 6px 0; }
-    .ok { color: #83f7b0; }
-    .bad { color: #ff8b8b; }
-    .foot { opacity: .8; margin-top: 14px; font-size: 13px; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+    .card { background: rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18); border-radius:16px; padding:12px; backdrop-filter: blur(13px) saturate(145%); -webkit-backdrop-filter: blur(13px) saturate(145%); box-shadow:0 10px 24px rgba(0,0,0,0.35); }
+    .card img { width:100%; height:100px; object-fit:contain; }
+    .k{font-size:13px;color:#cfe0ff}.v{font-size:22px;font-weight:700;margin-top:4px}
+    .ok{color:#83f7b0}.bad{color:#ff8b8b}.muted{opacity:.8}
+    #alerts li,#devices li{margin:6px 0}
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>Canlı Sistem İzleyici</h1>
+    <p class="muted">Gerçek veriler 3 saniyede bir güncellenir.</p>
+
     <div class="grid">
-      <div class="card"><img src="/static/icons/cpu.svg" alt="cpu"><div class="k">CPU Kullanımı</div><div class="v" id="cpu">-</div></div>
-      <div class="card"><img src="/static/icons/gpu.svg" alt="gpu"><div class="k">GPU Kullanımı</div><div class="v" id="gpu">-</div></div>
-      <div class="card"><img src="/static/icons/ram.svg" alt="ram"><div class="k">RAM Kullanımı</div><div class="v" id="ram">-</div></div>
-      <div class="card"><img src="/static/icons/hdd.svg" alt="hdd"><div class="k">Disk Okuma / Yazma</div><div class="v" id="disk">-</div></div>
-      <div class="card"><img src="/static/icons/ssd.svg" alt="ssd"><div class="k">SSD Takılı</div><div class="v" id="ssd">-</div></div>
-      <div class="card"><img src="/static/icons/m2.svg" alt="m2"><div class="k">M.2/NVMe Takılı</div><div class="v" id="m2">-</div></div>
-      <div class="card"><img src="/static/icons/sd.svg" alt="sd"><div class="k">SD Kart Takılı</div><div class="v" id="sd">-</div></div>
-      <div class="card"><img src="/static/icons/usb.svg" alt="usb"><div class="k">USB Bellek Takılı</div><div class="v" id="usb">-</div></div>
+      <div class="card"><img src="/static/icons/cpu.svg" alt="CPU"><div class="k">CPU</div><div class="v" id="cpu">-</div></div>
+      <div class="card"><img src="/static/icons/gpu.svg" alt="GPU"><div class="k">GPU</div><div class="v" id="gpu">-</div></div>
+      <div class="card"><img src="/static/icons/ram.svg" alt="RAM"><div class="k">RAM</div><div class="v" id="ram">-</div></div>
+      <div class="card"><img src="/static/icons/hdd.svg" alt="Disk"><div class="k">Disk Okuma/Yazma</div><div class="v" id="disk">-</div></div>
+      <div class="card"><img src="/static/icons/ssd.svg" alt="SSD"><div class="k">SSD Takılı</div><div class="v" id="ssd">-</div></div>
+      <div class="card"><img src="/static/icons/m2.svg" alt="M2"><div class="k">M.2/NVMe Takılı</div><div class="v" id="m2">-</div></div>
+      <div class="card"><img src="/static/icons/sd.svg" alt="SD"><div class="k">SD Kart Takılı</div><div class="v" id="sd">-</div></div>
+      <div class="card"><img src="/static/icons/usb.svg" alt="USB"><div class="k">USB Bellek Takılı</div><div class="v" id="usb">-</div></div>
     </div>
 
-    <div class="card" style="margin-top:14px">
-      <div class="k">Uyarılar</div>
-      <ul id="alerts"></ul>
+    <div class="grid" style="margin-top:14px; grid-template-columns:1fr 1fr;">
+      <div class="card"><div class="k">Uyarılar</div><ul id="alerts"></ul></div>
+      <div class="card"><div class="k">Algılanan Aygıtlar</div><ul id="devices"></ul></div>
     </div>
-    <div class="foot">Veriler 3 saniyede bir güncellenir.</div>
+
+    <p class="muted" id="backend">Backend: -</p>
   </div>
 
   <script>
     const yesNo = (v) => v ? '<span class="ok">Evet</span>' : '<span class="bad">Hayır</span>';
+    const setText = (id, txt) => document.getElementById(id).innerHTML = txt;
 
     async function load() {
-      try {
-        const r = await fetch('/api/snapshot');
-        const data = await r.json();
-        const s = data.system, st = data.storage;
+      const r = await fetch('/api/snapshot', {cache: 'no-store'});
+      if (!r.ok) throw new Error('API hata: ' + r.status);
+      const data = await r.json();
+      const s = data.system, st = data.storage;
 
-        document.getElementById('cpu').textContent = `%${s.cpu_percent.toFixed(1)}`;
-        document.getElementById('gpu').textContent = s.gpu_percent == null ? 'Tespit yok' : `%${s.gpu_percent.toFixed(1)}`;
-        document.getElementById('ram').textContent = `%${s.ram_used_percent.toFixed(1)} / ${s.ram_total_gb.toFixed(1)} GB`;
-        document.getElementById('disk').textContent = `${st.read_mb_s.toFixed(2)} / ${st.write_mb_s.toFixed(2)} MB/s`;
+      setText('cpu', `%${Number(s.cpu_percent).toFixed(1)}`);
+      setText('gpu', s.gpu_percent == null ? '<span class="muted">Tespit yok</span>' : `%${Number(s.gpu_percent).toFixed(1)}`);
+      setText('ram', `%${Number(s.ram_used_percent).toFixed(1)} / ${Number(s.ram_total_gb).toFixed(1)} GB`);
+      setText('disk', `${Number(st.read_mb_s).toFixed(2)} / ${Number(st.write_mb_s).toFixed(2)} MB/s`);
 
-        document.getElementById('ssd').innerHTML = yesNo(st.ssd_takili);
-        document.getElementById('m2').innerHTML = yesNo(st.m2_nvme_takili);
-        document.getElementById('sd').innerHTML = yesNo(st.sd_kart_takili);
-        document.getElementById('usb').innerHTML = yesNo(st.usb_takili);
+      setText('ssd', yesNo(st.ssd_takili));
+      setText('m2', yesNo(st.m2_nvme_takili));
+      setText('sd', yesNo(st.sd_kart_takili));
+      setText('usb', yesNo(st.usb_takili));
 
-        const alerts = document.getElementById('alerts');
-        alerts.innerHTML = '';
-        if (!data.alerts.length) {
-          alerts.innerHTML = '<li class="ok">Uyarı yok</li>';
-        } else {
-          data.alerts.forEach((a) => {
-            const li = document.createElement('li');
-            li.className = 'bad';
-            li.textContent = a;
-            alerts.appendChild(li);
-          });
-        }
-      } catch (e) {
-        console.error(e);
+      const alerts = document.getElementById('alerts'); alerts.innerHTML='';
+      (data.alerts.length ? data.alerts : ['Uyarı yok']).forEach((a)=>{
+        const li=document.createElement('li'); li.className=data.alerts.length?'bad':'ok'; li.textContent=a; alerts.appendChild(li);
+      });
+
+      const devices = document.getElementById('devices'); devices.innerHTML='';
+      if (!st.devices.length) {
+        const li=document.createElement('li'); li.className='muted'; li.textContent='Aygıt bulunamadı'; devices.appendChild(li);
+      } else {
+        st.devices.forEach((d)=>{
+          const li=document.createElement('li');
+          li.textContent=`${d.name} | ${d.kind} | ${d.interface} | ${d.mountpoint || '-'}`;
+          devices.appendChild(li);
+        });
       }
+
+      document.getElementById('backend').textContent = s.psutil_available ? 'Backend: psutil' : 'Backend: psutil yok, Linux fallback aktif';
     }
 
-    load();
-    setInterval(load, 3000);
+    async function tick(){
+      try { await load(); }
+      catch(e){ document.getElementById('backend').textContent = 'Bağlantı hatası: ' + e.message; }
+    }
+    tick();
+    setInterval(tick, 3000);
   </script>
 </body>
 </html>

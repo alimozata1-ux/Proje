@@ -10,48 +10,36 @@ Bu proje gerçek sistem verilerini izler:
 
 ## Kurulum
 
+Tercihen:
 ```bash
 pip install psutil
 # Opsiyonel GPU takibi için:
 pip install gputil
 ```
 
-## CLI Çalıştırma
+> `psutil` kurulu değilse uygulama Linux üzerinde `/proc` fallback ile çalışmaya devam eder.
 
-Tek sefer ölçüm:
-```bash
-python3 system_monitor.py
-```
-
-JSON çıktı:
-```bash
-python3 system_monitor.py --json
-```
-
-Sürekli izleme (her 5 saniye):
-```bash
-python3 system_monitor.py --watch 5
-```
-
-## HTML GUI Çalıştırma
+## GUI Çalıştırma
 
 ```bash
 python3 dashboard_server.py --host 127.0.0.1 --port 8080
 ```
 
-Ardından tarayıcıdan aç:
-
+Tarayıcı:
 ```text
 http://127.0.0.1:8080
 ```
 
-GUI özellikleri:
-- Gerçek veriler `/api/snapshot` endpoint’inden çekilir.
-- Kart tasarımında şeffaf cam (glassmorphism) efekti vardır.
-- Paylaştığın PNG’lere uygun olarak hazırlanmış SVG ikonlar kullanılır (`web/static/icons/*.svg`).
+## CLI Çalıştırma
+
+```bash
+python3 system_monitor.py
+python3 system_monitor.py --json
+python3 system_monitor.py --watch 5
+```
 
 ## Notlar
 
-- Disk türü tespiti Linux üzerinde `/sys/class/block` üzerinden yapılır.
-- NVMe tespiti, cihaz adından yapılır (`nvme*`) ve genellikle M.2 form faktörünü işaret eder.
-- GPU bilgisi için önce `nvidia-smi`, yoksa `GPUtil` denenir.
+- SVG ikonlar `web/static/icons/` altında tutulur ve GUI’de kullanılır.
+- GUI kartlarında şeffaf cam (glassmorphism) efekti vardır.
+- Disk türü Linux üzerinde `/sys/class/block` ile tespit edilir.
