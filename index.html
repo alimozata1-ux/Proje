@@ -101,8 +101,11 @@
             <div class="buttons secondary-actions">
               <button id="exportData" type="button">⬇️ Yedeği Dışa Aktar</button>
               <button id="importTrigger" type="button">⬆️ Yedek İçe Aktar</button>
+              <button id="connectExternalStorage" type="button">💽 Dış Depolama Bağla</button>
+              <button id="disconnectExternalStorage" type="button">🔌 Dış Depolamayı Ayır</button>
               <button id="clearAll" type="button" class="danger">Tümünü Sil</button>
             </div>
+            <p id="externalStorageStatus" class="muted-note">Dış depolama: Bağlı değil</p>
           </details>
           <input id="importInput" type="file" accept="application/json" hidden />
           <input id="folderInput" type="file" webkitdirectory directory multiple hidden />

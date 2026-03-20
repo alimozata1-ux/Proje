@@ -49,6 +49,9 @@ const clearSelection = document.getElementById("clearSelection");
 const bulkFavorite = document.getElementById("bulkFavorite");
 const bulkDownload = document.getElementById("bulkDownload");
 const bulkDelete = document.getElementById("bulkDelete");
+const connectExternalStorage = document.getElementById("connectExternalStorage");
+const disconnectExternalStorage = document.getElementById("disconnectExternalStorage");
+const externalStorageStatus = document.getElementById("externalStorageStatus");
 
 const dockServerStatus = document.getElementById("dockServerStatus");
 const dockTotalSize = document.getElementById("dockTotalSize");
@@ -85,6 +88,9 @@ let activities = loadActivities();
 const appStartTime = Date.now();
 const clientId = getOrCreateClientId();
 let selectedFileIds = new Set();
+let externalRootHandle = null;
+let externalFilesHandle = null;
+const supportsExternalStorage = typeof window.showDirectoryPicker === "function";
 
 applySavedTheme();
 applyAccentTheme();
@@ -98,6 +104,7 @@ renderActivity();
 initServerStats();
 renderTip();
 initFinalTouches();
+initExternalStorage();
 
 fileInput.addEventListener("change", async (event) => {
   await handleFiles(event.target.files);
@@ -226,6 +233,17 @@ bulkDelete.addEventListener("click", () => {
   showToast("Seçili dosyalar silindi");
 });
 
+connectExternalStorage.addEventListener("click", async () => {
+  await handleConnectExternalStorage();
+});
+
+disconnectExternalStorage.addEventListener("click", () => {
+  externalRootHandle = null;
+  externalFilesHandle = null;
+  updateExternalStorageStatus();
+  showToast("Dış depolama bağlantısı ayrıldı");
+});
+
 scrollTopBtn.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
@@ -334,6 +352,14 @@ async function handleFiles(fileListObj) {
       continue;
     }
     const fileDataUrl = await readAsDataURL(file);
+    let externalPath = null;
+    if (externalFilesHandle) {
+      try {
+        externalPath = await saveFileToExternalStorage(file, incomingName);
+      } catch {
+        showToast("Bazı dosyalar dış depolamaya yazılamadı");
+      }
+    }
     files.unshift({
       id: crypto.randomUUID(),
       name: incomingName,
@@ -343,6 +369,7 @@ async function handleFiles(fileListObj) {
       dataUrl: fileDataUrl,
       favorite: false,
       ownerId: clientId,
+      externalPath,
     });
     added += 1;
   }
@@ -421,12 +448,23 @@ function render() {
       }
     });
 
-    item.querySelector(".download-btn").addEventListener("click", () => {
-      const a = document.createElement("a");
-      a.href = file.dataUrl;
-      a.download = file.name;
-      a.click();
-      addActivity(`Dosya indirildi: ${file.name}`);
+    item.querySelector(".download-btn").addEventListener("click", async () => {
+      try {
+        if (file.externalPath && externalRootHandle) {
+          await downloadFromExternalStorage(file);
+        } else {
+          const a = document.createElement("a");
+          a.href = file.dataUrl;
+          a.download = file.name;
+          a.click();
+        }
+        addActivity(`Dosya indirildi: ${file.name}`);
+      } catch {
+        const a = document.createElement("a");
+        a.href = file.dataUrl;
+        a.download = file.name;
+        a.click();
+      }
     });
 
     item.querySelector(".rename-btn").addEventListener("click", () => {
@@ -533,7 +571,7 @@ function renderQuickAccess() {
 function loadFiles() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-    return parsed.map((f) => ({ ...f, favorite: Boolean(f.favorite), type: f.type || "other/unknown", ownerId: f.ownerId || clientId }));
+    return parsed.map((f) => ({ ...f, favorite: Boolean(f.favorite), type: f.type || "other/unknown", ownerId: f.ownerId || clientId, externalPath: typeof f.externalPath === "string" ? f.externalPath : null }));
   } catch {
     return [];
   }
@@ -541,6 +579,103 @@ function loadFiles() {
 
 function persist() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+  if (externalRootHandle) {
+    syncExternalDatabase().catch(() => {
+      // dış depolama opsiyonel, localStorage her zaman kaynak kalır
+    });
+  }
+}
+
+function initExternalStorage() {
+  if (!supportsExternalStorage) {
+    updateExternalStorageStatus("Desteklenmiyor");
+    connectExternalStorage.disabled = true;
+    disconnectExternalStorage.disabled = true;
+    return;
+  }
+  updateExternalStorageStatus();
+}
+
+function updateExternalStorageStatus(custom) {
+  if (custom) {
+    externalStorageStatus.textContent = `Dış depolama: ${custom}`;
+    return;
+  }
+  externalStorageStatus.textContent = externalRootHandle ? "Dış depolama: Bağlı (Files klasörü aktif)" : "Dış depolama: Bağlı değil";
+}
+
+async function handleConnectExternalStorage() {
+  if (!supportsExternalStorage) {
+    showToast("Tarayıcı dış depolama API'sini desteklemiyor");
+    return;
+  }
+  try {
+    externalRootHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+    externalFilesHandle = await externalRootHandle.getDirectoryHandle("Files", { create: true });
+    await syncExternalDatabase();
+    updateExternalStorageStatus();
+    addActivity("Dış depolama bağlandı (Files klasörü hazır)");
+    showToast("Dış depolama bağlandı");
+  } catch {
+    updateExternalStorageStatus();
+    showToast("Dış depolama bağlantısı iptal edildi");
+  }
+}
+
+async function saveFileToExternalStorage(file, relativePath) {
+  if (!externalFilesHandle) return null;
+  const safeParts = String(relativePath || file.name)
+    .split("/")
+    .filter(Boolean)
+    .map((part) => part.replace(/[\:*?"<>|]/g, "_"));
+
+  let dir = externalFilesHandle;
+  for (const segment of safeParts.slice(0, -1)) {
+    dir = await dir.getDirectoryHandle(segment, { create: true });
+  }
+
+  const finalName = safeParts[safeParts.length - 1] || `file-${Date.now()}`;
+  const fileHandle = await dir.getFileHandle(finalName, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(file);
+  await writable.close();
+
+  return `Files/${safeParts.join("/")}`;
+}
+
+async function getExternalFileHandleByPath(path) {
+  if (!externalRootHandle || !path) return null;
+  const parts = String(path).split("/").filter(Boolean);
+  let dir = externalRootHandle;
+  for (const segment of parts.slice(0, -1)) {
+    dir = await dir.getDirectoryHandle(segment, { create: false });
+  }
+  return await dir.getFileHandle(parts[parts.length - 1], { create: false });
+}
+
+async function downloadFromExternalStorage(fileMeta) {
+  const handle = await getExternalFileHandleByPath(fileMeta.externalPath);
+  if (!handle) throw new Error("missing external handle");
+  const file = await handle.getFile();
+  const url = URL.createObjectURL(file);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileMeta.name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function syncExternalDatabase() {
+  if (!externalRootHandle) return;
+  const dbHandle = await externalRootHandle.getFileHandle("goblin-data.json", { create: true });
+  const writable = await dbHandle.createWritable();
+  const payload = {
+    savedAt: new Date().toISOString(),
+    totalFiles: files.length,
+    files,
+  };
+  await writable.write(JSON.stringify(payload, null, 2));
+  await writable.close();
 }
 
 function getOrCreateClientId() {
@@ -716,6 +851,7 @@ async function handleImport(event) {
         dataUrl: String(f.dataUrl),
         favorite: Boolean(f.favorite),
         ownerId: clientId,
+        externalPath: typeof f.externalPath === "string" ? f.externalPath : null,
       }));
 
     files = normalized;
