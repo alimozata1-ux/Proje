@@ -289,18 +289,29 @@ def run_cli(app: GoblinDatabaseApp, args: argparse.Namespace) -> None:
         print(json.dumps(app.import_csv(payload), indent=2, ensure_ascii=False))
         return
 
-    print("Komut verilmedi. GUI için --gui kullanın veya komutlardan birini verin.")
+    print("Komut verilmedi.")
 
 
 def main() -> None:
     args = parse_args()
     app = GoblinDatabaseApp(Path(args.root))
 
-    if args.gui:
+    should_try_gui = args.gui or args.command is None
+    if should_try_gui:
         if tk is None:
-            raise RuntimeError("GUI modu için tkinter gerekli")
-        GoblinDatabaseGUI(app).run()
-        return
+            print("GUI başlatılamadı: tkinter bu ortamda mevcut değil.")
+            if args.command is None:
+                print("CLI kullanımı için bir komut verin (örn: stats, list, add).")
+                return
+        else:
+            try:
+                GoblinDatabaseGUI(app).run()
+                return
+            except Exception as exc:  # noqa: BLE001
+                print(f"GUI başlatılamadı: {exc}")
+                if args.command is None:
+                    print("CLI kullanımı için bir komut verin (örn: stats, list, add).")
+                    return
 
     run_cli(app, args)
 
