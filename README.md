@@ -71,6 +71,7 @@ VirtualBox:
 ```bash
 ./build/bin/konec compiler/examples/hello.kc build/hello.mars32
 ./build/bin/konevm build/hello.mars32 --debug
+python3 vm/konevm_py.py build/hello.mars32 --debug
 ```
 
 ## HTML Arayüz Önizleme
@@ -98,3 +99,13 @@ xdg-open gui/preview/koneos_preview.html
 
 - Mars32: i386 freestanding kernel + `.mars32` bytecode hedefi
 - Mars64: toolchain/VM tarafında `.mars64` çıktı desteği (kernel port planlanmıştır)
+
+
+## Python Tabanlı VM
+
+- Dosya: `vm/konevm_py.py`
+- Özellikler: debug modu, stack trace, step limiti
+
+```bash
+python3 vm/konevm_py.py build/hello.mars64 --debug --trace-stack
+```

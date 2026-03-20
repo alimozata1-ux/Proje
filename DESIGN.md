@@ -85,6 +85,7 @@ print(40 + 2);
 - Basit CPU emülasyonu: stack tabanlı opcode yürütümü
 - RAM, disk, framebuffer modelleyen VM state yapısı
 - Debug modu (`--debug`)
+- Python referans VM (`vm/konevm_py.py`)
 
 Opcode set:
 - `PUSH`

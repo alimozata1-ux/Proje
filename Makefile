@@ -44,7 +44,7 @@ KERNEL_OBJS := \
 	$(OBJ_DIR)/gui_debug_panel.o \
 	$(OBJ_DIR)/fs_kfs.o
 
-.PHONY: all kernel host-tools iso run-qemu clean stats
+.PHONY: all kernel host-tools iso run-qemu clean stats py-vm
 
 all: kernel host-tools
 
@@ -156,6 +156,9 @@ iso: kernel
 
 run-qemu: iso
 	qemu-system-i386 -cdrom $(BUILD)/koneos.iso -m 256 -serial stdio
+
+py-vm:
+	python3 vm/konevm_py.py build/hello.mars32 --debug
 
 stats:
 	@echo "C/Headers lines:" && wc -l $$(rg --files -g'*.c' -g'*.h' -g'*.s' -g'*.ld') | tail -n 1
