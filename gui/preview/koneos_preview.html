@@ -53,7 +53,10 @@
         <div class="content" id="content"></div>
       </div>
 
+      
       <aside class="sidebar" id="notify"></aside>
+      <div class="sidebar" style="right:300px;top:56px;width:220px" id="appLinks"></div>
+
 
       <div class="taskbar">
         <div class="tasks" id="tasks"></div>
@@ -104,6 +107,27 @@ function drawNotify(){
   (window.KONE_PREVIEW_DATA?.systemLog||[]).slice(0,10).forEach(x=>{const d=document.createElement('div');d.className='side-item';d.textContent=x;n.appendChild(d);});
 }
 
+
+function drawLinks(){
+  const m=[
+    ['File Manager','../apps/file_manager.html'],
+    ['Settings','../apps/settings.html'],
+    ['Terminal','../apps/terminal.html'],
+    ['Text Editor','../apps/text_editor.html'],
+    ['Media Player','../apps/media_player.html'],
+    ['Calculator','../apps/calculator.html'],
+    ['System Monitor','../apps/system_monitor.html']
+  ];
+  const box=document.getElementById('appLinks');
+  box.innerHTML='<b>App GUI Sayfaları</b>';
+  m.forEach(([n,u])=>{
+    const d=document.createElement('div');
+    d.className='side-item';
+    d.innerHTML=`<a href="${u}" style="color:#9fd0ff;text-decoration:none" target="_blank">${n}</a>`;
+    box.appendChild(d);
+  });
+}
+
 function openApp(name){
   document.getElementById('title').textContent=name;
   const c=document.getElementById('content');
@@ -122,7 +146,7 @@ function maximize(){const w=document.getElementById('window');w.style.left='20px
 function closeWin(){document.getElementById('content').textContent='Pencere kapatıldı.';}
 
 setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('tr-TR');},1000);
-drawHome();drawTasks();drawNotify();openApp('Terminal');
+drawHome();drawTasks();drawNotify();drawLinks();openApp('Terminal');
 </script>
 </body>
 </html>

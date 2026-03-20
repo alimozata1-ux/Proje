@@ -52,6 +52,7 @@ Kernel tarafında GUI çekirdeği başlatma seviyesindedir.
 - Çoklu masaüstü düğmesi
 - Tema geçişi
 - Debug paneli
+- Her temel uygulama için ayrı GUI mock ekranları (`gui/apps/*.html`)
 
 ## 5. KFS
 
@@ -95,6 +96,7 @@ Opcode set:
 Aşağıdaki dosyalar, büyük ölçekli bir OS ekosisteminde karşılaşılacak veri kataloglarını simüle eder:
 - `kernel/generated/syscall_catalog.c`: 5000+ syscall metadata satırı
 - `gui/preview/mock_data.js`: büyük uygulama/veri/log kataloğu
+- `gui/apps/mock_app_data.js`: uygulama bazlı yoğun GUI veri seti
 
 Bu sayede hem kod tabanı satır sayısı hem de test verisi yoğunluğu artırılmıştır.
 

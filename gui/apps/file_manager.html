@@ -1,0 +1,11 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>File Manager</title><link rel="stylesheet" href="kone_ui.css"></head><body>
+<script src="kone_ui.js"></script><script src="mock_app_data.js"></script><script src="../preview/mock_data.js"></script>
+<script>
+const files = (window.KONE_PREVIEW_DATA?.packages || []).slice(0,120).map((p,i)=>({name:`${p.name}.app`,size:`${p.sizeKb}KB`,type:i%2?'app':'txt'}));
+const side = `<h3>Klasörler</h3><div class=card>/</div><div class=card>/apps</div><div class=card>/home/user</div><div class=card>/media</div>`;
+const rows = files.map(f=>`<tr><td>${f.name}</td><td>${f.type}</td><td>${f.size}</td></tr>`).join('');
+const panel = `<h3>Dosya Yöneticisi</h3><table class=table><tr><th>Ad</th><th>Tür</th><th>Boyut</th></tr>${rows}</table>`;
+const _datasetInfo = window.KONE_APP_DATA ? Object.keys(window.KONE_APP_DATA).length + " app dataset" : "dataset yok";
+mountAppShell('Dosya Yöneticisi', side, panel);
+document.querySelector(".sidebar").insertAdjacentHTML("beforeend", `<div class=card>${_datasetInfo}</div>`);
+</script></body></html>

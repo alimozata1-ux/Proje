@@ -25,6 +25,7 @@ Bu depo, tek seferde üretilebilir bir **minimum çalışır temel** (MVP+) sağ
 - `/apps` Örnek uygulama paketleri
 - `/lib` Ortak tipler ve util
 - `/gui/preview` HTML ile tablet arayüz prototipi
+- `/gui/apps` Her temel uygulama için ayrı, düzgün GUI mock ekranları
 
 ## Derleme
 
@@ -73,6 +74,18 @@ VirtualBox:
 ```
 
 ## HTML Arayüz Önizleme
+
+Ana shell: `gui/preview/koneos_preview.html`
+
+Uygulama GUI sayfaları:
+- `gui/apps/file_manager.html`
+- `gui/apps/settings.html`
+- `gui/apps/terminal.html`
+- `gui/apps/text_editor.html`
+- `gui/apps/media_player.html`
+- `gui/apps/calculator.html`
+- `gui/apps/system_monitor.html`
+
 
 ```bash
 xdg-open gui/preview/koneos_preview.html

@@ -1,0 +1,9 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Text Editor</title><link rel="stylesheet" href="kone_ui.css"></head><body>
+<script src="kone_ui.js"></script><script src="mock_app_data.js"></script>
+<script>
+const side = `<h3>Dosyalar</h3><div class=card>notes.txt</div><div class=card>system.cfg</div><div class=card>todo.txt</div>`;
+const panel = `<h3>Metin Editörü</h3><textarea class=textarea>// KONEC sample\nprint(40+2);\n\n// notlar\n- kernel\n- gui\n- vm\n</textarea><div class=card><button class=button>Kaydet</button></div>`;
+const _datasetInfo = window.KONE_APP_DATA ? Object.keys(window.KONE_APP_DATA).length + " app dataset" : "dataset yok";
+mountAppShell('Metin Editörü', side, panel);
+document.querySelector(".sidebar").insertAdjacentHTML("beforeend", `<div class=card>${_datasetInfo}</div>`);
+</script></body></html>
