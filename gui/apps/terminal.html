@@ -1,0 +1,10 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Terminal</title><link rel="stylesheet" href="kone_ui.css"></head><body>
+<script src="kone_ui.js"></script><script src="mock_app_data.js"></script><script src="../preview/mock_data.js"></script>
+<script>
+const side = `<h3>Oturumlar</h3><div class=card>local@mars64</div><div class=card>debug@kernel</div>`;
+const log = [`$ konec hello.kc hello.mars64`,`$ konevm hello.mars64 --debug`,`[KONE VM] 42`,`$ ps`,`1 shell.home`,`2 ui.compositor`,`$ _`].join('\n');
+const panel = `<h3>Terminal</h3><div class=log>${log}</div><div class=card><input class=input value="help" /></div>`;
+const _datasetInfo = window.KONE_APP_DATA ? Object.keys(window.KONE_APP_DATA).length + " app dataset" : "dataset yok";
+mountAppShell('Terminal', side, panel);
+document.querySelector(".sidebar").insertAdjacentHTML("beforeend", `<div class=card>${_datasetInfo}</div>`);
+</script></body></html>

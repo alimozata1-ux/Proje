@@ -1,0 +1,10 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>System Monitor</title><link rel="stylesheet" href="kone_ui.css"></head><body>
+<script src="kone_ui.js"></script><script src="mock_app_data.js"></script><script src="../preview/mock_data.js"></script>
+<script>
+const side = `<h3>Metrikler</h3><div class=card>CPU</div><div class=card>RAM</div><div class=card>IPC</div><div class=card>KFS</div>`;
+const rows = (window.KONE_PREVIEW_DATA?.systemLog || []).slice(0,300).join('\n');
+const panel = `<h3>Sistem Monitor</h3><div class=grid-2><div class=card>CPU: 24%</div><div class=card>RAM: 61%</div><div class=card>IPC Queue: 11</div><div class=card>Threads: 42</div></div><div class=log>${rows}</div>`;
+const _datasetInfo = window.KONE_APP_DATA ? Object.keys(window.KONE_APP_DATA).length + " app dataset" : "dataset yok";
+mountAppShell('Sistem Monitor', side, panel);
+document.querySelector(".sidebar").insertAdjacentHTML("beforeend", `<div class=card>${_datasetInfo}</div>`);
+</script></body></html>

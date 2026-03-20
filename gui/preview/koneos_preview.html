@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KONE OS Android-benzeri GUI Demo</title>
+  <style>
+    :root{
+      --bg:#0f1115;--card:#1b1f27;--card2:#232938;--text:#f2f5ff;--muted:#9ba8c7;--accent:#4ea1ff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(circle at top,#1a2332,var(--bg));font-family:Inter,Segoe UI,sans-serif;color:var(--text);padding:20px}
+    .tablet{max-width:1200px;margin:0 auto;border-radius:24px;overflow:hidden;border:1px solid #3a4358;box-shadow:0 20px 60px #0008;background:#131722}
+    .status{height:32px;background:#111827;display:flex;justify-content:space-between;align-items:center;padding:0 12px;font-size:12px}
+    .screen{height:680px;position:relative;background:linear-gradient(160deg,#141b29,#0f1420)}
+    .home-grid{position:absolute;inset:70px 24px 86px 24px;display:grid;grid-template-columns:repeat(6,1fr);gap:14px;align-content:start}
+    .app{background:#ffffff10;border:1px solid #ffffff1f;border-radius:18px;padding:12px;text-align:center;cursor:pointer}
+    .app:hover{border-color:var(--accent);transform:translateY(-2px)}
+    .app .i{font-size:30px}
+    .app .n{font-size:12px;margin-top:8px;color:#dfe6ff}
+    .window{position:absolute;left:120px;top:90px;width:760px;height:470px;background:var(--card);border:1px solid #ffffff22;border-radius:18px;display:grid;grid-template-rows:44px 1fr;overflow:hidden}
+    .title{display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:#ffffff10;border-bottom:1px solid #ffffff1f}
+    .actions button{background:#ffffff12;border:1px solid #ffffff2c;color:var(--text);border-radius:10px;padding:4px 8px}
+    .content{padding:14px;font-family:ui-monospace,Consolas,monospace;font-size:13px;overflow:auto}
+    .taskbar{position:absolute;left:0;right:0;bottom:0;height:56px;background:#0c1220cc;border-top:1px solid #ffffff1c;display:flex;align-items:center;justify-content:space-between;padding:0 14px;backdrop-filter:blur(12px)}
+    .tasks{display:flex;gap:8px}
+    .task{padding:8px 10px;border-radius:10px;border:1px solid #ffffff21;background:#ffffff10;font-size:12px}
+    .nav{display:flex;gap:8px}
+    .nav button{width:40px;height:40px;border-radius:10px;border:1px solid #ffffff25;background:#ffffff10;color:#fff;cursor:pointer}
+    .sidebar{position:absolute;right:16px;top:56px;width:270px;background:var(--card2);border:1px solid #ffffff22;border-radius:14px;padding:10px}
+    .side-item{padding:9px;border-bottom:1px solid #ffffff14;font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="tablet">
+    <div class="status">
+      <span>KONE OS • Mars64 • Tablet Mode</span>
+      <span id="clock"></span>
+    </div>
+
+    <div class="screen">
+      <div class="home-grid" id="home"></div>
+
+      <div class="window" id="window">
+        <div class="title">
+          <b id="title">Terminal</b>
+          <div class="actions">
+            <button onclick="minimize()">_</button>
+            <button onclick="maximize()">▢</button>
+            <button onclick="closeWin()">✕</button>
+          </div>
+        </div>
+        <div class="content" id="content"></div>
+      </div>
+
+      
+      <aside class="sidebar" id="notify"></aside>
+      <div class="sidebar" style="right:300px;top:56px;width:220px" id="appLinks"></div>
+
+
+      <div class="taskbar">
+        <div class="tasks" id="tasks"></div>
+        <div class="nav">
+          <button title="Back">◀</button>
+          <button title="Home">●</button>
+          <button title="Recent">▢</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="./mock_data.js"></script>
+<script>
+const apps=[
+['📁','Dosya'],['⚙️','Ayarlar'],['⌨️','Terminal'],['📝','Notlar'],['🎵','Medya'],['🧮','Hesap'],
+['📊','Monitor'],['🛒','Store'],['🤖','AI'],['🧩','Plugin'],['🌐','Tarayıcı'],['🎮','Oyun'],['🗂️','Görevler'],['🔔','Bildirim']
+];
+const tasks=['Terminal','Dosya','Ayarlar'];
+const log=[
+'KFS mounted: /apps',
+'WindowManager ready: draggable/resizable',
+'Gesture engine: swipe-left detected',
+'Sandbox policy: terminal profile loaded',
+'Taskbar active apps synced'
+];
+
+function drawHome(){
+  const home=document.getElementById('home');
+  apps.forEach(([i,n])=>{
+    const d=document.createElement('div');
+    d.className='app';
+    d.innerHTML=`<div class=i>${i}</div><div class=n>${n}</div>`;
+    d.onclick=()=>openApp(n);
+    home.appendChild(d);
+  });
+}
+function drawTasks(){
+  const t=document.getElementById('tasks');
+  tasks.forEach(x=>{
+    const d=document.createElement('div');d.className='task';d.textContent=x;t.appendChild(d);
+  });
+}
+function drawNotify(){
+  const n=document.getElementById('notify');
+  n.innerHTML='<b>Bildirim Paneli</b>';
+  log.forEach(x=>{const d=document.createElement('div');d.className='side-item';d.textContent=x;n.appendChild(d);});
+  (window.KONE_PREVIEW_DATA?.systemLog||[]).slice(0,10).forEach(x=>{const d=document.createElement('div');d.className='side-item';d.textContent=x;n.appendChild(d);});
+}
+
+
+function drawLinks(){
+  const m=[
+    ['File Manager','../apps/file_manager.html'],
+    ['Settings','../apps/settings.html'],
+    ['Terminal','../apps/terminal.html'],
+    ['Text Editor','../apps/text_editor.html'],
+    ['Media Player','../apps/media_player.html'],
+    ['Calculator','../apps/calculator.html'],
+    ['System Monitor','../apps/system_monitor.html'],
+    ['Browser','../apps/browser.html'],
+    ['Game Center','../apps/game_center.html']
+  ];
+  const box=document.getElementById('appLinks');
+  box.innerHTML='<b>App GUI Sayfaları</b>';
+  m.forEach(([n,u])=>{
+    const d=document.createElement('div');
+    d.className='side-item';
+    d.innerHTML=`<a href="${u}" style="color:#9fd0ff;text-decoration:none" target="_blank">${n}</a>`;
+    box.appendChild(d);
+  });
+}
+
+function openApp(name){
+  document.getElementById('title').textContent=name;
+  const c=document.getElementById('content');
+  if(name==='Terminal'){
+    c.innerHTML=`$ konec hello.kc hello.mars64\n$ konevm hello.mars64 --debug\n[KONE VM] 42\n$ _`;
+  }else if(name==='Monitor'){
+    const rows=(window.KONE_PREVIEW_DATA?.systemLog||[]).slice(0,120).join('\n');
+    c.textContent=rows;
+  }else{
+    c.textContent=name+' uygulaması için Android-benzeri pencere görünümü.';
+  }
+}
+
+function minimize(){document.getElementById('window').style.display='none';}
+function maximize(){const w=document.getElementById('window');w.style.left='20px';w.style.top='40px';w.style.width='930px';w.style.height='580px';}
+function closeWin(){document.getElementById('content').textContent='Pencere kapatıldı.';}
+
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('tr-TR');},1000);
+drawHome();drawTasks();drawNotify();drawLinks();openApp('Terminal');
+</script>
+</body>
+</html>

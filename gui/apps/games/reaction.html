@@ -1,0 +1,9 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Reaction Tap</title><style>body{margin:0;background:#0f1422;color:#fff;font-family:sans-serif;display:grid;place-items:center;height:100vh}.box{width:420px;padding:20px;background:#1a2238;border-radius:12px}.target{height:160px;border-radius:12px;display:grid;place-items:center;font-size:22px;cursor:pointer}</style></head>
+<body><div class="box"><h2>Reaction Tap</h2><p>Hedef yeşil olunca hızlıca tıkla.</p><div id="t" class="target">Bekle...</div><p id="res">-</p><button onclick="start()">Başlat</button></div>
+<script>
+let startTime=0,timeout=0;
+const t=document.getElementById('t'),res=document.getElementById('res');
+function start(){clearTimeout(timeout);t.style.background='#555';t.textContent='Bekle...';res.textContent='-';timeout=setTimeout(()=>{t.style.background='#1fc97a';t.textContent='Tıkla!';startTime=performance.now();},1000+Math.random()*3000)}
+t.onclick=()=>{if(t.style.background==='rgb(31, 201, 122)'){const ms=Math.round(performance.now()-startTime);res.textContent='Tepki: '+ms+'ms';localStorage.setItem('kone_reaction_best',Math.min(ms,Number(localStorage.getItem('kone_reaction_best')||9999)));}else{res.textContent='Erken tıkladın!';}}
+start();
+</script></body></html>

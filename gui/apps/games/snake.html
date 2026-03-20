@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><title>Snake</title><style>body{margin:0;background:#111;color:#fff;font-family:sans-serif;display:grid;place-items:center;height:100vh}canvas{background:#1b1b1b;border:2px solid #4ea1ff}button{margin-top:10px}</style></head>
+<body>
+<div><h2>Snake</h2><canvas id="c" width="420" height="420"></canvas><div id="score">Skor: 0</div><button onclick="resetGame()">Yeniden Başlat</button></div>
+<script>
+const c=document.getElementById('c');const x=c.getContext('2d');
+let dir={x:1,y:0},snake=[{x:10,y:10}],food={x:15,y:15},score=0;
+function rnd(){return Math.floor(Math.random()*21)}
+function step(){
+  const head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+  if(head.x<0||head.y<0||head.x>20||head.y>20||snake.some(s=>s.x===head.x&&s.y===head.y)){return resetGame();}
+  snake.unshift(head);
+  if(head.x===food.x&&head.y===food.y){score+=10;food={x:rnd(),y:rnd()};}
+  else snake.pop();
+  draw();
+}
+function draw(){
+  x.fillStyle='#1b1b1b';x.fillRect(0,0,420,420);
+  x.fillStyle='#38d27a';snake.forEach(s=>x.fillRect(s.x*20,s.y*20,18,18));
+  x.fillStyle='#ff5f78';x.fillRect(food.x*20,food.y*20,18,18);
+  document.getElementById('score').textContent='Skor: '+score;
+}
+function resetGame(){dir={x:1,y:0};snake=[{x:10,y:10}];food={x:rnd(),y:rnd()};score=0;draw();}
+window.onkeydown=e=>{if(e.key==='ArrowUp'&&dir.y!==1)dir={x:0,y:-1};if(e.key==='ArrowDown'&&dir.y!==-1)dir={x:0,y:1};if(e.key==='ArrowLeft'&&dir.x!==1)dir={x:-1,y:0};if(e.key==='ArrowRight'&&dir.x!==-1)dir={x:1,y:0};};
+setInterval(step,120);draw();
+</script></body></html>

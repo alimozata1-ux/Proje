@@ -1,0 +1,17 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Settings</title><link rel="stylesheet" href="kone_ui.css"></head><body>
+<script src="kone_ui.js"></script><script src="mock_app_data.js"></script>
+<script>
+const side = `<h3>Ayar Kategorileri</h3><div class=card>Görüntü</div><div class=card>Güvenlik</div><div class=card>Ağ</div><div class=card>Sistem</div>`;
+const panel = `
+<h3>Sistem Ayarları</h3>
+<div class=grid-2>
+  <div class=card><label>Tema</label><select class=select><option>Koyu</option><option>Açık</option></select></div>
+  <div class=card><label>Dil</label><select class=select><option>Türkçe</option><option>English</option></select></div>
+  <div class=card><label>Sandbox</label><select class=select><option>Etkin</option><option>Kapalı</option></select></div>
+  <div class=card><label>Animasyon</label><select class=select><option>Yüksek</option><option>Orta</option><option>Düşük</option></select></div>
+</div>
+<div class=card><button class=button>Kaydet</button></div>`;
+const _datasetInfo = window.KONE_APP_DATA ? Object.keys(window.KONE_APP_DATA).length + " app dataset" : "dataset yok";
+mountAppShell('Ayarlar', side, panel);
+document.querySelector(".sidebar").insertAdjacentHTML("beforeend", `<div class=card>${_datasetInfo}</div>`);
+</script></body></html>

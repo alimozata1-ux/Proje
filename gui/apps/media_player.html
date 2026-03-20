@@ -1,0 +1,10 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Media Player</title><link rel="stylesheet" href="kone_ui.css"></head><body>
+<script src="kone_ui.js"></script><script src="mock_app_data.js"></script>
+<script>
+const tracks = Array.from({length:30},(_,i)=>`track_${String(i+1).padStart(2,'0')}.ogg`);
+const side = `<h3>Playlist</h3>${tracks.slice(0,12).map(t=>`<div class=card>${t}</div>`).join('')}`;
+const panel = `<h3>Medya Oynatıcı</h3><div class=card><b>Şimdi Çalıyor:</b> track_01.ogg</div><div class=card><button class=button>▶ Oynat</button> <button class=button>⏸ Duraklat</button></div><div class=log>${tracks.join('\n')}</div>`;
+const _datasetInfo = window.KONE_APP_DATA ? Object.keys(window.KONE_APP_DATA).length + " app dataset" : "dataset yok";
+mountAppShell('Medya Oynatıcı', side, panel);
+document.querySelector(".sidebar").insertAdjacentHTML("beforeend", `<div class=card>${_datasetInfo}</div>`);
+</script></body></html>

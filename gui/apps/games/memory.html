@@ -1,0 +1,9 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Memory Match</title><style>body{margin:0;background:#111;color:#fff;font-family:sans-serif;display:grid;place-items:center;height:100vh}.grid{display:grid;grid-template-columns:repeat(4,70px);gap:8px}.card{width:70px;height:70px;background:#25324f;display:grid;place-items:center;border-radius:8px;cursor:pointer;font-size:28px}</style></head>
+<body><div><h2>Memory Match</h2><div class="grid" id="g"></div><p id="m">Hamle: 0</p></div>
+<script>
+const icons=['🍎','🍌','🍇','🍒','🍊','🥝','🍉','🍍'];
+let deck=[...icons,...icons].sort(()=>Math.random()-0.5),open=[],moves=0,lock=false;
+const g=document.getElementById('g');
+deck.forEach((v,i)=>{const d=document.createElement('div');d.className='card';d.dataset.i=i;d.textContent='?';d.onclick=()=>flip(d);g.appendChild(d);});
+function flip(el){if(lock||el.textContent!=='?')return;const i=Number(el.dataset.i);el.textContent=deck[i];open.push(el);if(open.length===2){moves++;document.getElementById('m').textContent='Hamle: '+moves;lock=true;setTimeout(()=>{if(deck[open[0].dataset.i]!==deck[open[1].dataset.i]){open[0].textContent='?';open[1].textContent='?';}open=[];lock=false;},600)}}
+</script></body></html>

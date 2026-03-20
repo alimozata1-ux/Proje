@@ -1,0 +1,10 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Calculator</title><link rel="stylesheet" href="kone_ui.css"></head><body>
+<script src="kone_ui.js"></script><script src="mock_app_data.js"></script>
+<script>
+const side = `<h3>Geçmiş</h3><div class=card>42 + 58 = 100</div><div class=card>9 * 9 = 81</div><div class=card>sin(0) = 0</div>`;
+const keys = ['7','8','9','/','4','5','6','*','1','2','3','-','0','.','=','+'];
+const panel = `<h3>Hesap Makinesi</h3><div class=card><input class=input value="100" /></div><div class=grid-2>${keys.map(k=>`<button class=button>${k}</button>`).join('')}</div>`;
+const _datasetInfo = window.KONE_APP_DATA ? Object.keys(window.KONE_APP_DATA).length + " app dataset" : "dataset yok";
+mountAppShell('Hesap Makinesi', side, panel);
+document.querySelector(".sidebar").insertAdjacentHTML("beforeend", `<div class=card>${_datasetInfo}</div>`);
+</script></body></html>
