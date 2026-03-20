@@ -172,6 +172,48 @@
             <p id="activityEmpty" class="empty">Henüz aktivite kaydı yok.</p>
           </section>
         </div>
+
+        <section class="admin card" id="adminAuthCard">
+          <h2>🔐 Admin Panel Girişi</h2>
+          <p class="muted-note">1. Güvenlik: Renk kombinasyonu doğru sırada olmalı.</p>
+          <div class="admin-row">
+            <select id="adminColor1"><option>Kırmızı</option><option>Sarı</option><option>Mavi</option><option>Yeşil</option></select>
+            <select id="adminColor2"><option>Kırmızı</option><option>Sarı</option><option>Mavi</option><option>Yeşil</option></select>
+            <select id="adminColor3"><option>Kırmızı</option><option>Sarı</option><option>Mavi</option><option>Yeşil</option></select>
+            <select id="adminColor4"><option>Kırmızı</option><option>Sarı</option><option>Mavi</option><option>Yeşil</option></select>
+            <button id="adminCheckColors" type="button">1. Adımı Doğrula</button>
+          </div>
+
+          <p class="muted-note">2. Güvenlik: Kod gir.</p>
+          <div class="admin-row">
+            <input id="adminCodeInput" type="text" placeholder="Kod" autocomplete="off" />
+            <button id="adminCheckCode" type="button">2. Adımı Doğrula</button>
+          </div>
+
+          <p class="muted-note">3. Güvenlik: Geçici şifreyi gir.</p>
+          <div class="admin-row">
+            <input id="adminGeneratedPassword" type="text" readonly placeholder="Geçici şifre burada üretilecek" />
+            <input id="adminPasswordInput" type="text" placeholder="Geçici şifreyi yaz" autocomplete="off" />
+            <button id="adminUnlock" type="button">Admin Paneli Aç</button>
+          </div>
+
+          <p id="adminAuthStatus" class="muted-note">Durum: Kilitli</p>
+        </section>
+
+        <section id="adminPanel" class="admin card" hidden>
+          <h2>🛡️ Admin Panel</h2>
+          <div class="stat-grid">
+            <p><strong>Toplam Dosya:</strong> <span id="adminTotalFiles">0</span></p>
+            <p><strong>Toplam Boyut:</strong> <span id="adminTotalSize">0 KB</span></p>
+            <p><strong>Kullanıcı Sayısı:</strong> <span id="adminOwnerCount">0</span></p>
+          </div>
+          <div class="buttons secondary-actions">
+            <button id="adminRefresh" type="button">🔄 Admin Verisini Yenile</button>
+            <button id="adminDeleteAll" type="button" class="danger">🚨 Tüm Dosyaları Sil (Admin)</button>
+            <button id="adminLock" type="button">🔒 Paneli Kilitle</button>
+          </div>
+        </section>
+
       </section>
 
       <section id="serverPanel" class="tab-panel" aria-labelledby="Sunucu İstatistikleri">

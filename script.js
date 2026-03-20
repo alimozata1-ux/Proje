@@ -52,6 +52,24 @@ const bulkDelete = document.getElementById("bulkDelete");
 const connectExternalStorage = document.getElementById("connectExternalStorage");
 const disconnectExternalStorage = document.getElementById("disconnectExternalStorage");
 const externalStorageStatus = document.getElementById("externalStorageStatus");
+const adminColor1 = document.getElementById("adminColor1");
+const adminColor2 = document.getElementById("adminColor2");
+const adminColor3 = document.getElementById("adminColor3");
+const adminColor4 = document.getElementById("adminColor4");
+const adminCheckColors = document.getElementById("adminCheckColors");
+const adminCodeInput = document.getElementById("adminCodeInput");
+const adminCheckCode = document.getElementById("adminCheckCode");
+const adminGeneratedPassword = document.getElementById("adminGeneratedPassword");
+const adminPasswordInput = document.getElementById("adminPasswordInput");
+const adminUnlock = document.getElementById("adminUnlock");
+const adminAuthStatus = document.getElementById("adminAuthStatus");
+const adminPanel = document.getElementById("adminPanel");
+const adminTotalFiles = document.getElementById("adminTotalFiles");
+const adminTotalSize = document.getElementById("adminTotalSize");
+const adminOwnerCount = document.getElementById("adminOwnerCount");
+const adminRefresh = document.getElementById("adminRefresh");
+const adminDeleteAll = document.getElementById("adminDeleteAll");
+const adminLock = document.getElementById("adminLock");
 
 const dockServerStatus = document.getElementById("dockServerStatus");
 const dockTotalSize = document.getElementById("dockTotalSize");
@@ -91,6 +109,11 @@ let selectedFileIds = new Set();
 let externalRootHandle = null;
 let externalFilesHandle = null;
 const supportsExternalStorage = typeof window.showDirectoryPicker === "function";
+const ADMIN_COLOR_SEQUENCE = ["Kırmızı", "Sarı", "Mavi", "Yeşil"];
+const ADMIN_STATIC_CODE = "IAZEMY68";
+let adminFirstStepPassed = false;
+let adminSecondStepPassed = false;
+let adminTemporaryPassword = "";
 
 applySavedTheme();
 applyAccentTheme();
@@ -105,6 +128,7 @@ initServerStats();
 renderTip();
 initFinalTouches();
 initExternalStorage();
+initAdminSecurity();
 
 fileInput.addEventListener("change", async (event) => {
   await handleFiles(event.target.files);
@@ -243,6 +267,24 @@ disconnectExternalStorage.addEventListener("click", () => {
   updateExternalStorageStatus();
   showToast("Dış depolama bağlantısı ayrıldı");
 });
+
+adminCheckColors.addEventListener("click", handleAdminColorCheck);
+adminCheckCode.addEventListener("click", handleAdminCodeCheck);
+adminUnlock.addEventListener("click", handleAdminUnlock);
+adminRefresh.addEventListener("click", updateAdminPanelStats);
+adminDeleteAll.addEventListener("click", () => {
+  if (!adminPanel.hidden && confirm("Admin olarak tüm dosyaları silmek istiyor musun?")) {
+    files = [];
+    selectedFileIds.clear();
+    persist();
+    render();
+    updateServerStats();
+    updateAdminPanelStats();
+    addActivity("Admin tüm dosyaları sildi");
+    showToast("Admin: Tüm dosyalar silindi");
+  }
+});
+adminLock.addEventListener("click", lockAdminPanel);
 
 scrollTopBtn.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -584,6 +626,87 @@ function persist() {
       // dış depolama opsiyonel, localStorage her zaman kaynak kalır
     });
   }
+}
+
+function initAdminSecurity() {
+  lockAdminPanel();
+  adminGeneratedPassword.value = "";
+  adminPasswordInput.value = "";
+  adminCodeInput.value = "";
+  adminAuthStatus.textContent = "Durum: Kilitli";
+}
+
+function handleAdminColorCheck() {
+  const picked = [adminColor1.value, adminColor2.value, adminColor3.value, adminColor4.value];
+  const ok = picked.every((color, idx) => color === ADMIN_COLOR_SEQUENCE[idx]);
+  adminFirstStepPassed = ok;
+  adminSecondStepPassed = false;
+  adminTemporaryPassword = "";
+  adminGeneratedPassword.value = "";
+  if (ok) {
+    adminAuthStatus.textContent = "Durum: 1. adım başarılı";
+    showToast("1. güvenlik adımı doğrulandı");
+  } else {
+    adminAuthStatus.textContent = "Durum: Renk kombinasyonu yanlış";
+    showToast("Renk kombinasyonu hatalı");
+  }
+}
+
+function handleAdminCodeCheck() {
+  if (!adminFirstStepPassed) {
+    showToast("Önce renk kombinasyonunu doğrula");
+    return;
+  }
+  if (adminCodeInput.value.trim() !== ADMIN_STATIC_CODE) {
+    adminSecondStepPassed = false;
+    adminTemporaryPassword = "";
+    adminGeneratedPassword.value = "";
+    adminAuthStatus.textContent = "Durum: 2. adım başarısız";
+    showToast("Kod hatalı");
+    return;
+  }
+
+  adminSecondStepPassed = true;
+  adminTemporaryPassword = String(Math.floor(100000 + Math.random() * 900000));
+  adminGeneratedPassword.value = adminTemporaryPassword;
+  adminAuthStatus.textContent = "Durum: 2. adım başarılı, geçici şifre üretildi";
+  showToast("2. adım tamamlandı, geçici şifre üretildi");
+}
+
+function handleAdminUnlock() {
+  if (!adminFirstStepPassed || !adminSecondStepPassed) {
+    showToast("Önce 1. ve 2. adımı geçmelisin");
+    return;
+  }
+  if (adminPasswordInput.value.trim() !== adminTemporaryPassword) {
+    adminAuthStatus.textContent = "Durum: Geçici şifre hatalı";
+    showToast("Geçici şifre yanlış");
+    return;
+  }
+
+  adminPanel.hidden = false;
+  adminAuthStatus.textContent = "Durum: Admin panel açık";
+  updateAdminPanelStats();
+  showToast("Admin panel açıldı");
+}
+
+function lockAdminPanel() {
+  adminPanel.hidden = true;
+  adminFirstStepPassed = false;
+  adminSecondStepPassed = false;
+  adminTemporaryPassword = "";
+  adminGeneratedPassword.value = "";
+  adminPasswordInput.value = "";
+  adminCodeInput.value = "";
+  adminAuthStatus.textContent = "Durum: Kilitli";
+}
+
+function updateAdminPanelStats() {
+  adminTotalFiles.textContent = String(files.length);
+  const totalBytes = files.reduce((sum, file) => sum + Number(file.size || 0), 0);
+  adminTotalSize.textContent = prettySize(totalBytes);
+  const owners = new Set(files.map((f) => f.ownerId || "unknown"));
+  adminOwnerCount.textContent = String(owners.size);
 }
 
 function initExternalStorage() {
