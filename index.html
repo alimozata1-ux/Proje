@@ -129,6 +129,16 @@
 
         <section class="list card">
           <h2>Dosya Listesi</h2>
+          <div class="bulk-tools" aria-label="Toplu dosya işlemleri">
+            <p id="selectionInfo" class="muted-note">Seçili: 0</p>
+            <div class="buttons secondary-actions">
+              <button id="selectAllVisible" type="button">☑️ Görünenleri Seç</button>
+              <button id="clearSelection" type="button">🧹 Seçimi Temizle</button>
+              <button id="bulkFavorite" type="button">⭐ Toplu Favori</button>
+              <button id="bulkDownload" type="button">⬇️ Toplu İndir</button>
+              <button id="bulkDelete" type="button" class="danger">🗑️ Seçilenleri Sil</button>
+            </div>
+          </div>
           <ul id="fileList" aria-live="polite"></ul>
           <p id="emptyState" class="empty">Henüz dosya yok. Yükleyerek başlayabilirsin.</p>
         </section>
@@ -182,6 +192,7 @@
     <template id="fileItemTemplate">
       <li class="file-item">
         <div>
+          <label class="select-wrap"><input class="file-select" type="checkbox" /> Seç</label>
           <p class="file-name"></p>
           <p class="file-meta"></p>
           <div class="preview-wrap" hidden>
@@ -192,6 +203,7 @@
           <button class="favorite-btn" type="button">⭐</button>
           <button class="copy-name-btn" type="button">Adı Kopyala</button>
           <button class="download-btn" type="button">İndir</button>
+          <button class="rename-btn" type="button">Yeniden Adlandır</button>
           <button class="delete-btn danger" type="button">Sil</button>
         </div>
       </li>

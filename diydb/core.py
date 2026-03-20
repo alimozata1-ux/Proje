@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import threading
 from contextlib import contextmanager
@@ -656,6 +658,99 @@ class DiyDb:
     def on(self, table_name: str, event: str, callback: Callable[..., None]) -> None:
         with self._lock:
             self.table(table_name).on(event, callback)
+
+    def paginate(self, table_name: str, page: int = 1, per_page: int = 20, q: Optional[Query] = None) -> Dict[str, Any]:
+        if page < 1:
+            raise QueryError("page must be >= 1")
+        if per_page < 1:
+            raise QueryError("per_page must be >= 1")
+
+        with self._lock:
+            rows = self.table(table_name).find(q=q)
+            total = len(rows)
+            start = (page - 1) * per_page
+            end = start + per_page
+            return {
+                "page": page,
+                "per_page": per_page,
+                "total": total,
+                "pages": (total + per_page - 1) // per_page,
+                "items": rows[start:end],
+            }
+
+    def export_table_csv(self, table_name: str, fields: Optional[Sequence[str]] = None) -> str:
+        with self._lock:
+            table = self.table(table_name)
+            records = table.all()
+            if fields is None:
+                base_fields = [table.primary_key]
+                base_fields += [name for name in table.fields.keys() if name != table.primary_key]
+                fields = base_fields
+
+            output = io.StringIO()
+            writer = csv.DictWriter(output, fieldnames=list(fields), extrasaction="ignore")
+            writer.writeheader()
+            for rec in records:
+                row = {}
+                for field_name in fields:
+                    value = rec.get(field_name)
+                    if isinstance(value, (dict, list)):
+                        row[field_name] = json.dumps(value, ensure_ascii=False)
+                    else:
+                        row[field_name] = value
+                writer.writerow(row)
+            return output.getvalue()
+
+    def import_table_csv(
+        self,
+        table_name: str,
+        csv_text: str,
+        merge_by_pk: bool = True,
+        type_cast: bool = True,
+    ) -> Dict[str, int]:
+        with self._lock:
+            table = self.table(table_name)
+            reader = csv.DictReader(io.StringIO(csv_text))
+            inserted = 0
+            updated = 0
+
+            for row in reader:
+                normalized: Dict[str, Any] = {}
+                for key, raw in row.items():
+                    if raw is None:
+                        normalized[key] = None
+                        continue
+
+                    value: Any = raw
+                    if type_cast and key in table.fields:
+                        field_meta = table.fields[key]
+                        if field_meta.kind in (int, float) and raw != "":
+                            value = field_meta.kind(raw)
+                        elif field_meta.kind is bool:
+                            value = raw.strip().lower() in {"1", "true", "yes", "on"}
+                        elif field_meta.kind in (dict, list):
+                            try:
+                                value = json.loads(raw)
+                            except Exception:
+                                value = {} if field_meta.kind is dict else []
+                    normalized[key] = value
+
+                pk_name = table.primary_key
+                pk_value = normalized.get(pk_name)
+                if merge_by_pk and pk_value:
+                    existing = table.get(pk_value)
+                    if existing is None:
+                        table.insert(normalized)
+                        inserted += 1
+                    else:
+                        table.update(pk_value, normalized)
+                        updated += 1
+                else:
+                    table.insert(normalized)
+                    inserted += 1
+
+            self._auto_commit()
+            return {"inserted": inserted, "updated": updated}
 
     def backup(self) -> Dict[str, Any]:
         with self._lock:

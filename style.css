@@ -257,6 +257,25 @@ button.danger { background: var(--danger); }
 
 .stats h2, .list h2 { margin: 0 0 0.75rem; font-size: 1.1rem; }
 
+.bulk-tools {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.select-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+
 .stat-grid {
   display: grid;
   gap: 0.4rem;
@@ -304,6 +323,11 @@ body.dark .file-item { background: rgba(15, 23, 37, 0.5); }
 .preview-wrap { margin-top: 0.5rem; }
 .file-preview { width: min(220px, 100%); border-radius: 8px; border: 1px solid var(--border); }
 .item-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: flex-end; }
+
+.file-item.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
 .empty { margin-top: 0.9rem; color: var(--muted); }
 
 body.compact .card { padding: 0.8rem; }

@@ -43,6 +43,12 @@ const tipText = document.getElementById("tipText");
 const newTip = document.getElementById("newTip");
 const footerYear = document.getElementById("footerYear");
 const scrollTopBtn = document.getElementById("scrollTopBtn");
+const selectionInfo = document.getElementById("selectionInfo");
+const selectAllVisible = document.getElementById("selectAllVisible");
+const clearSelection = document.getElementById("clearSelection");
+const bulkFavorite = document.getElementById("bulkFavorite");
+const bulkDownload = document.getElementById("bulkDownload");
+const bulkDelete = document.getElementById("bulkDelete");
 
 const dockServerStatus = document.getElementById("dockServerStatus");
 const dockTotalSize = document.getElementById("dockTotalSize");
@@ -78,6 +84,7 @@ let favoriteOnlyMode = false;
 let activities = loadActivities();
 const appStartTime = Date.now();
 const clientId = getOrCreateClientId();
+let selectedFileIds = new Set();
 
 applySavedTheme();
 applyAccentTheme();
@@ -159,6 +166,65 @@ quickNotes.addEventListener("input", () => {
 });
 
 newTip.addEventListener("click", renderTip);
+
+selectAllVisible.addEventListener("click", () => {
+  const visibleIds = getVisibleFiles().map((f) => f.id);
+  selectedFileIds = new Set(visibleIds);
+  render();
+  showToast(`${visibleIds.length} dosya seçildi`);
+});
+
+clearSelection.addEventListener("click", () => {
+  selectedFileIds.clear();
+  render();
+  showToast("Seçim temizlendi");
+});
+
+bulkFavorite.addEventListener("click", () => {
+  if (!selectedFileIds.size) {
+    showToast("Önce dosya seçmelisin");
+    return;
+  }
+  files = files.map((f) => (selectedFileIds.has(f.id) ? { ...f, favorite: true } : f));
+  persist();
+  render();
+  addActivity(`${selectedFileIds.size} dosya favoriye alındı`);
+  showToast("Seçilen dosyalar favoriye alındı");
+});
+
+bulkDownload.addEventListener("click", () => {
+  const selected = files.filter((f) => selectedFileIds.has(f.id));
+  if (!selected.length) {
+    showToast("Önce dosya seçmelisin");
+    return;
+  }
+  for (const file of selected) {
+    const a = document.createElement("a");
+    a.href = file.dataUrl;
+    a.download = file.name;
+    a.click();
+  }
+  addActivity(`${selected.length} dosya toplu indirildi`);
+  showToast("Toplu indirme başlatıldı");
+});
+
+bulkDelete.addEventListener("click", () => {
+  const selected = files.filter((f) => selectedFileIds.has(f.id));
+  const ownSelected = selected.filter((f) => f.ownerId === clientId);
+  if (!ownSelected.length) {
+    showToast("Silmek için sana ait dosya seçmelisin");
+    return;
+  }
+  if (!confirm(`${ownSelected.length} seçili dosya silinsin mi?`)) return;
+  const ownIds = new Set(ownSelected.map((f) => f.id));
+  files = files.filter((f) => !ownIds.has(f.id));
+  for (const id of ownIds) selectedFileIds.delete(id);
+  persist();
+  render();
+  updateServerStats();
+  addActivity(`${ownSelected.length} dosya toplu silindi`);
+  showToast("Seçili dosyalar silindi");
+});
 
 scrollTopBtn.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -293,19 +359,35 @@ async function handleFiles(fileListObj) {
   }
 }
 
-function render() {
+function getVisibleFiles() {
   const q = searchInput.value.trim().toLowerCase();
   const selectedType = typeFilter.value;
-  const sortedAndFiltered = [...files]
+  return [...files]
     .filter((file) => file.name.toLowerCase().includes(q))
     .filter((file) => matchesType(file.type, selectedType))
     .filter((file) => (favoriteOnlyMode ? file.favorite : true))
     .sort(sortBySelectedRule);
+}
+
+function render() {
+  const sortedAndFiltered = getVisibleFiles();
+  selectedFileIds = new Set([...selectedFileIds].filter((id) => files.some((f) => f.id === id)));
 
   fileList.innerHTML = "";
 
   for (const file of sortedAndFiltered) {
     const item = fileItemTemplate.content.cloneNode(true);
+    const listItem = item.querySelector(".file-item");
+    const fileSelect = item.querySelector(".file-select");
+    fileSelect.checked = selectedFileIds.has(file.id);
+    fileSelect.addEventListener("change", () => {
+      if (fileSelect.checked) selectedFileIds.add(file.id);
+      else selectedFileIds.delete(file.id);
+      listItem.classList.toggle("selected", fileSelect.checked);
+      updateSelectionInfo();
+    });
+    listItem.classList.toggle("selected", fileSelect.checked);
+
     item.querySelector(".file-name").textContent = `${file.favorite ? "⭐ " : ""}${file.name}`;
     item.querySelector(".file-meta").textContent = `${prettySize(file.size)} • ${new Date(file.uploadedAt).toLocaleString("tr-TR")}`;
 
@@ -347,6 +429,20 @@ function render() {
       addActivity(`Dosya indirildi: ${file.name}`);
     });
 
+    item.querySelector(".rename-btn").addEventListener("click", () => {
+      if (file.ownerId !== clientId) {
+        showToast("Sadece kendi dosyanı yeniden adlandırabilirsin");
+        return;
+      }
+      const nextName = prompt("Yeni dosya adı", file.name);
+      if (!nextName || !nextName.trim()) return;
+      files = files.map((f) => (f.id === file.id ? { ...f, name: nextName.trim() } : f));
+      persist();
+      render();
+      addActivity(`Dosya yeniden adlandırıldı: ${file.name} -> ${nextName.trim()}`);
+      showToast("Dosya adı güncellendi");
+    });
+
     const deleteBtn = item.querySelector(".delete-btn");
     const isOwnedByCurrentUser = file.ownerId === clientId;
     deleteBtn.disabled = !isOwnedByCurrentUser;
@@ -383,6 +479,14 @@ function render() {
   updateQuotaMeter();
   updateStorageHealth();
   renderQuickAccess();
+  updateSelectionInfo();
+}
+
+function updateSelectionInfo() {
+  if (!selectionInfo) return;
+  const total = selectedFileIds.size;
+  const own = files.filter((f) => selectedFileIds.has(f.id) && f.ownerId === clientId).length;
+  selectionInfo.textContent = `Seçili: ${total} (silinebilir: ${own})`;
 }
 
 function sortBySelectedRule(a, b) {
