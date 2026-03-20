@@ -53,6 +53,7 @@ Kernel tarafında GUI çekirdeği başlatma seviyesindedir.
 - Tema geçişi
 - Debug paneli
 - Her temel uygulama için ayrı GUI mock ekranları (`gui/apps/*.html`)
+- Browser uygulaması: sekme, geçmiş, yer imi, indirme ve devtools panel mockları
 
 ## 5. KFS
 

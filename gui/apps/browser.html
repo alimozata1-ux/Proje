@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>KONE Browser</title>
+  <link rel="stylesheet" href="kone_ui.css" />
+</head>
+<body>
+<script src="kone_ui.js"></script>
+<script src="mock_app_data.js"></script>
+<script src="browser_pages.js"></script>
+<script src="browser_engine.js"></script>
+<script>
+mountAppShell(
+  'KONE Browser',
+  `
+    <h3>Geçmiş</h3><div id="history"></div>
+    <h3>Yer İmleri</h3><div id="bookmarks"></div>
+    <h3>İndirmeler</h3><div id="downloads"></div>
+  `,
+  `
+    <div class="card">
+      <div id="tabs"></div>
+    </div>
+    <div class="card" style="display:flex;gap:8px">
+      <input id="address" class="input" value="kone://home" />
+      <button id="go" class="button">Git</button>
+      <button id="add-bookmark" class="button">★</button>
+      <button id="fake-download" class="button">İndir</button>
+      <button id="open-devtools" class="button">DevTools</button>
+    </div>
+    <div id="page" class="panel" style="min-height:380px"></div>
+  `
+);
+KoneBrowser.init();
+</script>
+</body>
+</html>

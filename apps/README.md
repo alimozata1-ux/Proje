@@ -9,3 +9,4 @@ Bu klasörde paket meta dosyaları bulunur.
 - media_player.app
 - calculator.app
 - system_monitor.app
+- browser.app

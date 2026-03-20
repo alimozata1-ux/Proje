@@ -85,6 +85,7 @@ Uygulama GUI sayfaları:
 - `gui/apps/media_player.html`
 - `gui/apps/calculator.html`
 - `gui/apps/system_monitor.html`
+- `gui/apps/browser.html`
 
 
 ```bash
