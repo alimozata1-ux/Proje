@@ -1,10 +1,9 @@
 """GoblinPackege database application built on top of diydb.
 
-Bu uygulama, diydb kütüphanesini gerçek bir "database uygulaması" olarak kullanır.
-Opsiyonel olarak dış depolama aygıtı dizini verilebilir; bu durumda:
-- `Files/` klasörü otomatik oluşturulur
-- metadata `goblin_db.json` içinde tutulur
-- eklenen dosyalar `Files/` altına yazılır
+Özellikler:
+- CLI modunda dosya metadata yönetimi
+- GUI (tkinter) modunda temel kullanım ekranı
+- Opsiyonel dış depolama kök yolu (`--root`) ve otomatik `Files/` klasörü
 """
 
 from __future__ import annotations
@@ -12,10 +11,20 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 from diydb import Field, open_db, query
+
+try:
+    import tkinter as tk
+    from tkinter import filedialog, messagebox, ttk
+except Exception:  # noqa: BLE001
+    tk = None
+    filedialog = None
+    messagebox = None
+    ttk = None
 
 
 class GoblinDatabaseApp:
@@ -63,7 +72,7 @@ class GoblinDatabaseApp:
                 "size": destination.stat().st_size,
                 "mime": mime or "application/octet-stream",
                 "owner": owner,
-                "created_at": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+                "created_at": datetime.utcnow().isoformat() + "Z",
                 "favorite": False,
             },
         )
@@ -99,8 +108,125 @@ class GoblinDatabaseApp:
             "record_count": db_stats.record_count,
             "db_size_bytes": db_stats.file_size_bytes,
             "files_dir": str(self.files_dir),
-            "files_on_disk": sum(1 for _ in self.files_dir.glob("**/*") if _.is_file()),
+            "files_on_disk": sum(1 for item in self.files_dir.glob("**/*") if item.is_file()),
         }
+
+
+class GoblinDatabaseGUI:
+    def __init__(self, app: GoblinDatabaseApp):
+        if tk is None or ttk is None:
+            raise RuntimeError("Tkinter bu ortamda mevcut değil")
+
+        self.app = app
+        self.root = tk.Tk()
+        self.root.title("Goblin Database GUI")
+        self.root.geometry("900x560")
+
+        top = ttk.Frame(self.root, padding=10)
+        top.pack(fill=tk.X)
+
+        self.info_label = ttk.Label(top, text=f"Kök: {self.app.root_dir}")
+        self.info_label.pack(side=tk.LEFT)
+
+        ttk.Button(top, text="Dosya Ekle", command=self.add_file_dialog).pack(side=tk.RIGHT, padx=4)
+        ttk.Button(top, text="CSV İçe Aktar", command=self.import_csv_dialog).pack(side=tk.RIGHT, padx=4)
+        ttk.Button(top, text="CSV Dışa Aktar", command=self.export_csv_dialog).pack(side=tk.RIGHT, padx=4)
+        ttk.Button(top, text="Yenile", command=self.refresh).pack(side=tk.RIGHT, padx=4)
+
+        self.tree = ttk.Treeview(
+            self.root,
+            columns=("id", "name", "owner", "size", "created"),
+            show="headings",
+            height=20,
+        )
+        self.tree.heading("id", text="ID")
+        self.tree.heading("name", text="Dosya")
+        self.tree.heading("owner", text="Owner")
+        self.tree.heading("size", text="Boyut")
+        self.tree.heading("created", text="Oluşturulma")
+        self.tree.column("id", width=180)
+        self.tree.column("name", width=240)
+        self.tree.column("owner", width=120)
+        self.tree.column("size", width=90)
+        self.tree.column("created", width=200)
+        self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        bottom = ttk.Frame(self.root, padding=10)
+        bottom.pack(fill=tk.X)
+        ttk.Button(bottom, text="Seçileni Sil", command=self.delete_selected).pack(side=tk.LEFT)
+        self.stats_label = ttk.Label(bottom, text="")
+        self.stats_label.pack(side=tk.RIGHT)
+
+        self.refresh()
+
+    def refresh(self) -> None:
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        for row in self.app.list_files():
+            self.tree.insert(
+                "",
+                tk.END,
+                values=(
+                    row.get("id", ""),
+                    row.get("name", ""),
+                    row.get("owner", ""),
+                    row.get("size", 0),
+                    row.get("created_at", ""),
+                ),
+            )
+
+        stats = self.app.stats()
+        self.stats_label.config(text=f"Kayıt: {stats['record_count']} • Disk: {stats['db_size_bytes']} byte")
+
+    def add_file_dialog(self) -> None:
+        path = filedialog.askopenfilename(title="Eklenecek dosyayı seç")
+        if not path:
+            return
+        try:
+            self.app.add_file(Path(path))
+            self.refresh()
+            messagebox.showinfo("Başarılı", "Dosya eklendi")
+        except Exception as exc:  # noqa: BLE001
+            messagebox.showerror("Hata", str(exc))
+
+    def delete_selected(self) -> None:
+        selected = self.tree.selection()
+        if not selected:
+            return
+        values = self.tree.item(selected[0], "values")
+        file_id = values[0]
+        if not messagebox.askyesno("Onay", "Seçili dosya silinsin mi?"):
+            return
+        ok = self.app.delete_file(file_id)
+        if ok:
+            self.refresh()
+            messagebox.showinfo("Bilgi", "Dosya silindi")
+        else:
+            messagebox.showwarning("Bilgi", "Dosya bulunamadı")
+
+    def export_csv_dialog(self) -> None:
+        target = filedialog.asksaveasfilename(
+            title="CSV kaydet",
+            defaultextension=".csv",
+            filetypes=[("CSV", "*.csv"), ("All", "*.*")],
+        )
+        if not target:
+            return
+        Path(target).write_text(self.app.export_csv(), encoding="utf-8")
+        messagebox.showinfo("Başarılı", "CSV dışa aktarıldı")
+
+    def import_csv_dialog(self) -> None:
+        source = filedialog.askopenfilename(title="CSV seç", filetypes=[("CSV", "*.csv"), ("All", "*.*")])
+        if not source:
+            return
+        payload = Path(source).read_text(encoding="utf-8")
+        result = self.app.import_csv(payload)
+        self.refresh()
+        messagebox.showinfo("İçe Aktarım", f"Eklendi: {result['inserted']} • Güncellendi: {result['updated']}")
+
+    def run(self) -> None:
+        self.root.mainloop()
 
 
 def parse_args() -> argparse.Namespace:
@@ -110,8 +236,9 @@ def parse_args() -> argparse.Namespace:
         default="./goblin_storage",
         help="Verilerin yazılacağı kök dizin (harici disk yolu verilebilir)",
     )
+    parser.add_argument("--gui", action="store_true", help="GUI modunda başlat")
 
-    sub = parser.add_subparsers(dest="command", required=True)
+    sub = parser.add_subparsers(dest="command", required=False)
 
     add_cmd = sub.add_parser("add", help="Dosya ekle")
     add_cmd.add_argument("source", help="Eklenecek dosya yolu")
@@ -133,10 +260,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
-    args = parse_args()
-    app = GoblinDatabaseApp(Path(args.root))
-
+def run_cli(app: GoblinDatabaseApp, args: argparse.Namespace) -> None:
     if args.command == "add":
         rec = app.add_file(Path(args.source), owner=args.owner, mime=args.mime)
         print(json.dumps(rec, indent=2, ensure_ascii=False))
@@ -164,6 +288,21 @@ def main() -> None:
         payload = Path(args.csv_file).read_text(encoding="utf-8")
         print(json.dumps(app.import_csv(payload), indent=2, ensure_ascii=False))
         return
+
+    print("Komut verilmedi. GUI için --gui kullanın veya komutlardan birini verin.")
+
+
+def main() -> None:
+    args = parse_args()
+    app = GoblinDatabaseApp(Path(args.root))
+
+    if args.gui:
+        if tk is None:
+            raise RuntimeError("GUI modu için tkinter gerekli")
+        GoblinDatabaseGUI(app).run()
+        return
+
+    run_cli(app, args)
 
 
 if __name__ == "__main__":
