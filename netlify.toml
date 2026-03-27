@@ -1,0 +1,12 @@
+[build]
+  publish = "."
+
+# Netlify üzerinde PHP runtime yoktur.
+# Bu nedenle Netlify deploy'unda frontend statik olarak sunulur;
+# PHP API uçları harici bir PHP host (ör. Render/Railway/cPanel) üzerinde çalıştırılmalıdır.
+# window.API_BASE değeri deploy ortamında bu hosta yönlendirilmelidir.
+
+[[redirects]]
+  from = "/"
+  to = "/index.php"
+  status = 200
