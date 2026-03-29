@@ -72,3 +72,17 @@ Python uygulamasinda 2 ana input vardir:
   - Arduino IDE/Serial Monitor kapali olsun (portu kilitlemesin).
   - Linux: `sudo usermod -a -G dialout $USER` calistirin.
   - Oturumu kapatip acin, sonra tekrar deneyin.
+
+
+## vJoy Uyumlu Kullanim
+
+Eger metni baska bir uygulamadan (vJoy ile birlikte kullandiginiz bir otomasyon/script akisi gibi) gonderecekseniz, GUI acmadan su sekilde tek komutla gonderebilirsiniz:
+
+```bash
+python python_app/lcd_gui.py --vjoy --port COM3 --text "Merhaba LCD"
+```
+
+Bu modda:
+- `--port` ve `--text` zorunludur.
+- Metin 32 karaktere kisilir.
+- Sadece ASCII uyumlu veri gondermeniz onerilir.

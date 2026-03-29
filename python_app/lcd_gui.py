@@ -1,5 +1,8 @@
+import argparse
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
+
 import serial
 from serial.tools import list_ports
 
@@ -8,17 +11,55 @@ TIMEOUT_SECONDS = 1
 MAX_LCD_CHAR = 32
 
 
+def build_permission_help(error_text: str) -> str:
+    return (
+        f"Port izni yok: {error_text}\n\n"
+        "Cozum onerileri:\n"
+        "1) Arduino IDE / Serial Monitor'u kapatin.\n"
+        "2) Windows'ta uygulamayi yonetici olarak acmayi deneyin.\n"
+        "3) Linux icin: sudo usermod -a -G dialout $USER\n"
+        "4) Oturumu kapatip acin ve tekrar deneyin."
+    )
+
+
+def send_text_once(port: str, text: str) -> int:
+    payload = text.strip()[:MAX_LCD_CHAR]
+    if not payload:
+        print("Bos mesaj gonderilemez.", file=sys.stderr)
+        return 1
+
+    try:
+        with serial.Serial(port=port, baudrate=BAUD_RATE, timeout=TIMEOUT_SECONDS) as conn:
+            ready = conn.readline().decode(errors="ignore").strip()
+            conn.write((payload + "\n").encode("utf-8"))
+            response = conn.readline().decode(errors="ignore").strip()
+            print(f"Arduino READY: {ready or '-'}")
+            print(f"Arduino RESP: {response or '-'}")
+            return 0
+    except PermissionError as exc:
+        print(build_permission_help(str(exc)), file=sys.stderr)
+        return 2
+    except serial.SerialException as exc:
+        error_text = str(exc)
+        if "PermissionError" in error_text or "Errno 13" in error_text:
+            print(build_permission_help(error_text), file=sys.stderr)
+            return 2
+        print(f"Baglanti hatasi: {error_text}", file=sys.stderr)
+        return 3
+
+
 class LcdControllerApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title("Arduino LCD Kontrolcusu")
-        self.root.geometry("520x300")
+        self.root.geometry("560x330")
 
         self.serial_conn: serial.Serial | None = None
 
         self.port_var = tk.StringVar()
         self.message_var = tk.StringVar()
         self.status_var = tk.StringVar(value="Durum: Baglanti yok")
+        self.vjoy_mode_var = tk.BooleanVar(value=False)
 
         self._build_ui()
         self.refresh_ports()
@@ -37,6 +78,14 @@ class LcdControllerApp:
         ttk.Button(port_row, text="Yenile", command=self.refresh_ports).pack(side="left", padx=4)
         ttk.Button(port_row, text="Baglan", command=self.connect).pack(side="left", padx=4)
         ttk.Button(port_row, text="Baglantiyi Kes", command=self.disconnect).pack(side="left", padx=4)
+
+        mode_row = ttk.Frame(container)
+        mode_row.pack(fill="x", pady=(0, 8))
+        ttk.Checkbutton(
+            mode_row,
+            text="vJoy Uyumlu Mod (ASCII + 32 karakter)",
+            variable=self.vjoy_mode_var,
+        ).pack(anchor="w")
 
         ttk.Label(container, text="LCD'ye gonderilecek yazi (maks 32 karakter):").pack(anchor="w")
 
@@ -82,29 +131,14 @@ class LcdControllerApp:
                 self.status_var.set(f"Durum: Baglandi ({port})")
 
         except PermissionError as exc:
-            detail = (
-                f"Port izni yok: {exc}\n\n"
-                "Cozum onerileri:\n"
-                "1) Arduino IDE / Serial Monitor'u kapatin.\n"
-                "2) Linux icin kullanicinizi serial grubuna ekleyin:\n"
-                "   sudo usermod -a -G dialout $USER\n"
-                "3) Sonra oturumu kapatip acin ve tekrar deneyin."
-            )
-            messagebox.showerror("PermissionError [Errno 13]", detail)
+            messagebox.showerror("PermissionError [Errno 13]", build_permission_help(str(exc)))
             self.status_var.set("Durum: Port izin hatasi (Errno 13)")
             self.serial_conn = None
 
         except serial.SerialException as exc:
             error_text = str(exc)
             if "PermissionError" in error_text or "Errno 13" in error_text:
-                detail = (
-                    f"Port izni yok: {error_text}\n\n"
-                    "Cozum onerileri:\n"
-                    "1) Arduino IDE / Serial Monitor'u kapatin.\n"
-                    "2) Linux icin: sudo usermod -a -G dialout $USER\n"
-                    "3) Tekrar oturum acip uygulamayi yeniden baslatin."
-                )
-                messagebox.showerror("PermissionError [Errno 13]", detail)
+                messagebox.showerror("PermissionError [Errno 13]", build_permission_help(error_text))
                 self.status_var.set("Durum: Port izin hatasi (Errno 13)")
             else:
                 messagebox.showerror("Baglanti Hatasi", error_text)
@@ -118,6 +152,12 @@ class LcdControllerApp:
 
         self.status_var.set("Durum: Baglanti kapatildi")
 
+    def _normalize_text(self, text: str) -> str:
+        payload = text[:MAX_LCD_CHAR]
+        if self.vjoy_mode_var.get():
+            payload = payload.encode("ascii", errors="ignore").decode("ascii")
+        return payload
+
     def send_text(self) -> None:
         if not self.serial_conn or not self.serial_conn.is_open:
             messagebox.showwarning("Uyari", "Once Arduino'ya baglanin.")
@@ -128,7 +168,7 @@ class LcdControllerApp:
             messagebox.showwarning("Uyari", "Bos mesaj gonderemezsiniz.")
             return
 
-        payload = text[:MAX_LCD_CHAR]
+        payload = self._normalize_text(text)
 
         try:
             self.serial_conn.write((payload + "\n").encode("utf-8"))
@@ -139,7 +179,23 @@ class LcdControllerApp:
             self.status_var.set("Durum: Gonderim basarisiz")
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Arduino LCD Controller")
+    parser.add_argument("--vjoy", action="store_true", help="GUI acmadan tek seferlik gonderim yapar")
+    parser.add_argument("--port", help="COM port (ornek: COM3 / /dev/ttyUSB0)")
+    parser.add_argument("--text", help="LCD'ye gonderilecek metin")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+    args = parse_args()
+
+    if args.vjoy:
+        if not args.port or not args.text:
+            print("--vjoy modunda --port ve --text zorunludur.", file=sys.stderr)
+            raise SystemExit(1)
+        raise SystemExit(send_text_once(args.port, args.text))
+
     app_root = tk.Tk()
     LcdControllerApp(app_root)
     app_root.mainloop()
