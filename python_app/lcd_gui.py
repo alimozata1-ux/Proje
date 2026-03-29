@@ -81,9 +81,34 @@ class LcdControllerApp:
             else:
                 self.status_var.set(f"Durum: Baglandi ({port})")
 
+        except PermissionError as exc:
+            detail = (
+                f"Port izni yok: {exc}\n\n"
+                "Cozum onerileri:\n"
+                "1) Arduino IDE / Serial Monitor'u kapatin.\n"
+                "2) Linux icin kullanicinizi serial grubuna ekleyin:\n"
+                "   sudo usermod -a -G dialout $USER\n"
+                "3) Sonra oturumu kapatip acin ve tekrar deneyin."
+            )
+            messagebox.showerror("PermissionError [Errno 13]", detail)
+            self.status_var.set("Durum: Port izin hatasi (Errno 13)")
+            self.serial_conn = None
+
         except serial.SerialException as exc:
-            messagebox.showerror("Baglanti Hatasi", str(exc))
-            self.status_var.set("Durum: Baglanti hatasi")
+            error_text = str(exc)
+            if "PermissionError" in error_text or "Errno 13" in error_text:
+                detail = (
+                    f"Port izni yok: {error_text}\n\n"
+                    "Cozum onerileri:\n"
+                    "1) Arduino IDE / Serial Monitor'u kapatin.\n"
+                    "2) Linux icin: sudo usermod -a -G dialout $USER\n"
+                    "3) Tekrar oturum acip uygulamayi yeniden baslatin."
+                )
+                messagebox.showerror("PermissionError [Errno 13]", detail)
+                self.status_var.set("Durum: Port izin hatasi (Errno 13)")
+            else:
+                messagebox.showerror("Baglanti Hatasi", error_text)
+                self.status_var.set("Durum: Baglanti hatasi")
             self.serial_conn = None
 
     def disconnect(self) -> None:

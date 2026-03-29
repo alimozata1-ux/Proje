@@ -68,3 +68,7 @@ Python uygulamasinda 2 ana input vardir:
 - Port listede yoksa USB kabloyu kontrol edin, **Yenile** butonuna basin.
 - LCD bossa I2C adresiniz `0x27` degil olabilir (`0x3F` deneyin).
 - Karakter sorunu varsa sadece temel ASCII ile test edin.
+- **PermissionError: [Errno 13]** alirsaniz:
+  - Arduino IDE/Serial Monitor kapali olsun (portu kilitlemesin).
+  - Linux: `sudo usermod -a -G dialout $USER` calistirin.
+  - Oturumu kapatip acin, sonra tekrar deneyin.
