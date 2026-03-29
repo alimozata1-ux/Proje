@@ -76,6 +76,9 @@ Python uygulamasinda 2 ana input vardir:
 
 ## vJoy Uyumlu Kullanim
 
+Detayli vJoy konfig adimlari icin: `docs/vjoy_config.md`
+
+
 Eger metni baska bir uygulamadan (vJoy ile birlikte kullandiginiz bir otomasyon/script akisi gibi) gonderecekseniz, GUI acmadan su sekilde tek komutla gonderebilirsiniz:
 
 ```bash
