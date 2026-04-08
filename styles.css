@@ -1,0 +1,123 @@
+:root {
+  color-scheme: dark;
+  --bg: #070b15;
+  --card: #111a2e;
+  --muted: #9db0da;
+  --text: #f2f5ff;
+  --accent: #6aa9ff;
+  --accent-2: #4be59d;
+  --danger: #ff6a6a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: radial-gradient(circle at top, #142445 0%, var(--bg) 56%);
+  color: var(--text);
+}
+
+.container {
+  width: min(100% - 2rem, 560px);
+}
+
+.card {
+  padding: 1.5rem;
+  border-radius: 1.25rem;
+  background: linear-gradient(180deg, rgba(22, 35, 66, 0.95), rgba(13, 21, 39, 0.95));
+  border: 1px solid rgba(122, 155, 220, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+}
+
+.card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.icon {
+  width: 1.4rem;
+  height: 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon img {
+  width: 100%;
+  height: 100%;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+h1 {
+  margin: 0.2rem 0 0;
+  font-size: 1.4rem;
+}
+
+.channel-link {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.channel-link a {
+  color: var(--accent);
+}
+
+.counter {
+  margin-top: 1.2rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  font-size: clamp(1.2rem, 2.6vw, 1.6rem);
+}
+
+.counter strong {
+  font-size: clamp(1.8rem, 7vw, 3rem);
+  letter-spacing: 0.04em;
+  color: var(--accent-2);
+}
+
+.counter small {
+  color: var(--muted);
+}
+
+.status {
+  min-height: 1.4rem;
+  margin: 0.8rem 0 0;
+  color: var(--muted);
+}
+
+.status.error {
+  color: var(--danger);
+}
+
+.refresh-btn {
+  margin-top: 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 0;
+  border-radius: 0.7rem;
+  background: #203866;
+  color: var(--text);
+  padding: 0.65rem 0.95rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.refresh-btn:hover {
+  background: #2a4a85;
+}
