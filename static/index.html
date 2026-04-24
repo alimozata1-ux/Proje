@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hybrid DB Dashboard</title>
+  <style>
+    body { font-family: Inter, Arial, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
+    .wrap { max-width: 1100px; margin: auto; padding: 20px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card { background: #1e293b; border-radius: 12px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+    textarea, input { width: 100%; padding: 10px; margin-top: 8px; border-radius: 8px; border: 1px solid #334155; background: #0b1220; color: #e2e8f0; }
+    button { margin-top: 10px; background: #2563eb; color: white; border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; }
+    .bar { height: 12px; background: #334155; border-radius: 999px; overflow: hidden; margin: 6px 0 12px; }
+    .bar > div { height: 100%; background: linear-gradient(90deg, #22c55e, #3b82f6); }
+    .row { border-bottom: 1px solid #334155; padding: 6px 0; }
+    pre { background: #0b1220; padding: 8px; border-radius: 8px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Hybrid .LIB Engine Dashboard</h1>
+    <div class="grid">
+      <div class="card">
+        <h3>Veri Yolu Testi (JSON ➜ XML ➜ zlib)</h3>
+        <label>JSON Payload</label>
+        <textarea id="jsonInput" rows="12">{
+  "key": "user:1001",
+  "data": {"name":"Ada", "age": 32, "address": {"city":"Ankara"}},
+  "meta": {"source":"dashboard"}
+}</textarea>
+        <button id="sendBtn">Kaydet</button>
+        <label>Get key</label>
+        <input id="getKey" value="user:1001" />
+        <button id="getBtn">XML Gör</button>
+        <pre id="result">Hazır...</pre>
+      </div>
+
+      <div class="card">
+        <h3>Bakım</h3>
+        <button id="compactBtn">Compaction Çalıştır</button>
+        <div id="maintenanceResult"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>Shard Telemetri (10 dosya)</h3>
+      <div id="stats"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
