@@ -1,0 +1,8 @@
+pywebview
+python-dotenv
+google-genai
+SpeechRecognition
+pyttsx3
+pyserial
+psutil
+PyAudio
