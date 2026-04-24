@@ -3,123 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>BİLADER • Bilgisayar Destekli Yapay Zeka Dostu Rehber</title>
+  <title>BİLADER</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="app" class="app-shell">
-    <header class="topbar glass-panel">
-      <div class="brand-block">
-        <span class="brand-dot"></span>
-        <div>
-          <h2 class="brand-title">BİLADER</h2>
-          <p class="brand-subtitle">Bilgisayar Destekli Yapay Zeka Dostu Rehber</p>
-        </div>
-      </div>
-      <div class="topbar-actions">
-        <button id="listenToggle" class="action-btn">Dinlemeyi Başlat</button>
-        <button id="clearMemory" class="action-btn ghost">Ekranı Temizle</button>
-      </div>
+  <div class="app">
+    <header class="topbar">
+      <h1 id="logo">BİLADER</h1>
+      <p id="status">BAĞLANTI TAMAMLANDI, BİLADER.</p>
     </header>
 
-    <main class="main-grid">
-      <section class="stage glass-panel">
-        <canvas id="matrixCanvas" aria-label="Matrix canvas"></canvas>
+    <main class="layout">
+      <section class="chat">
+        <div id="history" class="history"></div>
 
-        <div class="center-overlay">
-          <h1 id="logo" class="logo">BİLADER</h1>
-          <p id="status" class="status">BAĞLANTI TAMAMLANDI, BİLADER.</p>
-
-          <div class="voice-meter" id="voiceMeter" role="img" aria-label="voice meter"></div>
-
-          <div class="chips-row">
-            <span class="chip">Gemini 2.5 Flash</span>
-            <span class="chip">PyWebView</span>
-            <span class="chip">Arduino Hub</span>
-            <span class="chip">Siberpunk UI</span>
-          </div>
+        <div class="composer">
+          <input id="prompt" type="text" placeholder="Bilader, bir şey sor..." />
+          <button id="sendBtn">Gönder</button>
+          <button id="voiceBtn">🎤 Konuş</button>
         </div>
 
-        <section class="chat-panel glass-panel">
-          <div class="chat-toolbar">
-            <label for="prompt">Komut / Mesaj</label>
-            <small class="hint">Örn: "Bilader CPU nasıl?"</small>
-          </div>
-
-          <div class="input-row">
-            <input id="prompt" type="text" autocomplete="off" placeholder="Bilader, komut ver veya sohbet başlat..." />
-            <button id="sendBtn" class="action-btn">Gönder</button>
-            <button id="routeBtn" class="action-btn ghost">Komut Çözümle</button>
-          </div>
-
-          <div class="history-wrap">
-            <div id="history" class="history"></div>
-          </div>
-
-          <div class="code-block-wrap">
-            <div class="section-title">Kod Çıktısı</div>
-            <pre id="codePanel" class="code-panel"></pre>
-          </div>
-        </section>
+        <pre id="codePanel" class="code" placeholder="Kod çıktısı"></pre>
       </section>
 
-      <aside class="side glass-panel">
-        <section class="widget">
-          <h3 class="widget-title">Siber Modüller</h3>
-          <div id="iconGrid" class="icon-grid"></div>
-        </section>
+      <aside class="side">
+        <button id="refreshHistoryBtn">Geçmişi Yenile</button>
+        <button id="snapshotBtn">Sistem Durumu</button>
+        <button id="arduinoBtn">Arduino Bağla/Kes</button>
+        <button id="tempBtn">Sıcaklık Oku</button>
 
-        <section class="widget">
-          <h3 class="widget-title">Cihaz Hub</h3>
-          <div class="button-grid">
-            <button id="arduinoToggle" class="action-btn">Arduino Bağla</button>
-            <button id="arduinoTemp" class="action-btn ghost">Sıcaklık Oku</button>
-            <button id="arduinoLightOn" class="action-btn ghost">Işığı Yak</button>
-            <button id="arduinoLightOff" class="action-btn ghost">Işığı Kapat</button>
-            <button id="portsBtn" class="action-btn ghost">Portları Tara</button>
-          </div>
-          <pre id="devicePanel" class="mini-panel"></pre>
-        </section>
-
-        <section class="widget">
-          <h3 class="widget-title">Sistem Kaynakları</h3>
-          <div class="button-grid">
-            <button id="snapshotBtn" class="action-btn">Anlık Görünüm</button>
-            <button id="processBtn" class="action-btn ghost">Süreçler</button>
-            <button id="memoryBtn" class="action-btn ghost">Hafıza Özeti</button>
-          </div>
-          <pre id="resourcePanel" class="mini-panel"></pre>
-        </section>
-
-        <section class="widget">
-          <h3 class="widget-title">Hızlı Uygulama</h3>
-          <div class="input-row compact">
-            <input id="appName" type="text" placeholder="örn: spotify" />
-            <button id="openAppBtn" class="action-btn">Aç</button>
-          </div>
-        </section>
+        <pre id="sidePanel" class="panel"></pre>
       </aside>
     </main>
-
-    <footer class="footer glass-panel">
-      <div class="telemetry-line">
-        <span>CPU <b id="cpuText">0%</b></span>
-        <span>RAM <b id="ramText">0%</b></span>
-        <span>DISK <b id="diskText">0%</b></span>
-      </div>
-      <div class="footer-note">Koyu obsidyen tema • Neon mavi / siber-yeşil • Bilader hazır.</div>
-    </footer>
   </div>
 
-  <template id="historyItemTemplate">
-    <article class="history-item">
-      <header>
+  <template id="itemTpl">
+    <div class="item">
+      <div class="meta">
         <span class="role"></span>
-        <time class="time"></time>
-      </header>
-      <p class="content"></p>
-    </article>
+        <span class="time"></span>
+      </div>
+      <div class="content"></div>
+    </div>
   </template>
 
   <script src="script.js"></script>

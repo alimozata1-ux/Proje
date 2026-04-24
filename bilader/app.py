@@ -14,7 +14,7 @@ from .filtering import CodeFilter
 from .gemini_client import GeminiService
 from .memory import ConversationMemory
 from .router import CommandRouter
-from .voice import TTSService, WakeWordListener
+from .voice import STTService, TTSService, WakeWordListener
 
 
 @dataclass(slots=True)
@@ -36,6 +36,7 @@ class BiladerApplication:
             temperature=config.gemini_temperature,
         )
         self.tts = TTSService(rate=config.tts_rate, volume=config.tts_volume)
+        self.stt = STTService(language="tr-TR")
         self.wake_listener = WakeWordListener(config.wake_words)
         self.arduino = ArduinoHub(
             default_port=config.arduino_port,
@@ -68,6 +69,20 @@ class BiladerApplication:
         self.set_status("KONUŞUYOR...")
         self.tts.speak(text)
         self.set_status("BAĞLANTI TAMAMLANDI, BİLADER.")
+
+    def get_history(self, limit: int = 50) -> list[dict]:
+        rows = self.memory.latest(limit=limit)
+        ordered = list(reversed(rows))
+        return [{"role": r.role, "content": r.content, "created_at": r.created_at} for r in ordered]
+
+    def listen_once(self) -> dict:
+        self.set_status("DİNLİYOR...")
+        result = self.stt.listen_once()
+        if result.get("ok"):
+            self.set_status("DUYDUM, İŞLİYORUM...")
+        else:
+            self.set_status(result.get("error", "Ses alınamadı."))
+        return result
 
     def handle_ai_chat(self, prompt: str) -> dict:
         self.set_status("DÜŞÜNÜYOR...")
@@ -181,6 +196,16 @@ class ApiBridge:
 
     def ask(self, prompt: str) -> dict:
         return self.app.handle_ai_chat(prompt)
+
+    def get_history(self, limit: int = 50) -> list[dict]:
+        return self.app.get_history(limit=limit)
+
+    def listen_once(self) -> dict:
+        return self.app.listen_once()
+
+    def speak_text(self, text: str) -> dict:
+        self.app.speak(text)
+        return {"ok": True}
 
     def run_command(self, utterance: str) -> dict:
         return self.app.execute_command(utterance)

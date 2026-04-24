@@ -30,6 +30,32 @@ class TTSService:
             self.engine.runAndWait()
 
 
+class STTService:
+    """Tek seferlik mikrofon dinleme servisi (kullanıcı konuşması için)."""
+
+    def __init__(self, language: str = "tr-TR") -> None:
+        self.language = language
+        self.recognizer = sr.Recognizer()
+
+    def listen_once(self, timeout: int = 6, phrase_time_limit: int = 12) -> dict:
+        try:
+            with sr.Microphone() as source:
+                self.recognizer.adjust_for_ambient_noise(source, duration=0.6)
+                audio = self.recognizer.listen(
+                    source,
+                    timeout=timeout,
+                    phrase_time_limit=phrase_time_limit,
+                )
+            text = self.recognizer.recognize_google(audio, language=self.language)
+            return {"ok": True, "text": text}
+        except sr.WaitTimeoutError:
+            return {"ok": False, "error": "Mikrofon zaman aşımı (ses algılanmadı)."}
+        except sr.UnknownValueError:
+            return {"ok": False, "error": "Ses anlaşılamadı, tekrar dener misin bilader?"}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+
+
 class WakeWordListener:
     def __init__(self, wake_words: tuple[str, ...]) -> None:
         self.wake_words = tuple(w.strip().lower() for w in wake_words if w.strip())
@@ -43,11 +69,7 @@ class WakeWordListener:
         if self.active:
             return
         self.active = True
-        self._thread = threading.Thread(
-            target=self._loop,
-            args=(callback,),
-            daemon=True,
-        )
+        self._thread = threading.Thread(target=self._loop, args=(callback,), daemon=True)
         self._thread.start()
 
     def stop(self) -> None:
@@ -61,26 +83,18 @@ class WakeWordListener:
             return
 
         with self.microphone as source:
-            self.recognizer.adjust_for_ambient_noise(source, duration=0.6)
+            self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
 
         while self.active:
             try:
                 with self.microphone as source:
-                    audio = self.recognizer.listen(
-                        source,
-                        timeout=1,
-                        phrase_time_limit=3,
-                    )
+                    audio = self.recognizer.listen(source, timeout=1, phrase_time_limit=3)
                 text = self.recognizer.recognize_google(audio, language="tr-TR")
                 low = text.lower()
                 if any(ww in low for ww in self.wake_words):
                     self._events.put(VoiceEvent(kind="wake", payload={"text": text}))
                     callback(text)
-                else:
-                    self._events.put(VoiceEvent(kind="passive", payload={"text": text}))
-            except sr.WaitTimeoutError:
-                continue
-            except sr.UnknownValueError:
+            except (sr.WaitTimeoutError, sr.UnknownValueError):
                 continue
             except Exception as exc:
                 self._events.put(VoiceEvent(kind="error", payload={"error": str(exc)}))
