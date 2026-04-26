@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LİB-BAG Yönetim Paneli</title>
+  <style>
+    body { font-family: Inter, Arial, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; }
+    header { padding:16px 24px; border-bottom:1px solid #1e293b; }
+    main { padding:24px; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+    .card { background:#111827; border:1px solid #1f2937; border-radius:12px; padding:16px; }
+    .title { font-size:14px; color:#94a3b8; margin-bottom:8px; }
+    .value { font-size:24px; font-weight:700; }
+    table { width:100%; border-collapse:collapse; margin-top:16px; font-size:14px; }
+    th,td { border-bottom:1px solid #1f2937; padding:8px; text-align:left; }
+    .bar { height:8px; background:#1f2937; border-radius:10px; overflow:hidden; }
+    .bar > span { display:block; height:100%; background:#22c55e; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>LİB-BAG Management Console</h1>
+  </header>
+  <main>
+    <div class="grid">
+      <div class="card"><div class="title">Toplam Shard</div><div id="totalShards" class="value">10</div></div>
+      <div class="card"><div class="title">Toplam I/O (B/s)</div><div id="totalIO" class="value">0</div></div>
+      <div class="card"><div class="title">Ortalama Sıkıştırma Oranı</div><div id="avgCompression" class="value">1.00</div></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Shard</th><th>LIB Entries</th><th>BAG Entries</th><th>I/O B/s</th><th>Compression</th><th>Doluluk</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
