@@ -1,127 +1,63 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BİLADER AI</title>
+  <title>BİLADER AI v1.1</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <canvas id="matrixCanvas"></canvas>
-  <div class="glass-overlay"></div>
+  <div class="vignette"></div>
 
-  <main class="layout">
-    <section class="center-panel">
-      <div class="logo-stack">
-        <h1 id="biladerLogo">BİLADER</h1>
-        <p class="subtitle">Bilgisayar Destekli Yapay Zeka Dostu Rehber</p>
-      </div>
+  <main class="app-shell">
+    <section class="main-panel glass">
+      <header class="hero">
+        <h1 id="logo">BİLADER</h1>
+        <p>Bilgisayar Destekli Yapay Zeka Dostu Rehber</p>
+      </header>
 
-      <div id="visualizer" class="visualizer"></div>
-
-      <div class="status-box">
+      <section class="status-row glass-soft">
         <span id="statusText">BAĞLANTI TAMAMLANDI, BİLADER.</span>
-      </div>
+        <div class="health" id="healthText">STT: - | TTS: - | Gemini: -</div>
+      </section>
 
-      <div class="chat-box">
+      <section class="visualizer" id="visualizer"></section>
+
+      <section class="chat glass-soft">
         <div id="chatLog" class="chat-log"></div>
-        <div class="chat-controls">
-          <input id="promptInput" type="text" placeholder="Bilader'e bir şey sor..." />
-          <button id="sendBtn">Gönder</button>
-          <button id="arduinoBtn">Arduino</button>
-          <button id="systemBtn">Sistem</button>
-        </div>
-      </div>
 
-      <div id="codeOutput" class="code-output hidden"></div>
+        <div class="prompt-row">
+          <input id="promptInput" type="text" placeholder="Bilader'e yaz veya komut ver..." />
+          <button id="sendBtn">Gönder</button>
+        </div>
+
+        <div class="actions">
+          <button id="listenBtn" class="ghost">Dinleme: Açık</button>
+          <button id="arduinoBtn" class="ghost">Arduino</button>
+          <button id="systemBtn" class="ghost">Sistem</button>
+          <button id="deviceBtn" class="ghost">Cihazlar</button>
+        </div>
+
+        <div id="codeBox" class="code-box hidden"></div>
+      </section>
     </section>
 
-    <aside class="right-panel">
+    <aside class="side-panel glass">
       <h2>Modüller</h2>
       <div class="icon-grid">
-        <button class="icon-card" data-icon="1">
-          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
-            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
-            <path d="M12 12 L52 12 M12 21 L52 21 M12 31 L52 31"></path>
-            <circle cx="32" cy="32" r="9"></circle>
-            <path d="M20 44 L32 20 L44 44 Z"></path>
-          </svg>
-          <span>Zeka</span>
-        </button>
-        <button class="icon-card" data-icon="2">
-          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
-            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
-            <path d="M12 14 L52 14 M12 22 L52 22 M12 32 L52 32"></path>
-            <circle cx="32" cy="32" r="10"></circle>
-            <path d="M20 44 L32 20 L44 44 Z"></path>
-          </svg>
-          <span>Mikrofon</span>
-        </button>
-        <button class="icon-card" data-icon="3">
-          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
-            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
-            <path d="M12 16 L52 16 M12 23 L52 23 M12 33 L52 33"></path>
-            <circle cx="32" cy="32" r="11"></circle>
-            <path d="M20 44 L32 20 L44 44 Z"></path>
-          </svg>
-          <span>Arduino</span>
-        </button>
-        <button class="icon-card" data-icon="4">
-          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
-            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
-            <path d="M12 18 L52 18 M12 24 L52 24 M12 34 L52 34"></path>
-            <circle cx="32" cy="32" r="8"></circle>
-            <path d="M20 44 L32 20 L44 44 Z"></path>
-          </svg>
-          <span>Hub</span>
-        </button>
-        <button class="icon-card" data-icon="5">
-          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
-            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
-            <path d="M12 20 L52 20 M12 25 L52 25 M12 35 L52 35"></path>
-            <circle cx="32" cy="32" r="9"></circle>
-            <path d="M20 44 L32 20 L44 44 Z"></path>
-          </svg>
-          <span>Hafıza</span>
-        </button>
-        <button class="icon-card" data-icon="6">
-          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
-            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
-            <path d="M12 22 L52 22 M12 26 L52 26 M12 36 L52 36"></path>
-            <circle cx="32" cy="32" r="10"></circle>
-            <path d="M20 44 L32 20 L44 44 Z"></path>
-          </svg>
-          <span>Kod</span>
-        </button>
-        <button class="icon-card" data-icon="7">
-          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
-            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
-            <path d="M12 24 L52 24 M12 27 L52 27 M12 37 L52 37"></path>
-            <circle cx="32" cy="32" r="11"></circle>
-            <path d="M20 44 L32 20 L44 44 Z"></path>
-          </svg>
-          <span>Smart Home</span>
-        </button>
-        <button class="icon-card" data-icon="8">
-          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
-            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
-            <path d="M12 26 L52 26 M12 28 L52 28 M12 38 L52 38"></path>
-            <circle cx="32" cy="32" r="8"></circle>
-            <path d="M20 44 L32 20 L44 44 Z"></path>
-          </svg>
-          <span>Sistem</span>
-        </button>
-        <button class="icon-card" data-icon="9">
-          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
-            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
-            <path d="M12 28 L52 28 M12 29 L52 29 M12 39 L52 39"></path>
-            <circle cx="32" cy="32" r="9"></circle>
-            <path d="M20 44 L32 20 L44 44 Z"></path>
-          </svg>
-          <span>Ayarlar</span>
-        </button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M8 12h48v40H8zM16 24h32M16 32h32M16 40h20"/></svg><span>Zeka</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M32 12v22M20 22v12a12 12 0 0 0 24 0V22M24 52h16"/></svg><span>Mikrofon</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M12 12h40v40H12zM20 20h8v8h-8zM36 20h8v8h-8zM20 36h24"/></svg><span>Arduino</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M16 16h12v12H16zM36 16h12v12H36zM26 36h12v12H26zM28 22h8M42 28v8M22 28v8"/></svg><span>Hub</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M14 14h36v36H14zM22 24h20M22 32h20M22 40h12"/></svg><span>Hafıza</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M14 20h36M20 20l-6 24h36l-6-24"/></svg><span>Kod Filtre</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M12 34l20-16 20 16v16H12zM24 50v-10h16v10"/></svg><span>Smart Home</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M14 50h8V26h-8zM28 50h8V16h-8zM42 50h8V32h-8z"/></svg><span>Sistem</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M32 14v8M32 42v8M14 32h8M42 32h8M20 20l6 6M38 38l6 6M44 20l-6 6M20 44l6-6"/><circle cx="32" cy="32" r="8"/></svg><span>Ayarlar</span></button>
       </div>
-      <div class="device-info" id="deviceInfo"></div>
+
+      <div class="device-box glass-soft" id="deviceInfo">USB: -<br/>Bluetooth: -</div>
     </aside>
   </main>
 
