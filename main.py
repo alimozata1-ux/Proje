@@ -15,7 +15,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except Exception:  # pragma: no cover
+    def load_dotenv(*_args, **_kwargs):  # type: ignore[no-redef]
+        return False
 
 try:
     import webview
@@ -390,7 +394,7 @@ class BiladerCore:
         self.stop_event.set()
         self.arduino.disconnect()
 
-    def process_input(self, text: str) -> Dict[str, Any]:
+    def process_input(self, text: str, emit_event: bool = True) -> Dict[str, Any]:
         text = text.strip()
         if not text:
             return {"ok": False, "error": "Boş komut"}
@@ -416,7 +420,8 @@ class BiladerCore:
         )
         self.memory.add_message("assistant", response)
         payload = asdict(packet)
-        self.events.put({"type": "assistant_response", "payload": payload})
+        if emit_event:
+            self.events.put({"type": "assistant_response", "payload": payload})
         return {"ok": True, **payload}
 
 
@@ -425,7 +430,8 @@ class ApiBridge:
         self.core = core
 
     def ask(self, text: str) -> Dict[str, Any]:
-        return self.core.process_input(text)
+        # UI doğrudan bu dönüşü işlediği için event kuyruğuna tekrar düşmüyoruz.
+        return self.core.process_input(text, emit_event=False)
 
     def get_system_status(self) -> Dict[str, Any]:
         snap = SystemControl.snapshot()
