@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BİLADER AI v1.1</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="matrixCanvas"></canvas>
+  <div class="vignette"></div>
+
+  <main class="app-shell">
+    <section class="main-panel glass">
+      <header class="hero">
+        <h1 id="logo">BİLADER</h1>
+        <p>Bilgisayar Destekli Yapay Zeka Dostu Rehber</p>
+      </header>
+
+      <section class="status-row glass-soft">
+        <span id="statusText">BAĞLANTI TAMAMLANDI, BİLADER.</span>
+        <div class="health" id="healthText">STT: - | TTS: - | Gemini: -</div>
+      </section>
+
+      <section class="visualizer" id="visualizer"></section>
+
+      <section class="chat glass-soft">
+        <div id="chatLog" class="chat-log"></div>
+
+        <div class="prompt-row">
+          <input id="promptInput" type="text" placeholder="Bilader'e yaz veya komut ver..." />
+          <button id="sendBtn">Gönder</button>
+        </div>
+
+        <div class="actions">
+          <button id="listenBtn" class="ghost">Dinleme: Açık</button>
+          <button id="arduinoBtn" class="ghost">Arduino</button>
+          <button id="systemBtn" class="ghost">Sistem</button>
+          <button id="deviceBtn" class="ghost">Cihazlar</button>
+          <button id="memoryBtn" class="ghost">Hafıza Temizle</button>
+          <button id="exportBtn" class="ghost">Hafıza Dışa Aktar</button>
+          <button id="guideBtn" class="ghost">Komut Rehberi</button>
+        </div>
+
+        <div id="codeBox" class="code-box hidden"></div>
+      </section>
+    </section>
+
+    <aside class="side-panel glass">
+      <h2>Modüller</h2>
+      <div class="icon-grid">
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M8 12h48v40H8zM16 24h32M16 32h32M16 40h20"/></svg><span>Zeka</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M32 12v22M20 22v12a12 12 0 0 0 24 0V22M24 52h16"/></svg><span>Mikrofon</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M12 12h40v40H12zM20 20h8v8h-8zM36 20h8v8h-8zM20 36h24"/></svg><span>Arduino</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M16 16h12v12H16zM36 16h12v12H36zM26 36h12v12H26zM28 22h8M42 28v8M22 28v8"/></svg><span>Hub</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M14 14h36v36H14zM22 24h20M22 32h20M22 40h12"/></svg><span>Hafıza</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M14 20h36M20 20l-6 24h36l-6-24"/></svg><span>Kod Filtre</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M12 34l20-16 20 16v16H12zM24 50v-10h16v10"/></svg><span>Smart Home</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M14 50h8V26h-8zM28 50h8V16h-8zM42 50h8V32h-8z"/></svg><span>Sistem</span></button>
+        <button class="module"><svg viewBox="0 0 64 64"><path d="M32 14v8M32 42v8M14 32h8M42 32h8M20 20l6 6M38 38l6 6M44 20l-6 6M20 44l6-6"/><circle cx="32" cy="32" r="8"/></svg><span>Ayarlar</span></button>
+      </div>
+
+      <div class="device-box glass-soft" id="deviceInfo">USB: -<br/>Bluetooth: -</div>
+    </aside>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

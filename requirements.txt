@@ -1,0 +1,8 @@
+pywebview>=5.0
+google-generativeai>=0.7.2
+SpeechRecognition>=3.10.4
+pyttsx3>=2.99
+pyserial>=3.5
+psutil>=5.9.8
+python-dotenv>=1.0.1
+pyaudio>=0.2.14
