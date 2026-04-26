@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BİLADER AI</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="matrixCanvas"></canvas>
+  <div class="glass-overlay"></div>
+
+  <main class="layout">
+    <section class="center-panel">
+      <div class="logo-stack">
+        <h1 id="biladerLogo">BİLADER</h1>
+        <p class="subtitle">Bilgisayar Destekli Yapay Zeka Dostu Rehber</p>
+      </div>
+
+      <div id="visualizer" class="visualizer"></div>
+
+      <div class="status-box">
+        <span id="statusText">BAĞLANTI TAMAMLANDI, BİLADER.</span>
+      </div>
+
+      <div class="chat-box">
+        <div id="chatLog" class="chat-log"></div>
+        <div class="chat-controls">
+          <input id="promptInput" type="text" placeholder="Bilader'e bir şey sor..." />
+          <button id="sendBtn">Gönder</button>
+          <button id="arduinoBtn">Arduino</button>
+          <button id="systemBtn">Sistem</button>
+        </div>
+      </div>
+
+      <div id="codeOutput" class="code-output hidden"></div>
+    </section>
+
+    <aside class="right-panel">
+      <h2>Modüller</h2>
+      <div class="icon-grid">
+        <button class="icon-card" data-icon="1">
+          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
+            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
+            <path d="M12 12 L52 12 M12 21 L52 21 M12 31 L52 31"></path>
+            <circle cx="32" cy="32" r="9"></circle>
+            <path d="M20 44 L32 20 L44 44 Z"></path>
+          </svg>
+          <span>Zeka</span>
+        </button>
+        <button class="icon-card" data-icon="2">
+          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
+            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
+            <path d="M12 14 L52 14 M12 22 L52 22 M12 32 L52 32"></path>
+            <circle cx="32" cy="32" r="10"></circle>
+            <path d="M20 44 L32 20 L44 44 Z"></path>
+          </svg>
+          <span>Mikrofon</span>
+        </button>
+        <button class="icon-card" data-icon="3">
+          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
+            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
+            <path d="M12 16 L52 16 M12 23 L52 23 M12 33 L52 33"></path>
+            <circle cx="32" cy="32" r="11"></circle>
+            <path d="M20 44 L32 20 L44 44 Z"></path>
+          </svg>
+          <span>Arduino</span>
+        </button>
+        <button class="icon-card" data-icon="4">
+          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
+            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
+            <path d="M12 18 L52 18 M12 24 L52 24 M12 34 L52 34"></path>
+            <circle cx="32" cy="32" r="8"></circle>
+            <path d="M20 44 L32 20 L44 44 Z"></path>
+          </svg>
+          <span>Hub</span>
+        </button>
+        <button class="icon-card" data-icon="5">
+          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
+            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
+            <path d="M12 20 L52 20 M12 25 L52 25 M12 35 L52 35"></path>
+            <circle cx="32" cy="32" r="9"></circle>
+            <path d="M20 44 L32 20 L44 44 Z"></path>
+          </svg>
+          <span>Hafıza</span>
+        </button>
+        <button class="icon-card" data-icon="6">
+          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
+            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
+            <path d="M12 22 L52 22 M12 26 L52 26 M12 36 L52 36"></path>
+            <circle cx="32" cy="32" r="10"></circle>
+            <path d="M20 44 L32 20 L44 44 Z"></path>
+          </svg>
+          <span>Kod</span>
+        </button>
+        <button class="icon-card" data-icon="7">
+          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
+            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
+            <path d="M12 24 L52 24 M12 27 L52 27 M12 37 L52 37"></path>
+            <circle cx="32" cy="32" r="11"></circle>
+            <path d="M20 44 L32 20 L44 44 Z"></path>
+          </svg>
+          <span>Smart Home</span>
+        </button>
+        <button class="icon-card" data-icon="8">
+          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
+            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
+            <path d="M12 26 L52 26 M12 28 L52 28 M12 38 L52 38"></path>
+            <circle cx="32" cy="32" r="8"></circle>
+            <path d="M20 44 L32 20 L44 44 Z"></path>
+          </svg>
+          <span>Sistem</span>
+        </button>
+        <button class="icon-card" data-icon="9">
+          <svg viewBox="0 0 64 64" aria-hidden="true" class="neon-icon">
+            <rect x="6" y="6" width="52" height="52" rx="8" ry="8"></rect>
+            <path d="M12 28 L52 28 M12 29 L52 29 M12 39 L52 39"></path>
+            <circle cx="32" cy="32" r="9"></circle>
+            <path d="M20 44 L32 20 L44 44 Z"></path>
+          </svg>
+          <span>Ayarlar</span>
+        </button>
+      </div>
+      <div class="device-info" id="deviceInfo"></div>
+    </aside>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
