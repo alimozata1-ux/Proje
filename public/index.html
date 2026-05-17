@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProjePaylaş - Projelerinizi Paylaşın</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-logo" onclick="navigate('home')">
+        <i class="fas fa-rocket"></i>
+        <span>ProjePaylaş</span>
+      </a>
+      <div class="nav-search" id="navSearch">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="Proje ara..." onkeyup="handleSearch(event)">
+      </div>
+      <div class="nav-links" id="navLinks">
+        <a href="#" onclick="navigate('home')" class="nav-link active" data-page="home">
+          <i class="fas fa-home"></i> Ana Sayfa
+        </a>
+        <a href="#" onclick="navigate('explore')" class="nav-link" data-page="explore">
+          <i class="fas fa-compass"></i> Keşfet
+        </a>
+        <a href="#" onclick="navigate('new-project')" class="nav-link" data-page="new-project" id="newProjectLink" style="display:none;">
+          <i class="fas fa-plus-circle"></i> Proje Ekle
+        </a>
+      </div>
+      <div class="nav-right">
+        <div class="nav-auth" id="navAuth">
+          <a href="#" onclick="navigate('login')" class="btn btn-outline btn-sm">Giriş Yap</a>
+          <a href="#" onclick="navigate('register')" class="btn btn-primary btn-sm">Kayıt Ol</a>
+        </div>
+        <div class="nav-profile" id="navProfile" style="display:none;">
+          <div class="profile-dropdown" onclick="toggleProfileMenu()">
+            <div class="profile-avatar-small" id="navAvatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <span class="profile-name" id="navUsername"></span>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="dropdown-menu" id="profileDropdown">
+            <a href="#" onclick="navigate('profile'); closeDropdown()"><i class="fas fa-user-circle"></i> Profilim</a>
+            <a href="#" onclick="navigate('my-projects'); closeDropdown()"><i class="fas fa-folder"></i> Projelerim</a>
+            <a href="#" onclick="navigate('settings'); closeDropdown()"><i class="fas fa-cog"></i> Ayarlar</a>
+            <hr>
+            <a href="#" onclick="logout(); closeDropdown()" class="logout-link"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content" id="mainContent">
+    <!-- Pages will be rendered here -->
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3><i class="fas fa-rocket"></i> ProjePaylaş</h3>
+        <p>Projelerinizi paylaşın, keşfedin ve ilham alın.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Sayfalar</h4>
+        <a href="#" onclick="navigate('home')">Ana Sayfa</a>
+        <a href="#" onclick="navigate('explore')">Keşfet</a>
+      </div>
+      <div class="footer-section">
+        <h4>Hesap</h4>
+        <a href="#" onclick="navigate('login')">Giriş Yap</a>
+        <a href="#" onclick="navigate('register')">Kayıt Ol</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2024 ProjePaylaş. Tüm hakları saklıdır.</p>
+    </div>
+  </footer>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
